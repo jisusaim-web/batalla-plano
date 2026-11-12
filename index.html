@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Batalla en el plano</title>
+<style>
+:root{--bg:#e8eef0;--panel:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--accink:#fff;--err:#b3261e;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--panel:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--accink:#06222a;--err:#ff8a80;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Avenir Next","Segoe UI",system-ui,sans-serif}
+main{max-width:440px;margin:0 auto;padding:20px 16px 32px}
+h1{font:700 1.5rem/1.2 Georgia,serif;margin:0 0 14px}
+h2{font:600 1.05rem/1.3 Georgia,serif;margin:0 0 8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 3px}
+input{width:100%;box-sizing:border-box;padding:10px;font:inherit;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+button{padding:10px 14px;font:inherit;font-weight:600;border:1px solid var(--acc);border-radius:6px;background:var(--acc);color:var(--accink);cursor:pointer;margin-top:10px}
+button.sec{background:transparent;color:var(--acc)}
+button.link{border:0;background:none;color:var(--acc);padding:6px 0;text-decoration:underline}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.err{color:var(--err);min-height:1.3em;margin:8px 0 0;font-size:.9rem}
+.code{font:700 2rem/1.2 ui-monospace,Menlo,monospace;letter-spacing:.2em}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Batalla en el plano</h1>
+
+<section id="auth" hidden>
+  <div class="panel">
+    <h2 id="tAuth">Iniciar sesión</h2>
+    <div id="fNombre" hidden><label for="nombre">Nombre de jugador</label><input id="nombre" maxlength="20" autocomplete="nickname"></div>
+    <label for="email">Correo</label><input id="email" type="email" autocomplete="email">
+    <label for="pass">Contraseña (mínimo 6 caracteres)</label><input id="pass" type="password" autocomplete="current-password">
+    <p class="err" id="eAuth"></p>
+    <div class="row"><button id="bEnviar">Entrar</button><button class="sec" id="bGoogle">Continuar con Google</button></div>
+    <button class="link" id="bModo">Crear cuenta nueva</button><br>
+    <button class="link" id="bReset">Olvidé mi contraseña</button>
+  </div>
+</section>
+
+<section id="lobby" hidden>
+  <div class="panel">
+    <h2 id="hola"></h2>
+    <button id="bCrear">Crear partida</button>
+    <label for="codigo">O únete con un código</label>
+    <div class="row"><input id="codigo" maxlength="5" style="flex:1;text-transform:uppercase"><button id="bUnir" style="margin-top:0">Unirme</button></div>
+    <p class="err" id="eLobby"></p>
+  </div>
+  <button class="sec" id="bSalir">Cerrar sesión</button>
+</section>
+
+<section id="sala" hidden>
+  <div class="panel">
+    <h2>Sala de espera</h2>
+    <p>Código de la partida:</p><div class="code" id="vCodigo"></div>
+    <p id="vJ1"></p><p id="vJ2"></p>
+    <p id="vEstado"><strong></strong></p>
+  </div>
+  <button class="sec" id="bVolver">Volver al lobby</button>
+</section>
+</main>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import {getFirestore,doc,setDoc,getDoc,updateDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU",
+  authDomain: "prueba-2-df121.firebaseapp.com",
+  projectId: "prueba-2-df121",
+  storageBucket: "prueba-2-df121.firebasestorage.app",
+  messagingSenderId: "147257342708",
+  appId: "1:147257342708:web:81be883437b83c7e443ca1"
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = id => document.getElementById(id);
+const ver = v => ["auth","lobby","sala"].forEach(x => $(x).hidden = x !== v);
+const TEXTOS = {
+  "auth/invalid-credential":"Correo o contraseña incorrectos.",
+  "auth/invalid-email":"El correo no es válido.",
+  "auth/email-already-in-use":"Ese correo ya tiene una cuenta. Inicia sesión.",
+  "auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
+  "auth/popup-closed-by-user":"Cerraste la ventana de Google antes de terminar.",
+  "auth/too-many-requests":"Demasiados intentos. Espera un momento.",
+  "permission-denied":"No tienes permiso para esta acción (revisa las reglas de Firestore).",
+  "nombre":"El nombre de jugador debe tener al menos 3 caracteres."
+};
+const texto = e => TEXTOS[e.code] || "Algo salió mal. Inténtalo de nuevo.";
+const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
+
+let modo = "entrar", unsub = null;
+
+function pintarModo(){
+  const crear = modo === "crear";
+  $("tAuth").textContent = crear ? "Crear cuenta" : "Iniciar sesión";
+  $("bEnviar").textContent = crear ? "Crear cuenta" : "Entrar";
+  $("bModo").textContent = crear ? "Ya tengo cuenta" : "Crear cuenta nueva";
+  $("fNombre").hidden = !crear;
+  $("pass").autocomplete = crear ? "new-password" : "current-password";
+  $("eAuth").textContent = "";
+}
+$("bModo").onclick = () => { modo = modo === "crear" ? "entrar" : "crear"; pintarModo(); };
+
+$("bEnviar").onclick = async () => {
+  const email = $("email").value.trim(), pass = $("pass").value;
+  try {
+    if (modo === "crear"){
+      const n = $("nombre").value.trim();
+      if (n.length < 3) throw {code:"nombre"};
+      const c = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(c.user, {displayName:n});
+      await setDoc(doc(db,"users",c.user.uid), {nombre:n, creado:serverTimestamp()});
+      entrarLobby(c.user);
+    } else await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e){ $("eAuth").textContent = texto(e); }
+};
+$("bGoogle").onclick = async () => {
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch (e){ $("eAuth").textContent = texto(e); }
+};
+$("bReset").onclick = async () => {
+  const email = $("email").value.trim();
+  if (!email){ $("eAuth").textContent = "Escribe tu correo y vuelve a tocar el enlace."; return; }
+  try { await sendPasswordResetEmail(auth, email); $("eAuth").textContent = "Te enviamos un correo para restablecerla."; }
+  catch (e){ $("eAuth").textContent = texto(e); }
+};
+$("bSalir").onclick = () => signOut(auth);
+
+function entrarLobby(u){
+  $("hola").textContent = "Hola, " + nombreDe(u);
+  $("eLobby").textContent = "";
+  ver("lobby");
+}
+
+onAuthStateChanged(auth, async u => {
+  if (unsub){ unsub(); unsub = null; }
+  if (!u){ pintarModo(); ver("auth"); return; }
+  const ref = doc(db,"users",u.uid);
+  try { if (!(await getDoc(ref)).exists()) await setDoc(ref, {nombre:nombreDe(u), creado:serverTimestamp()}); } catch {}
+  entrarLobby(u);
+});
+
+const LETRAS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const nuevoCodigo = () => Array.from({length:5}, () => LETRAS[Math.floor(Math.random()*LETRAS.length)]).join("");
+
+$("bCrear").onclick = async () => {
+  const u = auth.currentUser, codigo = nuevoCodigo();
+  try {
+    await setDoc(doc(db,"games",codigo), {j1:u.uid, n1:nombreDe(u), j2:null, n2:null, estado:"esperando", creada:serverTimestamp()});
+    abrirSala(codigo);
+  } catch (e){ $("eLobby").textContent = texto(e); }
+};
+$("bUnir").onclick = async () => {
+  const u = auth.currentUser, codigo = $("codigo").value.trim().toUpperCase();
+  if (codigo.length !== 5){ $("eLobby").textContent = "El código tiene 5 caracteres."; return; }
+  try {
+    const ref = doc(db,"games",codigo), s = await getDoc(ref);
+    if (!s.exists()) throw {code:"x", m:"No existe una partida con ese código."};
+    const g = s.data();
+    if (g.j1 !== u.uid && g.j2 !== u.uid){
+      if (g.j2) throw {code:"x", m:"Esa partida ya está llena."};
+      await updateDoc(ref, {j2:u.uid, n2:nombreDe(u), estado:"lista"});
+    }
+    abrirSala(codigo);
+  } catch (e){ $("eLobby").textContent = e.m || texto(e); }
+};
+
+function abrirSala(codigo){
+  $("vCodigo").textContent = codigo;
+  ver("sala");
+  unsub = onSnapshot(doc(db,"games",codigo), s => {
+    const g = s.data(); if (!g) return;
+    $("vJ1").textContent = "Jugador 1: " + g.n1;
+    $("vJ2").textContent = "Jugador 2: " + (g.n2 || "esperando rival…");
+    $("vEstado").textContent = g.j2
+      ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos."
+      : "Comparte el código con tu rival.";
+  });
+}
+$("bVolver").onclick = () => { if (unsub){ unsub(); unsub = null; } entrarLobby(auth.currentUser); };
+</script>
+</body>
+</html>
