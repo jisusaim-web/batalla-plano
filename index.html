@@ -200,7 +200,7 @@ $("hAv").onclick = () => ir("perfil");
 /* ---------- Pintar vistas ---------- */
 const nombre = () => P.nombre || (U && nombreDe(U)) || "Jugador";
 const rival = g => g.j1 === U.uid ? g.n2 : g.n1;
-const estadoTxt = g => g.j2 ? "Lista" : "Esperando rival";
+const estadoTxt = g => g.estado === "fin" ? "Terminada" : g.j2 ? "En curso" : "Esperando rival";
 const pendientes = () => amistades.filter(a => a.estado === "pendiente" && a.pedidoPor !== U.uid);
 const otro = a => a.miembros.find(m => m !== U.uid);
 
@@ -268,7 +268,7 @@ function pintarPerfil(){
       <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
-    <h2>Historial</h2><div class="card">${lista.length ? lista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó.</small></details>`; }).join("") : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+    <h2>Historial</h2><div class="card">${lista.length ? lista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó.</small></details>`; }).join("") : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
@@ -330,7 +330,8 @@ async function alCambiar(id, g){
   if (g.estado === "fin"){
     const f = g.finales || {};
     if (!f[U.uid] && !publicado){ publicado = true; updateDoc(doc(db,"games",gid), {[`finales.${U.uid}`]:{ships:mis, gast:[...gast]}}).catch(() => {}); }
-    if (!guardado && f[g.j1] && f[g.j2]){ guardado = true; guardarFin(); }
+    if (g.cancelada) guardado = true;
+    if (!guardado && f[U.uid] && (f[yo === 1 ? g.j2 : g.j1] || g.abandonoPor)){ guardado = true; guardarFin(); }
   }
   const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts]);
   if (h !== huella){ huella = h; pintarPartida(); }
@@ -366,8 +367,8 @@ function pintarPartida(){
   const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
   let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">—</b></span></div>`;
   if (g.estado === "fin"){
-    h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>
-      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p><small>Se guardó en tu historial.</small></div><button data-go="partidas">Volver a mis partidas</button>`;
+    h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
+      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div><button data-go="partidas">Volver a mis partidas</button>`;
     $("v-sala").innerHTML = h; return;
   }
   if (!bat){
@@ -387,7 +388,8 @@ function pintarPartida(){
         <label>b (eje Y)<input id="b" type="number" step="0.5" inputmode="decimal" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div>` : ""}
       <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
   }
-  $("v-sala").innerHTML = h;
+  h += `<div class="row" style="margin-top:16px"><button class="sec" id="abandonar">Abandonar partida</button></div>`;
+  $("v-sala").innerHTML = h; $("abandonar").onclick = abandonar;
   if (!bat && !g.listo[U.uid]){
     enlazarDrag();
     $("ori").onclick = () => { horiz = !horiz; pintarPartida(); };
@@ -473,7 +475,7 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
       const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
       if (!g.ataque) return;
       const pts = {...g.pts}; pts[a.p] = (pts[a.p] || 0) + suma;
-      const patch = {lineas:[...(g.lineas || []), {p:a.p, m:a.m, b:a.b, rojo:toca, hits}], ataque:null, apunta:null, pts, ...avanzar(g, pts)};
+      const patch = {lineas:[...(g.lineas || []), {p:a.p, m:a.m, b:a.b, rojo:toca, hits}], ataque:null, apunta:null, pts, fallos:{...(g.fallos || {1:0,2:0}), [a.p]:0}, ...avanzar(g, pts)};
       if (gana){ patch.estado = "fin"; patch.ganador = a.p; }
       tx.update(ref, patch);
     });
@@ -485,26 +487,57 @@ async function pasar(){             // se acabó el tiempo: se pierde el ataque
   try { await runTransaction(db, async tx => {
     const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
     if (g.estado !== "batalla" || g.ataque || Date.now() < g.tiempoFin) return;
-    tx.update(ref, {...avanzar(g, g.pts), apunta:null});
+    const f = {...(g.fallos || {1:0,2:0})}; f[g.turno] = (f[g.turno] || 0) + 1;
+    const patch = {...avanzar(g, g.pts), apunta:null, fallos:f};
+    if (f[g.turno] >= 3){ patch.estado = "fin"; patch.ganador = 3 - g.turno; patch.abandonoPor = g.turno; }   // 3 turnos seguidos sin atacar
+    tx.update(ref, patch);
   }); } catch {}
   pasando = false;
 }
+const COLOCAR_MS = 300000;   // 5 minutos para colocar la flota
+async function cancelarColocacion(){
+  if (pasando) return; pasando = true;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado !== "colocando" || !g.inicio || Date.now() - g.inicio <= COLOCAR_MS) return;
+    const l = g.listo || {}, a = !!l[g.j1], b = !!l[g.j2];
+    if (a === b) tx.update(ref, {estado:"fin", cancelada:true, ganador:0});                    // nadie terminó: se cancela
+    else tx.update(ref, {estado:"fin", ganador:a ? 1 : 2, abandonoPor:a ? 2 : 1});            // gana quien sí terminó
+  }); } catch {}
+  pasando = false;
+}
+async function abandonar(){
+  if (!confirm("¿Seguro que quieres abandonar? Perderás la partida.")) return;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado === "fin") return;
+    tx.update(ref, {estado:"fin", ganador:3 - yo, abandonoPor:yo, ataque:null, apunta:null, [`finales.${U.uid}`]:{ships:mis, gast:[...gast]}});
+  }); publicado = true; } catch {}
+}
 setInterval(() => {
-  if (!G || !G.j2 || G.estado !== "batalla") return;
-  const r = Math.ceil((G.tiempoFin - Date.now()) / 1000), e = $("tm");
+  if (!G || !G.j2) return;
+  const e = $("tm");
+  if (G.estado === "colocando" && G.inicio){
+    const r = Math.ceil((G.inicio + COLOCAR_MS - Date.now()) / 1000);
+    if (e) e.textContent = fmtT(r);
+    if (r <= 0) cancelarColocacion();
+    return;
+  }
+  if (G.estado !== "batalla") return;
+  const r = Math.ceil((G.tiempoFin - Date.now()) / 1000);
   if (e) e.textContent = fmtT(r);
   if (!G.ataque && ((G.turno === yo && r <= 0) || r <= -4)) pasar();
 }, 1000);
 
 async function guardarFin(){
-  const g = G, f = g.finales, mio = f[U.uid], rv = f[yo === 1 ? g.j2 : g.j1];
+  const g = G, f = g.finales, mio = f[U.uid], rv = f[yo === 1 ? g.j2 : g.j1] || {ships:[], gast:[]};
   const res = g.ganador === 0 ? "empate" : g.ganador === yo ? "victoria" : "derrota", ref = doc(db,"users",U.uid,"historial",gid);
   const flota = F => F.ships.map(s => ({c:CL[s.i].c, celdas:s.celdas, hund:!!s.hund})), sol = l => ({m:l.m, b:l.b, rojo:l.rojo});
   try {
     if ((await getDoc(ref)).exists()) return;
     await setDoc(ref, {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
       mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
-      barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, fecha:serverTimestamp()});
+      barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, abandono:!!g.abandonoPor, fecha:serverTimestamp()});
     const campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
     await updateDoc(doc(db,"users",U.uid), {[campo]:increment(1), puntos:increment(g.pts[yo]), mejor:Math.max(P.mejor || 0, g.pts[yo])});
   } catch (e){ console.error(e); }
@@ -542,7 +575,7 @@ document.addEventListener("click", async e => {
       const g = s.data();
       if (g.j1 !== U.uid && g.j2 !== U.uid){
         if (g.j2){ er.textContent = "Esa partida ya está llena."; return; }
-        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1});
+        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
       }
       return abrirSala(id);
     }
