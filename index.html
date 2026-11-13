@@ -2,38 +2,54 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Batalla en el plano</title>
 <style>
-:root{--bg:#e8eef0;--panel:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--accink:#fff;--err:#b3261e;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--panel:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--accink:#06222a;--err:#ff8a80;color-scheme:dark}}
+:root{--bg:#e8eef0;--card:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--on:#fff;--err:#b3261e;--ok:#2e7d32;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--card:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--on:#06222a;--err:#ff8a80;--ok:#81c784;color-scheme:dark}}
+*{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Avenir Next","Segoe UI",system-ui,sans-serif}
-main{max-width:440px;margin:0 auto;padding:20px 16px 32px}
-h1{font:700 1.5rem/1.2 Georgia,serif;margin:0 0 14px}
-h2{font:600 1.05rem/1.3 Georgia,serif;margin:0 0 8px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+h1{font:700 1.15rem Georgia,serif;margin:0}
+h2{font:600 1.05rem Georgia,serif;margin:18px 0 8px}
+main{max-width:480px;margin:0 auto;padding:14px 16px 96px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0}
+.big{display:block;width:100%;padding:16px;font-size:1.05rem}
 label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 3px}
-input{width:100%;box-sizing:border-box;padding:10px;font:inherit;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
-button{padding:10px 14px;font:inherit;font-weight:600;border:1px solid var(--acc);border-radius:6px;background:var(--acc);color:var(--accink);cursor:pointer;margin-top:10px}
+input{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button{padding:10px 14px;font:inherit;font-weight:600;border:1px solid var(--acc);border-radius:8px;background:var(--acc);color:var(--on);cursor:pointer}
 button.sec{background:transparent;color:var(--acc)}
-button.link{border:0;background:none;color:var(--acc);padding:6px 0;text-decoration:underline}
+button.mini{padding:6px 10px;font-size:.85rem}
+button.link{border:0;background:none;color:var(--acc);text-decoration:underline;padding:6px 0}
 button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-.row{display:flex;gap:8px;flex-wrap:wrap}
+.row{display:flex;gap:8px;align-items:center}.row>input{flex:1}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats b{display:block;font:700 1.6rem Georgia,serif}
+.stats span,small,.mut{color:var(--mut);font-size:.85rem}
 .err{color:var(--err);min-height:1.3em;margin:8px 0 0;font-size:.9rem}
-.code{font:700 2rem/1.2 ui-monospace,Menlo,monospace;letter-spacing:.2em}
+.av{width:36px;height:36px;border-radius:50%;background:var(--acc);color:var(--on);display:grid;place-items:center;font-weight:700;overflow:hidden;padding:0;border:0}
+.av img{width:100%;height:100%;object-fit:cover}
+.code{font:700 2rem ui-monospace,Menlo,monospace;letter-spacing:.2em}
+.tag{font-size:.75rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;border:0;color:var(--mut);padding:8px 0 6px;font-size:.72rem;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;border-radius:0}
+nav button.on{color:var(--acc)}
+nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dot{position:absolute;top:4px;left:55%;min-width:16px;height:16px;border-radius:8px;background:var(--err);color:#fff;font-size:.65rem;display:grid;place-items:center;padding:0 4px}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
+<header><h1>Batalla en el plano</h1><button class="av" id="hAv" hidden aria-label="Mi perfil"></button></header>
 <main>
-<h1>Batalla en el plano</h1>
-
 <section id="auth" hidden>
-  <div class="panel">
-    <h2 id="tAuth">Iniciar sesión</h2>
-    <div id="fNombre" hidden><label for="nombre">Nombre de jugador</label><input id="nombre" maxlength="20" autocomplete="nickname"></div>
+  <div class="card">
+    <h2 id="tAuth" style="margin-top:0">Iniciar sesión</h2>
+    <div id="fNombre" hidden><label for="nombre">Nombre de jugador</label><input id="nombre" maxlength="20"></div>
     <label for="email">Correo</label><input id="email" type="email" autocomplete="email">
-    <label for="pass">Contraseña (mínimo 6 caracteres)</label><input id="pass" type="password" autocomplete="current-password">
+    <label for="pass">Contraseña (mínimo 6 caracteres)</label><input id="pass" type="password">
     <p class="err" id="eAuth"></p>
     <div class="row"><button id="bEnviar">Entrar</button><button class="sec" id="bGoogle">Continuar con Google</button></div>
     <button class="link" id="bModo">Crear cuenta nueva</button><br>
@@ -41,147 +57,244 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
   </div>
 </section>
 
-<section id="lobby" hidden>
-  <div class="panel">
-    <h2 id="hola"></h2>
-    <button id="bCrear">Crear partida</button>
-    <label for="codigo">O únete con un código</label>
-    <div class="row"><input id="codigo" maxlength="5" style="flex:1;text-transform:uppercase"><button id="bUnir" style="margin-top:0">Unirme</button></div>
-    <p class="err" id="eLobby"></p>
-  </div>
-  <button class="sec" id="bSalir">Cerrar sesión</button>
-</section>
-
-<section id="sala" hidden>
-  <div class="panel">
-    <h2>Sala de espera</h2>
-    <p>Código de la partida:</p><div class="code" id="vCodigo"></div>
-    <p id="vJ1"></p><p id="vJ2"></p>
-    <p id="vEstado"><strong></strong></p>
-  </div>
-  <button class="sec" id="bVolver">Volver al lobby</button>
-</section>
+<div id="app" hidden>
+  <section id="v-inicio"></section>
+  <section id="v-partidas" hidden></section>
+  <section id="v-amigos" hidden></section>
+  <section id="v-perfil" hidden></section>
+  <section id="v-sala" hidden></section>
+</div>
 </main>
+<nav id="nav" hidden>
+  <button data-v="inicio"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Inicio</button>
+  <button data-v="partidas"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>Partidas</button>
+  <button data-v="amigos"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 3-6 6.500-6s6.500 2 6.500 6M17 5a3.500 3.500 0 010 6.500M21.500 20c0-3-1.500-5-4-5.800"/></svg>Amigos<i class="dot" id="dotA" hidden>0</i></button>
+  <button data-v="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.500 3.500-7 8-7s8 2.500 8 7"/></svg>Perfil</button>
+</nav>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import {getFirestore,doc,setDoc,getDoc,updateDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,onSnapshot,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const app = initializeApp({
-  apiKey: "AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU",
-  authDomain: "prueba-2-df121.firebaseapp.com",
-  projectId: "prueba-2-df121",
-  storageBucket: "prueba-2-df121.firebasestorage.app",
-  messagingSenderId: "147257342708",
-  appId: "1:147257342708:web:81be883437b83c7e443ca1"
+  apiKey:"AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU", authDomain:"prueba-2-df121.firebaseapp.com",
+  projectId:"prueba-2-df121", storageBucket:"prueba-2-df121.firebasestorage.app",
+  messagingSenderId:"147257342708", appId:"1:147257342708:web:81be883437b83c7e443ca1"
 });
 const auth = getAuth(app), db = getFirestore(app);
 const $ = id => document.getElementById(id);
-const ver = v => ["auth","lobby","sala"].forEach(x => $(x).hidden = x !== v);
-const TEXTOS = {
-  "auth/invalid-credential":"Correo o contraseña incorrectos.",
-  "auth/invalid-email":"El correo no es válido.",
-  "auth/email-already-in-use":"Ese correo ya tiene una cuenta. Inicia sesión.",
-  "auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
-  "auth/popup-closed-by-user":"Cerraste la ventana de Google antes de terminar.",
-  "auth/too-many-requests":"Demasiados intentos. Espera un momento.",
-  "permission-denied":"No tienes permiso para esta acción (revisa las reglas de Firestore).",
-  "nombre":"El nombre de jugador debe tener al menos 3 caracteres."
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ERR = {
+  "auth/invalid-credential":"Correo o contraseña incorrectos.","auth/invalid-email":"El correo no es válido.",
+  "auth/email-already-in-use":"Ese correo ya tiene una cuenta. Inicia sesión.","auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
+  "auth/popup-closed-by-user":"Cerraste la ventana de Google antes de terminar.","auth/too-many-requests":"Demasiados intentos. Espera un momento.",
+  "permission-denied":"No se pudo completar. Puede que ya exista esa solicitud o amistad.","nombre":"El nombre debe tener al menos 3 caracteres."
 };
-const texto = e => TEXTOS[e.code] || "Algo salió mal. Inténtalo de nuevo.";
+const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo.";
+const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
+
+let U = null, P = {}, amistades = [], partidas = [], subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
-let modo = "entrar", unsub = null;
-
+/* ---------- Autenticación ---------- */
 function pintarModo(){
-  const crear = modo === "crear";
-  $("tAuth").textContent = crear ? "Crear cuenta" : "Iniciar sesión";
-  $("bEnviar").textContent = crear ? "Crear cuenta" : "Entrar";
-  $("bModo").textContent = crear ? "Ya tengo cuenta" : "Crear cuenta nueva";
-  $("fNombre").hidden = !crear;
-  $("pass").autocomplete = crear ? "new-password" : "current-password";
-  $("eAuth").textContent = "";
+  const c = modo === "crear";
+  $("tAuth").textContent = c ? "Crear cuenta" : "Iniciar sesión";
+  $("bEnviar").textContent = c ? "Crear cuenta" : "Entrar";
+  $("bModo").textContent = c ? "Ya tengo cuenta" : "Crear cuenta nueva";
+  $("fNombre").hidden = !c; $("eAuth").textContent = "";
 }
 $("bModo").onclick = () => { modo = modo === "crear" ? "entrar" : "crear"; pintarModo(); };
-
 $("bEnviar").onclick = async () => {
   const email = $("email").value.trim(), pass = $("pass").value;
   try {
     if (modo === "crear"){
-      const n = $("nombre").value.trim();
-      if (n.length < 3) throw {code:"nombre"};
-      const c = await createUserWithEmailAndPassword(auth, email, pass);
-      await updateProfile(c.user, {displayName:n});
-      await setDoc(doc(db,"users",c.user.uid), {nombre:n, creado:serverTimestamp()});
-      entrarLobby(c.user);
+      const n = $("nombre").value.trim(); if (n.length < 3) throw {code:"nombre"};
+      let fin; espera = new Promise(r => fin = r);
+      try {
+        const c = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(c.user, {displayName:n});
+      } finally { fin(); }
     } else await signInWithEmailAndPassword(auth, email, pass);
   } catch (e){ $("eAuth").textContent = texto(e); }
 };
-$("bGoogle").onclick = async () => {
-  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-  catch (e){ $("eAuth").textContent = texto(e); }
-};
+$("bGoogle").onclick = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e){ $("eAuth").textContent = texto(e); } };
 $("bReset").onclick = async () => {
   const email = $("email").value.trim();
   if (!email){ $("eAuth").textContent = "Escribe tu correo y vuelve a tocar el enlace."; return; }
-  try { await sendPasswordResetEmail(auth, email); $("eAuth").textContent = "Te enviamos un correo para restablecerla."; }
-  catch (e){ $("eAuth").textContent = texto(e); }
+  try { await sendPasswordResetEmail(auth, email); $("eAuth").textContent = "Te enviamos un correo para restablecerla."; } catch (e){ $("eAuth").textContent = texto(e); }
 };
-$("bSalir").onclick = () => signOut(auth);
 
-function entrarLobby(u){
-  $("hola").textContent = "Hola, " + nombreDe(u);
-  $("eLobby").textContent = "";
-  ver("lobby");
-}
-
+let espera = Promise.resolve();
 onAuthStateChanged(auth, async u => {
-  if (unsub){ unsub(); unsub = null; }
-  if (!u){ pintarModo(); ver("auth"); return; }
-  const ref = doc(db,"users",u.uid);
-  try { if (!(await getDoc(ref)).exists()) await setDoc(ref, {nombre:nombreDe(u), creado:serverTimestamp()}); } catch {}
-  entrarLobby(u);
+  await espera; espera = Promise.resolve();
+  subs.forEach(f => f()); subs = []; if (salaSub){ salaSub(); salaSub = null; }
+  U = u;
+  if (!u){ $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hAv").hidden = true; pintarModo(); return; }
+  await prepararPerfil(u);
+  $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hAv").hidden = false;
+  subs.push(onSnapshot(doc(db,"users",u.uid), s => { P = s.data() || P; pintar(); }));
+  subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
+  subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
+  ir("inicio");
 });
 
-const LETRAS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const nuevoCodigo = () => Array.from({length:5}, () => LETRAS[Math.floor(Math.random()*LETRAS.length)]).join("");
-
-$("bCrear").onclick = async () => {
-  const u = auth.currentUser, codigo = nuevoCodigo();
+async function prepararPerfil(u){
+  const ref = doc(db,"users",u.uid);
   try {
-    await setDoc(doc(db,"games",codigo), {j1:u.uid, n1:nombreDe(u), j2:null, n2:null, estado:"esperando", creada:serverTimestamp()});
-    abrirSala(codigo);
-  } catch (e){ $("eLobby").textContent = texto(e); }
-};
-$("bUnir").onclick = async () => {
-  const u = auth.currentUser, codigo = $("codigo").value.trim().toUpperCase();
-  if (codigo.length !== 5){ $("eLobby").textContent = "El código tiene 5 caracteres."; return; }
-  try {
-    const ref = doc(db,"games",codigo), s = await getDoc(ref);
-    if (!s.exists()) throw {code:"x", m:"No existe una partida con ese código."};
-    const g = s.data();
-    if (g.j1 !== u.uid && g.j2 !== u.uid){
-      if (g.j2) throw {code:"x", m:"Esa partida ya está llena."};
-      await updateDoc(ref, {j2:u.uid, n2:nombreDe(u), estado:"lista"});
+    const s = await getDoc(ref); let d = s.exists() ? s.data() : null;
+    if (!d || !d.codigo){
+      let c = "";
+      for (let i = 0; i < 4; i++){
+        const t = cod(6);
+        try { await setDoc(doc(db,"codigos",t), {uid:u.uid, nombre:nombreDe(u)}); c = t; break; } catch {}
+      }
+      await setDoc(ref, {nombre:d?.nombre || nombreDe(u), codigo:c, victorias:d?.victorias || 0, derrotas:d?.derrotas || 0, creado:d?.creado || serverTimestamp()}, {merge:true});
     }
-    abrirSala(codigo);
-  } catch (e){ $("eLobby").textContent = e.m || texto(e); }
-};
-
-function abrirSala(codigo){
-  $("vCodigo").textContent = codigo;
-  ver("sala");
-  unsub = onSnapshot(doc(db,"games",codigo), s => {
-    const g = s.data(); if (!g) return;
-    $("vJ1").textContent = "Jugador 1: " + g.n1;
-    $("vJ2").textContent = "Jugador 2: " + (g.n2 || "esperando rival…");
-    $("vEstado").textContent = g.j2
-      ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos."
-      : "Comparte el código con tu rival.";
-  });
+  } catch {}
 }
-$("bVolver").onclick = () => { if (unsub){ unsub(); unsub = null; } entrarLobby(auth.currentUser); };
+
+/* ---------- Navegación ---------- */
+const VISTAS = ["inicio","partidas","amigos","perfil","sala"];
+function ir(v){
+  vista = v;
+  VISTAS.forEach(x => $("v-"+x).hidden = x !== v);
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === (v === "sala" ? "partidas" : v)));
+  pintar(); window.scrollTo(0,0);
+}
+$("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); };
+$("hAv").onclick = () => ir("perfil");
+
+/* ---------- Pintar vistas ---------- */
+const nombre = () => P.nombre || (U && nombreDe(U)) || "Jugador";
+const rival = g => g.j1 === U.uid ? g.n2 : g.n1;
+const estadoTxt = g => g.j2 ? "Lista" : "Esperando rival";
+const pendientes = () => amistades.filter(a => a.estado === "pendiente" && a.pedidoPor !== U.uid);
+const otro = a => a.miembros.find(m => m !== U.uid);
+
+function pintar(){
+  if (!U) return;
+  const av = $("hAv");
+  av.innerHTML = U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
+  const n = pendientes().length; $("dotA").hidden = !n; $("dotA").textContent = n;
+  if (vista === "inicio") pintarInicio();
+  if (vista === "partidas") pintarPartidas();
+  if (vista === "amigos") pintarAmigos();
+  if (vista === "perfil") pintarPerfil();
+}
+
+function pintarInicio(){
+  const act = partidas.filter(g => g.estado !== "terminada").length;
+  $("v-inicio").innerHTML = `
+    <h2 style="margin-top:6px">Hola, ${esc(nombre())}</h2>
+    <button class="big" id="bCrear">Crear partida</button>
+    <div class="card"><label for="codigo" style="margin-top:0">Unirme con un código</label>
+      <div class="row"><input id="codigo" maxlength="5" style="text-transform:uppercase" placeholder="ABCDE"><button id="bUnir">Unirme</button></div>
+      <p class="err" id="eInicio"></p></div>
+    <div class="card"><div class="stats"><div><b>${P.victorias || 0}</b><span>Victorias</span></div><div><b>${P.derrotas || 0}</b><span>Derrotas</span></div><div><b>${act}</b><span>Activas</span></div></div></div>
+    <div class="row"><button class="sec" style="flex:1" data-go="partidas">Mis partidas</button><button class="sec" style="flex:1" data-go="amigos">Amigos</button></div>`;
+}
+
+function pintarPartidas(){
+  const l = [...partidas].sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
+  $("v-partidas").innerHTML = `<h2 style="margin-top:6px">Mis partidas</h2><div class="card">` +
+    (l.length ? l.map(g => `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${estadoTxt(g)}</span><br><small>Rival: ${esc(rival(g) || "esperando…")}</small></div><button class="mini" data-sala="${esc(g.id)}">Abrir</button></div>`).join("")
+      : `<p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p>`) + `</div>`;
+}
+
+function pintarAmigos(){
+  const acept = amistades.filter(a => a.estado === "aceptada");
+  const rec = pendientes(), env = amistades.filter(a => a.estado === "pendiente" && a.pedidoPor === U.uid);
+  const fila = (a, bot) => `<div class="item"><span>${esc(a.nombres?.[otro(a)] || "Jugador")}</span><span>${bot}</span></div>`;
+  $("v-amigos").innerHTML = `<h2 style="margin-top:6px">Amigos</h2>
+    <div class="card"><label for="cAmigo" style="margin-top:0">Agregar amigo con su código</label>
+      <div class="row"><input id="cAmigo" maxlength="6" style="text-transform:uppercase" placeholder="Código de 6 letras"><button id="bAmigo">Enviar</button></div>
+      <p class="${msgAmigo.startsWith("✓") ? "mut" : "err"}">${esc(msgAmigo)}</p></div>
+    ${rec.length ? `<h2>Solicitudes</h2><div class="card">${rec.map(a => fila(a, `<button class="mini" data-acep="${a.id}">Aceptar</button> <button class="mini sec" data-del="${a.id}">Rechazar</button>`)).join("")}</div>` : ""}
+    <h2>Mis amigos</h2><div class="card">${acept.length ? acept.map(a => fila(a, `<button class="mini sec" data-del="${a.id}">Quitar</button>`)).join("") : `<p class="mut">Todavía no tienes amigos agregados.</p>`}</div>
+    ${env.length ? `<h2>Enviadas</h2><div class="card">${env.map(a => fila(a, `<span class="tag">Pendiente</span> <button class="mini sec" data-del="${a.id}">Cancelar</button>`)).join("")}</div>` : ""}`;
+}
+
+function pintarPerfil(){
+  const j = (P.victorias || 0) + (P.derrotas || 0);
+  $("v-perfil").innerHTML = `<h2 style="margin-top:6px">Mi perfil</h2>
+    <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
+      <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
+      <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
+    <div class="card"><div class="stats"><div><b>${j}</b><span>Jugadas</span></div><div><b>${P.victorias || 0}</b><span>Victorias</span></div><div><b>${P.derrotas || 0}</b><span>Derrotas</span></div></div></div>
+    <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
+      <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
+    <button class="sec big" id="bSalir">Cerrar sesión</button>`;
+}
+
+function pintarSala(id, g){
+  $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
+    <p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: ${esc(g.n2 || "esperando rival…")}</p>
+    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p></div>
+    <button class="sec" data-go="partidas">Volver a mis partidas</button>`;
+}
+function abrirSala(id){
+  if (salaSub){ salaSub(); salaSub = null; }
+  ir("sala");
+  salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()) pintarSala(id, s.data()); });
+}
+
+/* ---------- Acciones (delegación de eventos) ---------- */
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t || !U) return;
+  const d = t.dataset;
+  try {
+    if (d.go) return ir(d.go);
+    if (d.sala) return abrirSala(d.sala);
+    if (t.id === "bCrear"){
+      const id = cod(5);
+      await setDoc(doc(db,"games",id), {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", creada:serverTimestamp()});
+      return abrirSala(id);
+    }
+    if (t.id === "bUnir"){
+      const id = $("codigo").value.trim().toUpperCase(), er = $("eInicio");
+      if (id.length !== 5){ er.textContent = "El código tiene 5 caracteres."; return; }
+      const ref = doc(db,"games",id), s = await getDoc(ref);
+      if (!s.exists()){ er.textContent = "No existe una partida con ese código."; return; }
+      const g = s.data();
+      if (g.j1 !== U.uid && g.j2 !== U.uid){
+        if (g.j2){ er.textContent = "Esa partida ya está llena."; return; }
+        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"lista", jugadores:arrayUnion(U.uid)});
+      }
+      return abrirSala(id);
+    }
+    if (t.id === "bAmigo"){
+      const c = $("cAmigo").value.trim().toUpperCase(); msgAmigo = "";
+      if (c.length !== 6) msgAmigo = "El código tiene 6 caracteres.";
+      else {
+        const s = await getDoc(doc(db,"codigos",c));
+        if (!s.exists()) msgAmigo = "No existe ese código.";
+        else if (s.data().uid === U.uid) msgAmigo = "Ese código es el tuyo.";
+        else {
+          const o = s.data(), id = [U.uid, o.uid].sort().join("_");
+          await setDoc(doc(db,"amistades",id), {miembros:[U.uid,o.uid], nombres:{[U.uid]:nombre(), [o.uid]:o.nombre}, pedidoPor:U.uid, estado:"pendiente", creada:serverTimestamp()});
+          msgAmigo = "✓ Solicitud enviada a " + o.nombre;
+        }
+      }
+      return pintarAmigos();
+    }
+    if (d.acep) return await updateDoc(doc(db,"amistades",d.acep), {estado:"aceptada"});
+    if (d.del) return await deleteDoc(doc(db,"amistades",d.del));
+    if (t.id === "bNombre"){
+      const n = $("pNombre").value.trim(); if (n.length < 3){ $("ePerfil").textContent = ERR.nombre; return; }
+      await updateProfile(U, {displayName:n});
+      await updateDoc(doc(db,"users",U.uid), {nombre:n});
+      if (P.codigo) await updateDoc(doc(db,"codigos",P.codigo), {nombre:n});
+      $("ePerfil").textContent = ""; return pintar();
+    }
+    if (t.id === "bCopiar"){ try { await navigator.clipboard.writeText(P.codigo || ""); t.textContent = "¡Copiado!"; } catch { t.textContent = P.codigo || ""; } return; }
+    if (t.id === "bSalir") return signOut(auth);
+  } catch (er){
+    const x = $("eInicio") || $("ePerfil"); if (vista === "amigos"){ msgAmigo = texto(er); pintarAmigos(); } else if (x) x.textContent = texto(er);
+  }
+});
 </script>
 </body>
 </html>
