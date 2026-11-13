@@ -344,14 +344,15 @@ async function alCambiar(id, g){
   }
   G = g; yo = g.j1 === U.uid ? 1 : 2;
   if (!g.j2){ huella = ""; return pintarSala(id, g); }
-  if (g.ataque && g.ataque.p !== yo && !resolviendo) resolver();
+  const pausaActiva = g.pausa && (g.pausa.estado === "pausada" || g.pausa.estado === "reanudar");
+  if (g.ataque && g.ataque.p !== yo && !resolviendo && !pausaActiva) resolver();
   if (g.estado === "fin"){
     const f = g.finales || {};
     if (!f[U.uid] && !publicado){ publicado = true; updateDoc(doc(db,"games",gid), {[`finales.${U.uid}`]:{ships:mis, gast:[...gast]}}).catch(() => {}); }
     if (g.cancelada) guardado = true;
     if (!guardado && f[U.uid] && (f[yo === 1 ? g.j2 : g.j1] || g.abandonoPor)){ guardado = true; guardarFin(); }
   }
-  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts]);
+  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null]);
   if (h !== huella){ huella = h; pintarPartida(); }
   else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
 }
@@ -383,13 +384,17 @@ function resumenH(){
 }
 function pintarPartida(){
   const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
-  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">—</b></span></div>`;
+  const pa = g.pausa || null, congelada = !!(pa && (pa.estado === "pausada" || pa.estado === "reanudar"));
+  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div>`;
   if (g.estado === "fin"){
     h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
       <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div><button data-go="partidas">Volver a mis partidas</button>`;
     $("v-sala").innerHTML = h; return;
   }
-  if (!bat){
+  if (congelada){
+    const yaPidioReanudar = pa.confirmacionesReanudar && pa.confirmacionesReanudar[U.uid];
+    h += `<div class="card"><h2 style="margin-top:0">Partida pausada</h2><p>${pa.estado === "reanudar" && yaPidioReanudar ? "Confirmaste reanudar. Esperando a que tu rival también pulse Reanudar partida." : "Los dos jugadores deben pulsar Reanudar partida para continuar."}</p><button id="reanudarPartida" ${yaPidioReanudar ? "disabled" : ""}>Reanudar partida</button></div>`;
+  } else if (!bat){
     const n = mis.length, cls = CL[FLOTA[n]], yaListo = g.listo[U.uid];
     h += yaListo ? `<p class="msg">Flota lista. Esperando a que ${esc(riv)} termine de colocar…</p><div class="rad" id="def">${radarH("def")}</div>`
       : `<p class="msg">${cls ? `Arrastra sobre el plano para colocar tu ${cls.n} (${cls.L} cuadros). ${n}/9` : "Flota completa: toca Listo."}</p>${msgP ? `<p class="msg">${msgP}</p>` : ""}
@@ -406,8 +411,15 @@ function pintarPartida(){
         <label>b (eje Y)<input id="b" type="number" step="0.5" inputmode="decimal" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div>` : ""}
       <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
   }
-  h += `<div class="row" style="margin-top:16px"><button class="sec" id="abandonar">Abandonar partida</button></div>`;
+  if (pa && pa.estado === "solicitada"){
+    const yoSolicite = pa.solicitadaPor === U.uid;
+    h += `<div class="card"><b>Solicitud de pausa</b><p>${yoSolicite ? "Esperando a que tu rival confirme la pausa." : esc(riv) + " quiere pausar la partida. ¿Aceptas?"}</p>${yoSolicite ? "" : `<button id="confirmarPausa">Confirmar pausa</button>`}</div>`;
+  } else if (!congelada){
+    h += `<div class="row" style="margin-top:16px"><button class="sec" id="solicitarPausa">Pausa</button></div>`;
+  }
+  h += `<div class="row" style="margin-top:10px"><button class="sec" id="abandonar">Abandonar partida</button></div>`;
   $("v-sala").innerHTML = h; $("abandonar").onclick = abandonar;
+  if (congelada) return;
   if (!bat && !g.listo[U.uid]){
     enlazarDrag();
     $("ori").onclick = () => { horiz = !horiz; pintarPartida(); };
@@ -504,10 +516,10 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
   resolviendo = false;
 }
 async function pasar(){             // se acabó el tiempo: se pierde el ataque
-  if (pasando) return; pasando = true;
+  if (pasando || (G && G.pausa && ["pausada","reanudar"].includes(G.pausa.estado))) return; pasando = true;
   try { await runTransaction(db, async tx => {
     const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
-    if (g.estado !== "batalla" || g.ataque || Date.now() < g.tiempoFin) return;
+    if (g.estado !== "batalla" || g.pausa && ["pausada","reanudar"].includes(g.pausa.estado) || g.ataque || Date.now() < g.tiempoFin) return;
     const f = {...(g.fallos || {1:0,2:0})}; f[g.turno] = (f[g.turno] || 0) + 1;
     const patch = {...avanzar(g, g.pts), apunta:null, fallos:f};
     if (f[g.turno] >= 3){ patch.estado = "fin"; patch.ganador = 3 - g.turno; patch.abandonoPor = g.turno; }   // 3 turnos seguidos sin atacar
@@ -520,7 +532,7 @@ async function cancelarColocacion(){
   if (pasando) return; pasando = true;
   try { await runTransaction(db, async tx => {
     const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
-    if (g.estado !== "colocando" || !g.inicio || Date.now() - g.inicio <= COLOCAR_MS) return;
+    if (g.estado !== "colocando" || g.pausa && ["pausada","reanudar"].includes(g.pausa.estado) || !g.inicio || Date.now() - g.inicio <= COLOCAR_MS) return;
     const l = g.listo || {}, a = !!l[g.j1], b = !!l[g.j2];
     if (a === b) tx.update(ref, {estado:"fin", cancelada:true, ganador:0});                    // nadie terminó: se cancela
     else tx.update(ref, {estado:"fin", ganador:a ? 1 : 2, abandonoPor:a ? 2 : 1});            // gana quien sí terminó
@@ -538,6 +550,7 @@ async function abandonar(){
 setInterval(() => {
   if (!G || !G.j2) return;
   const e = $("tm");
+  if (G.pausa && ["pausada","reanudar"].includes(G.pausa.estado)) return;
   if (G.estado === "colocando" && G.inicio){
     const r = Math.ceil((G.inicio + COLOCAR_MS - Date.now()) / 1000);
     if (e) e.textContent = fmtT(r);
@@ -549,6 +562,48 @@ setInterval(() => {
   if (e) e.textContent = fmtT(r);
   if (!G.ataque && ((G.turno === yo && r <= 0) || r <= -4)) pasar();
 }, 1000);
+
+async function solicitarPausa(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data();
+    if (!g.jugadores || !g.jugadores.includes(U.uid) || !g.j2) throw new Error("No puedes pausar esta partida.");
+    if (!["colocando","batalla"].includes(g.estado) || g.pausa) return;
+    tx.update(ref, {pausa:{estado:"solicitada", solicitadaPor:U.uid, confirmaciones:{[U.uid]:true}, creada:Date.now()}});
+  });
+}
+async function confirmarPausa(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data(), pa = g.pausa || {};
+    if (!["colocando","batalla"].includes(g.estado) || pa.estado !== "solicitada" || pa.solicitadaPor === U.uid) return;
+    const ahora = Date.now(), restante = g.estado === "batalla"
+      ? Math.max(0, (g.tiempoFin || ahora) - ahora)
+      : Math.max(0, (g.inicio || ahora) + COLOCAR_MS - ahora);
+    tx.update(ref, {pausa:{estado:"pausada", solicitadaPor:pa.solicitadaPor,
+      confirmaciones:{...(pa.confirmaciones || {}), [U.uid]:true}, restante,
+      tipo:g.estado, pausadaEn:ahora}});
+  });
+}
+async function reanudarPartida(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data(), pa = g.pausa || {};
+    if (!["pausada","reanudar"].includes(pa.estado)) return;
+    const confirmaciones = {...(pa.confirmacionesReanudar || {}), [U.uid]:true};
+    if (!confirmaciones[g.j1] || !confirmaciones[g.j2]){
+      tx.update(ref, {pausa:{...pa, estado:"reanudar", confirmacionesReanudar:confirmaciones}});
+      return;
+    }
+    const restante = Math.max(0, Number(pa.restante) || 0), ahora = Date.now(), patch = {pausa:null};
+    if (pa.tipo === "batalla") patch.tiempoFin = ahora + restante;
+    if (pa.tipo === "colocando") patch.inicio = ahora + restante - COLOCAR_MS;
+    tx.update(ref, {...patch});
+  });
+}
 
 async function guardarFin(){
   const g = G, f = g.finales, mio = f[U.uid], rv = f[yo === 1 ? g.j2 : g.j1] || {ships:[], gast:[]};
@@ -670,6 +725,9 @@ Ya no aparecerá en tu lista de amigos.`
     }
     if (t.id === "bCopiar"){ try { await navigator.clipboard.writeText(P.codigo || ""); t.textContent = "¡Copiado!"; } catch { t.textContent = P.codigo || ""; } return; }
     if (t.id === "bEjemplo") return await ejemplo();
+    if (t.id === "solicitarPausa") return await solicitarPausa();
+    if (t.id === "confirmarPausa") return await confirmarPausa();
+    if (t.id === "reanudarPartida") return await reanudarPartida();
     if (t.id === "bSalir") return signOut(auth);
   } catch (er){
     const x = $("eInicio") || $("ePerfil"); if (vista === "amigos"){ msgAmigo = texto(er); pintarAmigos(); } else if (x) x.textContent = texto(er);
