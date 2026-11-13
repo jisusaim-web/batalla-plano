@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Batalla en el plano</title>
 <style>
-:root{--bg:#e8eef0;--card:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--on:#fff;--err:#b3261e;--ok:#2e7d32;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--card:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--on:#06222a;--err:#ff8a80;--ok:#81c784;color-scheme:dark}}
+:root{--bg:#e8eef0;--card:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--on:#fff;--err:#b3261e;--ok:#2e7d32;--off:#d3dfe3;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--card:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--on:#06222a;--err:#ff8a80;--ok:#81c784;--off:#0f2227;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Avenir Next","Segoe UI",system-ui,sans-serif}
 header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
@@ -38,21 +38,11 @@ nav button{flex:1;background:none;border:0;color:var(--mut);padding:8px 0 6px;fo
 nav button.on{color:var(--acc)}
 nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .dot{position:absolute;top:4px;left:55%;min-width:16px;height:16px;border-radius:8px;background:var(--err);color:#fff;font-size:.65rem;display:grid;place-items:center;padding:0 4px}
-
-.game-wrap{display:grid;gap:12px}
-.game-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.board{display:grid;grid-template-columns:repeat(15,minmax(0,1fr));gap:2px;width:100%;touch-action:pan-y}
-.cell{aspect-ratio:1/1;min-width:0;padding:0;border:1px solid #78939b;border-radius:2px;background:#d8e5e8;color:#17323a;font-size:clamp(8px,2.4vw,15px);line-height:1;display:grid;place-items:center;position:relative}
-.cell.dark{background:#a9c0c7}.cell.ship{background:#557d89;color:white}.cell.hit{background:#c83c36;color:white}.cell.miss{background:#e7c85b;color:#392d0b}.cell.preview{outline:2px solid #0b9b58;outline-offset:-2px;background:#a5e3bd}.cell.invalid{outline:2px solid #c62828;outline-offset:-2px;background:#efaaaa}.cell.line-hit{background:#d64b43;color:white}.cell.line-miss{background:#e9ca58;color:#302400}.cell:disabled{opacity:1;cursor:default}.cell.forbidden{background:repeating-linear-gradient(135deg,#d3dadd,#d3dadd 4px,#b9c3c7 4px,#b9c3c7 8px);opacity:.55}.cell.line-preview{outline:2px dashed #1677d2;outline-offset:-2px;background:#a7d4fa}
-.board-label{font-size:.68rem;text-align:center;color:var(--mut);min-width:0}
-.ship-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.ship-choice{font-size:.78rem;padding:8px 5px;background:transparent;color:var(--acc)}
-.ship-choice.selected{background:var(--acc);color:var(--on)}
-.hint{font-size:.84rem;color:var(--mut)}
-.timer{font:700 1.5rem ui-monospace,monospace}
-.attack-line{height:5px;border-radius:4px;background:var(--line);overflow:hidden}
-.attack-line>i{display:block;height:100%;background:var(--acc)}
-@media(min-width:560px){main{max-width:650px}}
+summary{list-style:none;cursor:pointer}summary::-webkit-details-marker{display:none}
+details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child{border:0}
+.win{color:var(--ok)}.lose{color:var(--err)}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bar{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:.85rem;color:var(--mut)}.bar b{color:var(--ink)}
+.rad{margin:6px 0}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -90,7 +80,7 @@ nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stro
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,onSnapshot,arrayUnion,serverTimestamp,runTransaction} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,addDoc,increment,runTransaction,onSnapshot,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU", authDomain:"prueba-2-df121.firebaseapp.com",
@@ -110,7 +100,7 @@ const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo."
 const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
 
-let U = null, P = {}, amistades = [], partidas = [], subs = [], salaSub = null, privSub = null, privado = null, salaId = null, salaData = null, timerTick = null, vista = "inicio", modo = "entrar", msgAmigo = "";
+let U = null, P = {}, historial = [], amistades = [], partidas = [], subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
 /* ---------- Autenticación ---------- */
@@ -145,7 +135,7 @@ $("bReset").onclick = async () => {
 let espera = Promise.resolve();
 onAuthStateChanged(auth, async u => {
   await espera; espera = Promise.resolve();
-  subs.forEach(f => f()); subs = []; if (salaSub){ salaSub(); salaSub = null; } if(privSub){privSub();privSub=null;} if(timerTick){clearInterval(timerTick);timerTick=null;} privado=null; salaId=null;
+  subs.forEach(f => f()); subs = []; if (salaSub){ salaSub(); salaSub = null; }
   U = u;
   if (!u){ $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hAv").hidden = true; pintarModo(); return; }
   await prepararPerfil(u);
@@ -153,6 +143,7 @@ onAuthStateChanged(auth, async u => {
   subs.push(onSnapshot(doc(db,"users",u.uid), s => { P = s.data() || P; pintar(); }));
   subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
   subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
+  subs.push(onSnapshot(collection(db,"users",u.uid,"historial"), s => { historial = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
   ir("inicio");
 });
 
@@ -233,125 +224,272 @@ function pintarAmigos(){
 }
 
 function pintarPerfil(){
-  const j = (P.victorias || 0) + (P.derrotas || 0);
+  const v = P.victorias || 0, d = P.derrotas || 0, e = P.empates || 0, j = v + d + e;
+  const wr = j ? Math.round(v / j * 100) : 0;
+  const lista = [...historial].sort((a,b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+  const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
   $("v-perfil").innerHTML = `<h2 style="margin-top:6px">Mi perfil</h2>
     <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
       <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
       <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
-    <div class="card"><div class="stats"><div><b>${j}</b><span>Jugadas</span></div><div><b>${P.victorias || 0}</b><span>Victorias</span></div><div><b>${P.derrotas || 0}</b><span>Derrotas</span></div></div></div>
+    <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
+      <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
+    <h2>Historial</h2><div class="card">${lista.length ? lista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"mios")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mis ataques</small>${mini(h,"mios")}</div><div><small>Ataques rivales en mi flota</small>${mini(h,"rival")}</div></div></details>`; }).join("") : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+      <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de ejemplo (prueba)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
     <button class="sec big" id="bSalir">Cerrar sesión</button>`;
 }
 
-function pintarSala(id, g){
-  salaData = g; salaId = id;
-  const soyJ1 = g.j1 === U.uid, soyJ2 = g.j2 === U.uid;
-  const numero = soyJ1 ? 1 : 2;
-  const rivalNombre = soyJ1 ? (g.n2 || "Esperando rival") : g.n1;
-  if (!g.j2){
-    $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div><p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: esperando rival…</p><p>Comparte el código para que entre tu contrincante.</p></div><button class="sec" data-go="partidas">Volver a mis partidas</button>`;
-    return;
+const fecha = h => h.fecha?.seconds ? new Date(h.fecha.seconds * 1000).toLocaleDateString("es") : "";
+function mini(h, modo){   // vista previa del plano con las rectas de la partida
+  let g = "";
+  for (let x = -6; x < 6; x++) for (let y = -6; y < 6; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="var(--card)" stroke="var(--line)" stroke-width=".03"/>`;
+  if (modo === "rival") for (const b of h.barcos || []) for (const c of b.celdas) g += `<rect x="${Number(c.x) + .06}" y="${Number(c.y) + .06}" width=".88" height=".88" rx=".12" fill="${esc(b.c)}"/>`;
+  g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of (modo === "mios" ? h.mios : h.rival) || []){
+    const m = Number(l.m), b = Number(l.b);
+    g += `<line x1="-8" y1="${m * -8 + b}" x2="8" y2="${m * 8 + b}" stroke="${l.rojo ? "var(--err)" : "#e0a800"}" stroke-width=".13" stroke-linecap="round"/>`;
   }
-  if (!soyJ1 && !soyJ2){ $("v-sala").innerHTML = `<div class="card">No formas parte de esta partida.</div>`; return; }
-  if (!g.fase){
-    $("v-sala").innerHTML = `<div class="card">Preparando tablero…</div>`;
-    inicializarPartida(id,g).catch(e=>console.error(e)); return;
-  }
-  renderJuego(id,g,numero,rivalNombre);
+  return `<svg viewBox="-6.2 -6.2 12.4 12.4" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
 }
-// Los datos privados (por ejemplo, la posición de los barcos) se guardan
-// en un documento separado para cada jugador. Las reglas de Firestore
-// permiten que cada usuario lea únicamente su propio documento.
-async function prepararPrivadoPartida(id){
-  const ref=doc(db,"games",id,"private",U.uid), snap=await getDoc(ref);
-  if(!snap.exists()) await setDoc(ref,{uid:U.uid,barcos:[],estadoColocacion:false,actualizado:serverTimestamp()});
+// Se llamará al terminar una partida real; el botón de ejemplo la usa para probar el diseño.
+async function guardarPartida(d){
+  await addDoc(collection(db,"users",U.uid,"historial"), {...d, fecha:serverTimestamp()});
+  const campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[d.resultado];
+  await updateDoc(doc(db,"users",U.uid), {[campo]:increment(1), puntos:increment(d.miPuntaje), mejor:Math.max(P.mejor || 0, d.miPuntaje)});
 }
-
-async function abrirSala(id){
-  celdaAtaque=null;axisSeleccionado=null;procesandoAtaqueId=null;
-  if (salaSub){ salaSub(); salaSub = null; }
-  if (privSub){ privSub(); privSub = null; }
-  if (timerTick){clearInterval(timerTick);timerTick=null;}
-  privado=null; salaId=id;
-  await prepararPrivadoPartida(id);
-  ir("sala");
-  privSub = onSnapshot(doc(db,"games",id,"private",U.uid), s => { privado=s.exists()?s.data():null; if(salaData){pintarSala(id,salaData);procesarAtaquePendiente(id,salaData).catch(e=>console.error(e));} });
-  salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()){ const g=s.data(); salaData=g; pintarSala(id,g); procesarAtaquePendiente(id,g).catch(e=>console.error(e)); } });
+async function ejemplo(){
+  const lin = n => Array.from({length:n}, () => ({m:Math.round((Math.random() * 4 - 2) * 2) / 2, b:Math.round(Math.random() * 8 - 4), rojo:Math.random() < .5}));
+  const a = Math.floor(Math.random() * 300), z = Math.floor(Math.random() * 300);
+  await guardarPartida({resultado:a > z ? "victoria" : a < z ? "derrota" : "empate", rivalNombre:"Rival de prueba", miPuntaje:a, puntajeRival:z, mios:lin(10), rival:lin(10),
+    barcos:[{c:"#3a6ea5", celdas:[0,1,2,3].map(i => ({x:i, y:2}))}, {c:"#4a9a5a", celdas:[{x:-3, y:-2}, {x:-3, y:-1}]}]});
 }
-
-/* ---------- Tablero y reglas de Batalla Plano ---------- */
-const FLOTILLA = [
-  {tipo:"Portaaviones",n:2,tam:4,pts:100,umbral:70,danio:[20,50,50,20]},
-  {tipo:"Acorazado",n:2,tam:3,pts:90,umbral:65,danio:[25,45,25]},
-  {tipo:"Destructor",n:3,tam:2,pts:60,umbral:50,danio:[30,30]},
-  {tipo:"Submarino",n:2,tam:2,pts:30,umbral:50,danio:[50,50]}
+/* ================= PARTIDA ONLINE ================= */
+const PERM = {1:[1,2,4], 2:[2,3,4]}, RONDAS = 10, SEG = 90, NN = 6;
+const CL = [
+  {n:"Portaaviones", L:4, pts:100, um:70, d:[20,50,50,20], c:"#3a6ea5", q:2},
+  {n:"Acorazado",    L:3, pts:90,  um:65, d:[25,45,25],    c:"#c9772b", q:2},
+  {n:"Destructor",   L:2, pts:60,  um:50, d:[30,30],       c:"#4a9a5a", q:3},
+  {n:"Submarino",    L:2, pts:30,  um:50, d:[50,50],       c:"#7b5ea7", q:2}
 ];
-const TOTAL_NAVES=FLOTILLA.reduce((a,x)=>a+x.n,0);
-let seleccionNave=0, orientacion="H", celdaInicio=null, previewCells=[], procesandoAtaqueId=null, dragStart=null, axisSeleccionado=null;
-const coord=(r,c)=>r*15+c;
-const rc=i=>[Math.floor(i/15),i%15];
-const naveInfo=t=>FLOTILLA.find(x=>x.tipo===t);
-function celdasDe(r,c,tam,ori){const out=[];for(let k=0;k<tam;k++){const rr=r+(ori==="V"?k:0),cc=c+(ori==="H"?k:0);if(rr<0||rr>=15||cc<0||cc>=15)return null;out.push(coord(rr,cc));}return out;}
-function cuadranteValido(cells,jugador){return cells.every(i=>{const [r,c]=rc(i),q=r<8?(c<8?2:1):(c<8?3:4);return jugador===1?[1,2,4].includes(q):[2,3,4].includes(q);});}
-function celdasOcupadas(barcos){return new Set((barcos||[]).flatMap(b=>b.celdas||[]));}
-function navesPendientes(){const counts={};(privado?.barcos||[]).forEach(b=>counts[b.tipo]=(counts[b.tipo]||0)+1);return FLOTILLA.flatMap(f=>Array.from({length:Math.max(0,f.n-(counts[f.tipo]||0))},()=>f.tipo));}
-function renderJuego(id,g,numero,rivalNombre){
-  const yo=privado||{barcos:[],estadoColocacion:false};
-  const fase=g.fase||"colocacion", miTurno=g.turno===U.uid, ronda=g.ronda||1, ataques=g.ataques||[];
-  const barcos=yo.barcos||[], naves=navesPendientes();
-  const status=fase==="colocacion"?(yo.estadoColocacion?"Esperando a que el rival termine de colocar sus barcos.":"Coloca tu flota en las zonas permitidas."):fase==="combate"?(miTurno?"Tu turno: prepara tu línea de ataque.":"Turno del rival: observa su línea."):"Partida terminada";
-  const ownCells=new Map();barcos.forEach((b,bi)=>(b.celdas||[]).forEach((cell,k)=>ownCells.set(cell,{b,bi,k})));
-  const publicLines=ataques.filter(a=>a.linea).map(a=>a.linea);
-  const aiming=g.aiming&&g.aiming.from!==U.uid?g.aiming:null;
-  const previewSet=aiming?new Set(Array.from({length:15},(_,k)=>aiming.axis==="H"?coord(aiming.index,k):coord(k,aiming.index))):new Set();
-  const ownBoard=Array.from({length:225},(_,i)=>{const occ=ownCells.get(i);let cls="cell";if((Math.floor(i/15)+i%15)%2)cls+=" dark";if(fase==="colocacion"&&!cuadranteValido([i],numero))cls+=" forbidden";if(occ)cls+=" ship";if(occ?.b.golpes?.[occ.k])cls+=" hit";const line=publicLines.find(l=>l.cells?.includes(i));if(line)cls+=line.hit?" line-hit":" line-miss";if(previewSet.has(i))cls+=" line-preview";const label=String.fromCharCode(65+i%15)+(Math.floor(i/15)+1);return `<button class="${cls}" data-cell="${i}" title="${label}" aria-label="${label}">${occ?(occ.b.tipo==="Portaaviones"?"P":occ.b.tipo==="Acorazado"?"A":occ.b.tipo==="Destructor"?"D":"S"):""}</button>`;}).join("");
-  const enemyBoard=Array.from({length:225},(_,i)=>{let cls="cell";if((Math.floor(i/15)+i%15)%2)cls+=" dark";const line=publicLines.find(l=>l.cells?.includes(i));if(line)cls+=line.hit?" line-hit":" line-miss";if(previewSet.has(i))cls+=" line-preview";return `<button class="${cls}" data-target="${i}" title="${String.fromCharCode(65+i%15)}${Math.floor(i/15)+1}" ${fase!=="combate"||!miTurno||g.pendingAttack?"disabled":""}>${line?(line.hit?"×":"·"):""}</button>`;}).join("");
-  const names=FLOTILLA.map(f=>`<div class="item"><span>${f.tipo} (${f.tam})</span><b>${(barcos.filter(b=>b.tipo===f.tipo).length)}/${f.n}</b></div>`).join("");
-  let body="";
-  if(fase==="colocacion"){
-    body=`<div class="card"><b>Tu flota</b><div class="ship-list">${FLOTILLA.map((f,i)=>`<button class="ship-choice ${seleccionNave===i?"selected":""}" data-ship="${i}" ${!naves.includes(f.tipo)?"disabled":""}>${f.tipo} · ${naves.filter(x=>x===f.tipo).length} por colocar</button>`).join("")}</div><div class="row" style="margin-top:8px"><button class="sec" data-orient="H">Horizontal</button><button class="sec" data-orient="V">Vertical</button></div><p class="hint">Toca una casilla para colocar el barco seleccionado. También puedes arrastrar desde la casilla inicial; la dirección del arrastre define la orientación. No se permiten barcos fuera de tu zona ni superpuestos.</p>${names}<button class="big" id="bListo" ${barcos.length!==TOTAL_NAVES?"disabled":""}>Terminé de colocar (${barcos.length}/${TOTAL_NAVES})</button></div><div class="card"><b>Tu tablero (barcos visibles solo para ti)</b><div class="board">${ownBoard}</div></div>`;
-  } else if(fase==="combate"){
-    const timeLeft=90-Math.floor((Date.now()-(g.turnStartedAt?.toMillis?.()||Date.now()))/1000);
-    body=`<div class="card game-top"><div><b>Ronda ${ronda}/10</b><div class="hint">Tú: ${esc(nombre())} · Rival: ${esc(rivalNombre)}</div></div><div class="timer" id="timer">${miTurno?Math.max(0,timeLeft):"—"}s</div></div><div class="card"><b>Radar enemigo</b><p class="hint">Elige una casilla y después una línea horizontal o vertical. La línea atraviesa el tablero en ambos sentidos. Tus primeras cuatro líneas deben partir de A1.</p><div class="board">${enemyBoard}</div><div class="row" style="margin-top:8px"><button class="sec" data-axis="H" ${!miTurno||!!g.pendingAttack?"disabled":""}>Línea horizontal</button><button class="sec" data-axis="V" ${!miTurno||!!g.pendingAttack?"disabled":""}>Línea vertical</button><button id="bLaunch" ${celdaAtaque===null||!axisSeleccionado?"disabled":""}>Lanzar ataque</button></div><p id="attackHint" class="hint">${miTurno?"Selecciona una casilla del radar.":"Esperando al rival…"}</p></div><div class="card"><b>Tu radar / flota</b><div class="board">${ownBoard}</div><p class="hint">Los barcos y daños exactos de tu flota solo aparecen en tu pantalla.</p></div><div class="card"><b>Resultado del último ataque</b>${g.lastResult?(g.lastResult.timeout?`<p>Se agotó el tiempo: ataque perdido.</p>`:g.lastResult.impactos?.length?g.lastResult.impactos.map(x=>`<p>${esc(x.tipo)} · daño acumulado: ${x.danio}% ${x.hundido?"· Barco hundido":""}</p>`).join(""):`<p>La línea no encontró barcos.</p>`):`<p class="hint">Todavía no hay ataques.</p>`}</div><div class="card"><b>Historial de líneas</b>${ataques.length?ataques.slice().reverse().map(a=>`<div class="item"><span>R${a.ronda} · ${a.jugador===U.uid?"Tu ataque":"Ataque rival"} · ${a.linea.axis==="H"?"Horizontal":"Vertical"} ${a.linea.index+1}</span><b>${a.linea.timeout?"Tiempo agotado":a.linea.hit?"Impacto":"Falló"}</b></div>`).join(""):`<p class="hint">Aún no hay ataques.</p>`}</div>`;
-  } else {
-    body=`<div class="card"><h2>Partida terminada</h2><p>Se completaron las 10 rondas.</p><p>Se registraron ${ataques.length} ataques.</p><p class="hint">La puntuación PTS y el criterio definitivo de desempate aún necesitan confirmación; por eso no asignamos un ganador inventado.</p></div>`;
-  }
-  $("v-sala").innerHTML=`<div class="game-wrap"><div class="card"><div class="game-top"><div><small>Partida ${esc(id)}</small><h2 style="margin:2px 0">${fase==="colocacion"?"Colocación de flota":fase==="combate"?"Batalla en el plano":"Resultados"}</h2></div><span class="tag">Jugador ${numero}</span></div><p>${status}</p></div>${body}<button class="sec" data-go="partidas">Volver a mis partidas</button></div>`;
-  if(fase==="combate") iniciarReloj(id,g);
-}
-function iniciarReloj(id,g){if(timerTick)clearInterval(timerTick);const started=g.turnStartedAt?.toMillis?.();if(!started)return;timerTick=setInterval(async()=>{const el=$("timer");const left=Math.max(0,90-Math.floor((Date.now()-started)/1000));if(el)el.textContent=left+"s";if(left===0&&g.turno===U.uid&&!g.pendingAttack){clearInterval(timerTick);timerTick=null;await pasarTurnoPorTiempo(id,g).catch(console.error);}},500);}
-async function inicializarPartida(id,g){const ref=doc(db,"games",id);await runTransaction(db,async tx=>{const fresh=await tx.get(ref);if(fresh.exists()&&!fresh.data().fase)tx.update(ref,{fase:"colocacion",ronda:1,turno:fresh.data().j1,ataques:[],pendingAttack:null,aiming:null,lastResult:null,turnStartedAt:serverTimestamp(),ready1:false,ready2:false});});}
-async function guardarFlota(barcos,ready=false){await updateDoc(doc(db,"games",salaId,"private",U.uid),{barcos,estadoColocacion:ready,actualizado:serverTimestamp()});}
-async function colocarNave(i){if(!privado||privado.estadoColocacion)return;const tipo=FLOTILLA[seleccionNave].tipo,info=naveInfo(tipo);if(!navesPendientes().includes(tipo))return;const [r,c]=rc(i),cells=celdasDe(r,c,info.tam,orientacion);if(!cells||!cuadranteValido(cells,salaData.j1===U.uid?1:2)){alert("Ese barco no cabe o está fuera de tu zona permitida.");return;}const barcos=privado.barcos||[],ocup=celdasOcupadas(barcos);if(cells.some(x=>ocup.has(x))){alert("Los barcos no pueden superponerse.");return;}barcos.push({id:cod(8),tipo,celdas:cells,golpes:cells.map(()=>false),danio:0});await guardarFlota(barcos);}
-async function marcarListo(){if((privado?.barcos||[]).length!==TOTAL_NAVES)return;await guardarFlota(privado.barcos,true);const ref=doc(db,"games",salaId);const snap=await getDoc(ref);const g=snap.data();const campo=g.j1===U.uid?"ready1":"ready2";await updateDoc(ref,{[campo]:true});const actual=(await getDoc(ref)).data();if(actual.ready1&&actual.ready2&&actual.fase==="colocacion"){await updateDoc(ref,{fase:"combate",turno:actual.j1,ronda:1,ataques:[],pendingAttack:null,lastResult:null,turnStartedAt:serverTimestamp()});}}
-let celdaAtaque=null;
-async function publicarApuntado(){if(celdaAtaque===null||!axisSeleccionado)return;const [r,c]=rc(celdaAtaque);const index=axisSeleccionado==="H"?r:c;const count=(salaData.ataques||[]).filter(a=>a.jugador===U.uid).length;if(count<4&&(r!==0||c!==0)){const h=$("attackHint");if(h)h.textContent="Tus primeras cuatro líneas deben partir de A1.";return;}await updateDoc(doc(db,"games",salaId),{aiming:{from:U.uid,axis:axisSeleccionado,index,origin:celdaAtaque}});}
-async function lanzarLinea(axis,cell){const ref=doc(db,"games",salaId),snap=await getDoc(ref);if(!snap.exists())return;const g=snap.data();if(g.fase!=="combate"||g.turno!==U.uid||g.pendingAttack)return;const count=(g.ataques||[]).filter(a=>a.jugador===U.uid).length;if(count>=10)return;const [r,c]=rc(cell);if(count<4&&(r!==0||c!==0)){alert("Tus primeras cuatro líneas deben partir de A1.");return;}const index=axis==="H"?r:c;const pending={id:cod(10),from:U.uid,axis,index,origin:cell,round:g.ronda||1,createdAt:Date.now()};await updateDoc(ref,{pendingAttack:pending,aiming:null});celdaAtaque=null;axisSeleccionado=null;}
-async function procesarAtaquePendiente(id,g){const a=g.pendingAttack;if(!a||a.from===U.uid||!privado||!Array.isArray(privado.barcos))return;if(privado.procesando===a.id||procesandoAtaqueId===a.id)return;procesandoAtaqueId=a.id;await updateDoc(doc(db,"games",id,"private",U.uid),{procesando:a.id,actualizado:serverTimestamp()});const barcos=(privado.barcos||[]).map(b=>({...b,celdas:[...b.celdas],golpes:[...(b.golpes||b.celdas.map(()=>false))]}));const path=[];if(a.axis==="H"){for(let c=a.origin%15;c<15;c++)path.push(coord(a.index,c));for(let c=a.origin%15-1;c>=0;c--)path.push(coord(a.index,c));}else{for(let r=Math.floor(a.origin/15);r<15;r++)path.push(coord(r,a.index));for(let r=Math.floor(a.origin/15)-1;r>=0;r--)path.push(coord(r,a.index));}const impact=[];for(const b of barcos){let hitAt=-1;for(const cell of path){const k=b.celdas.indexOf(cell);if(k>=0&&!b.golpes[k]){hitAt=k;break;}}if(hitAt>=0){b.golpes[hitAt]=true;const info=naveInfo(b.tipo);b.danio=(b.danio||0)+info.danio[hitAt];impact.push({tipo:b.tipo,danio:b.danio,umbral:info.umbral,hundido:b.danio>=info.umbral});}}await updateDoc(doc(db,"games",id,"private",U.uid),{barcos,procesando:null,actualizado:serverTimestamp()});const hit=impact.length>0;const ataques=[...(g.ataques||[]),{jugador:a.from,ronda:a.round,linea:{axis:a.axis,index:a.index,cells:path,hit},impactos:impact.map(x=>({tipo:x.tipo,danio:x.danio,hundido:x.hundido}))}];const c1=ataques.filter(x=>x.jugador===g.j1).length,c2=ataques.filter(x=>x.jugador===g.j2).length;const other=g.j1===a.from?g.j2:g.j1;const fin=c1>=10&&c2>=10;const nextRound=Math.min(10,Math.ceil(ataques.length/2));await updateDoc(doc(db,"games",id),{ataques,pendingAttack:null,lastResult:{from:a.from,hit,impactos:impact.map(x=>({tipo:x.tipo,danio:x.danio,hundido:x.hundido}))},turno:other,ronda:nextRound,turnStartedAt:serverTimestamp(),...(fin?{fase:"terminada"}:{})});procesandoAtaqueId=null;}
-async function pasarTurnoPorTiempo(id,g){const other=g.j1===U.uid?g.j2:g.j1;const attacks=[...(g.ataques||[]),{jugador:U.uid,ronda:g.ronda||1,linea:{axis:"H",index:0,cells:[],hit:false,timeout:true},impactos:[]}];const c1=attacks.filter(a=>a.jugador===g.j1).length,c2=attacks.filter(a=>a.jugador===g.j2).length;const fin=c1>=10&&c2>=10;const nextRound=Math.min(10,Math.ceil(attacks.length/2));await updateDoc(doc(db,"games",id),{ataques,pendingAttack:null,aiming:null,lastResult:{from:U.uid,timeout:true},turno:other,ronda:nextRound,turnStartedAt:serverTimestamp(),...(fin?{fase:"terminada"}:{})});}
+const FLOTA = CL.flatMap((c,i) => Array(c.q).fill(i));
+const quad = (x,y) => x>=0&&y>=0 ? 1 : x<0&&y>=0 ? 2 : x<0&&y<0 ? 3 : 4;
+const kk = c => c.x + "," + c.y;
+const cruza = (c,m,b) => { const v = [[0,0],[1,0],[0,1],[1,1]].map(([i,j]) => c.y+j - m*(c.x+i) - b); return Math.min(...v) < -1e-9 && Math.max(...v) > 1e-9; };
+const fmtT = r => Math.floor(Math.max(r,0)/60) + ":" + String(Math.max(r,0)%60).padStart(2,"0");
+let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz = true, vm = "1", vb = "0",
+    huella = "", resolviendo = false, pasando = false, guardado = false, msgP = "", aimT = null;
 
-// Colocación por arrastre (mouse o pantalla táctil): la dirección decide horizontal/vertical.
-$("v-sala").addEventListener("pointerdown",e=>{const b=e.target.closest("[data-cell]");if(b)dragStart=Number(b.dataset.cell);});
-$("v-sala").addEventListener("pointerup",async e=>{const b=e.target.closest("[data-cell]");if(!b||dragStart===null)return;const end=Number(b.dataset.cell),[r1,c1]=rc(dragStart),[r2,c2]=rc(end);if(Math.abs(c2-c1)>=Math.abs(r2-r1)){orientacion="H";await colocarNave(coord(Math.min(r1,r2),Math.min(c1,c2)));}else{orientacion="V";await colocarNave(coord(Math.min(r1,r2),Math.min(c1,c2)));}dragStart=null;});
+async function alCambiar(id, g){
+  g.lineas = g.lineas || []; g.listo = g.listo || {}; g.pts = g.pts || {1:0,2:0};
+  if (id !== gid){
+    gid = id; mis = []; gast = new Set(); guardado = false; msgP = ""; huella = ""; G = g; yo = g.j1 === U.uid ? 1 : 2;
+    try { const s = await getDoc(doc(db,"games",id,"privado",U.uid)); if (s.exists()){ mis = s.data().ships; gast = new Set(s.data().gast); } } catch {}
+  }
+  G = g; yo = g.j1 === U.uid ? 1 : 2;
+  if (!g.j2){ huella = ""; return pintarSala(id, g); }
+  if (g.ataque && g.ataque.p !== yo && !resolviendo) resolver();
+  if (g.estado === "fin" && !guardado){ guardado = true; guardarFin(); }
+  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts]);
+  if (h !== huella){ huella = h; pintarPartida(); }
+  else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
+}
+
+/* --- dibujo --- */
+const ln = (m,b,c,w,d) => `<line x1="-8" y1="${m*-8+b}" x2="8" y2="${m*8+b}" stroke="${c}" stroke-width="${w}" ${d ? `stroke-dasharray="${d}"` : ""} stroke-linecap="round"/>`;
+function radarH(modo, prev, place){
+  const p = modo === "def" ? yo : 3 - yo, zona = PERM[p];
+  let g = "";
+  for (let x=-NN; x<NN; x++) for (let y=-NN; y<NN; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="${zona.includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
+  if (modo === "def") for (const s of mis) for (const c of s.celdas){
+    g += `<rect x="${c.x+.06}" y="${c.y+.06}" width=".88" height=".88" rx=".12" fill="${CL[s.i].c}" opacity="${s.hund ? .45 : 1}"/>`;
+    if (gast.has(kk(c))) g += `<path d="M${c.x+.25} ${c.y+.25}L${c.x+.75} ${c.y+.75}M${c.x+.75} ${c.y+.25}L${c.x+.25} ${c.y+.75}" stroke="#fff" stroke-width=".1"/>`;
+  }
+  if (prev && prev.celdas) for (const c of prev.celdas) g += `<rect x="${c.x}" y="${c.y}" width="1" height="1" fill="${prev.ok ? "#2e7d32" : "#d23a2a"}" opacity=".55"/>`;
+  g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of G.lineas.filter(l => modo === "atk" ? l.p === yo : l.p !== yo)) g += ln(l.m, l.b, l.rojo ? "var(--err)" : "#e0a800", .1, "");
+  if (modo === "def" && G.apunta && G.apunta.p !== yo) g += ln(G.apunta.m, G.apunta.b, "var(--err)", .06, ".25 .2");
+  if (prev && prev.linea) g += ln(prev.linea.m, prev.linea.b, "var(--acc)", .08, ".25 .2");
+  let t = "";
+  for (let i=-6; i<=6; i+=2) if (i) t += `<text x="${i}" y="-.3" font-size=".5" text-anchor="middle" fill="var(--mut)">${i}</text><text x=".2" y="${-i+.17}" font-size=".5" fill="var(--mut)">${i}</text>`;
+  return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px;${place ? "touch-action:none" : ""}"><g transform="scale(1,-1)">${g}</g>${t}</svg>`;
+}
+const ultTxt = l => `${l.p === yo ? "Tu ataque" : "Ataque rival"} (y = ${l.m}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}`).join(" | ");
+function resumenH(){
+  const m = new Map(); for (const l of G.lineas.filter(l => l.p === yo)) for (const h of l.hits || []) m.set(h.k, h);
+  const v = [...m.values()], tot = {}, c = {}; v.forEach(h => tot[h.n] = (tot[h.n] || 0) + 1);
+  return v.length ? v.map(h => { c[h.n] = (c[h.n] || 0) + 1; return `${h.n}${tot[h.n] > 1 ? " " + c[h.n] : ""}: ${h.h ? "derribado" : h.t + "%"}`; }).join(" · ") : "ninguno todavía";
+}
+function pintarPartida(){
+  const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
+  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">—</b></span></div>`;
+  if (g.estado === "fin"){
+    h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>
+      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p><small>Se guardó en tu historial.</small></div><button data-go="partidas">Volver a mis partidas</button>`;
+    $("v-sala").innerHTML = h; return;
+  }
+  if (!bat){
+    const n = mis.length, cls = CL[FLOTA[n]], yaListo = g.listo[U.uid];
+    h += yaListo ? `<p class="msg">Flota lista. Esperando a que ${esc(riv)} termine de colocar…</p><div class="rad" id="def">${radarH("def")}</div>`
+      : `<p class="msg">${cls ? `Arrastra sobre el plano para colocar tu ${cls.n} (${cls.L} cuadros). ${n}/9` : "Flota completa: toca Listo."}</p>${msgP ? `<p class="msg">${msgP}</p>` : ""}
+      <div class="rad" id="def">${radarH("def", null, true)}</div>
+      <div class="row"><button class="sec" id="ori">${horiz ? "Horizontal" : "Vertical"} (al tocar)</button><button class="sec" id="undo" ${n ? "" : "disabled"}>Deshacer</button><button id="listo" ${n === 9 ? "" : "disabled"}>Listo</button></div>
+      <p><small>Tus cuadrantes: ${PERM[p].join(", ")}. Los apagados no se pueden usar.</small></p>`;
+  } else {
+    const miT = g.turno === p && !g.ataque;
+    h += `<p class="msg">${g.ataque ? "Resolviendo el ataque…" : miT ? (g.ronda <= 4 ? "Tu turno: ataque desde el origen, elige la pendiente m." : "Tu turno: elige m y b.") : "Turno de " + esc(riv) + "…"}</p>
+      ${ult ? `<div class="card"><b>${esc(ultTxt(ult))}</b></div>` : ""}${msgP ? `<p class="msg">${msgP}</p>` : ""}
+      <p><small>Barcos rivales tocados: ${esc(resumenH())}</small></p>
+      <h2>Radar de ataque</h2><div class="rad" id="atk">${radarH("atk", {linea:miT ? leerRecta() : null})}</div>
+      ${miT ? `<div class="row"><label>m (pendiente)<input id="m" type="number" step="0.1" inputmode="decimal" value="${esc(vm)}"></label>
+        <label>b (eje Y)<input id="b" type="number" step="0.5" inputmode="decimal" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div>` : ""}
+      <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
+  }
+  $("v-sala").innerHTML = h;
+  if (!bat && !g.listo[U.uid]){
+    enlazarDrag();
+    $("ori").onclick = () => { horiz = !horiz; pintarPartida(); };
+    $("undo").onclick = () => { mis.pop(); msgP = ""; pintarPartida(); };
+    $("listo").onclick = listo;
+  }
+  if (bat && g.turno === p && !g.ataque){
+    const redib = () => { vm = $("m").value; vb = $("b").value; $("atk").innerHTML = radarH("atk", {linea:leerRecta()}); apuntar(); };
+    $("m").oninput = redib; $("b").oninput = redib; $("fire").onclick = fuego;
+  }
+}
+function leerRecta(){
+  const m = parseFloat($("m")?.value ?? vm), b = G.ronda <= 4 ? 0 : parseFloat($("b")?.value ?? vb);
+  return isNaN(m) || isNaN(b) ? null : {m, b};
+}
+function apuntar(){
+  clearTimeout(aimT);
+  aimT = setTimeout(() => { const r = leerRecta(); if (r) updateDoc(doc(db,"games",gid), {apunta:{p:yo, m:r.m, b:r.b}}).catch(() => {}); }, 500);
+}
+
+/* --- colocar barcos arrastrando --- */
+function celdasDrag(cls){
+  const dx = drag.c.x - drag.a.x, dy = drag.c.y - drag.a.y, h = dx || dy ? Math.abs(dx) >= Math.abs(dy) : horiz, s = (h ? dx : dy) < 0 ? -1 : 1;
+  return Array.from({length:cls.L}, (_,i) => h ? {x:drag.a.x + i*s, y:drag.a.y} : {x:drag.a.x, y:drag.a.y + i*s});
+}
+const validas = cs => { const oc = new Set(mis.flatMap(s => s.celdas.map(kk))); return cs.every(c => c.x >= -NN && c.x < NN && c.y >= -NN && c.y < NN && PERM[yo].includes(quad(c.x,c.y)) && !oc.has(kk(c))); };
+function enlazarDrag(){
+  const el = $("def"), cls = CL[FLOTA[mis.length]]; if (!cls) return;
+  const celda = e => { const s = el.querySelector("svg"), pt = s.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(s.getScreenCTM().inverse()); return {x:Math.floor(q.x), y:Math.floor(-q.y)}; };
+  const dib = () => { const cs = celdasDrag(cls); el.innerHTML = radarH("def", {celdas:cs, ok:validas(cs)}, true); };
+  el.onpointerdown = e => { drag = {a:celda(e), c:celda(e)}; el.setPointerCapture?.(e.pointerId); dib(); };
+  el.onpointermove = e => { if (drag){ drag.c = celda(e); dib(); } };
+  el.onpointerup = e => {
+    if (!drag) return; drag.c = celda(e);
+    const cs = celdasDrag(cls);
+    if (validas(cs)){ mis.push({i:FLOTA[mis.length], k:mis.length, celdas:cs, dano:0, hund:false}); msgP = ""; }
+    else msgP = "No cabe ahí: debe quedar en tus cuadrantes y sin tocar otro barco.";
+    drag = null; pintarPartida();
+  };
+}
+async function listo(){
+  try {
+    await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[]});
+    await runTransaction(db, async tx => {
+      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data(), l = {...(g.listo || {}), [U.uid]:true}, patch = {listo:l};
+      if (l[g.j1] && l[g.j2]) Object.assign(patch, {estado:"batalla", turno:1, ronda:1, tiempoFin:Date.now() + SEG*1000});
+      tx.update(ref, patch);
+    });
+  } catch (e){ msgP = "No se pudo guardar tu flota. Inténtalo otra vez."; pintarPartida(); }
+}
+
+/* --- ataque, resolución y turnos --- */
+async function fuego(){
+  const r = leerRecta(); if (!r){ msgP = "Escribe valores válidos."; return pintarPartida(); }
+  msgP = "";
+  try { await updateDoc(doc(db,"games",gid), {ataque:{p:yo, m:r.m, b:r.b}, apunta:null}); } catch { msgP = "No se envió el ataque."; pintarPartida(); }
+}
+function avanzar(g, pts){
+  let turno = g.turno, ronda = g.ronda;
+  if (turno === 1) turno = 2; else { turno = 1; ronda++; }
+  const r = {turno, ronda, tiempoFin:Date.now() + SEG*1000};
+  if (ronda > RONDAS){ r.estado = "fin"; r.ganador = pts[1] > pts[2] ? 1 : pts[2] > pts[1] ? 2 : 0; }
+  return r;
+}
+async function resolver(){          // lo hace el defensor: solo él conoce sus barcos
+  resolviendo = true;
+  try {
+    const a = G.ataque, hits = []; let toca = false, suma = 0;
+    for (const s of mis){
+      const C = CL[s.i], tocados = s.celdas.filter(c => cruza(c, a.m, a.b));
+      if (tocados.length) toca = true;
+      const libres = tocados.filter(c => !gast.has(kk(c)));
+      if (!libres.length) continue;
+      libres.sort((u,v) => Math.hypot(u.x+.5, u.y+.5-a.b) - Math.hypot(v.x+.5, v.y+.5-a.b));   // el más cercano a (0, b)
+      const c = libres[0], d = C.d[s.celdas.findIndex(z => z.x === c.x && z.y === c.y)];
+      gast.add(kk(c)); s.dano += d;
+      if (!s.hund && s.dano >= C.um){ s.hund = true; suma += C.pts; }
+      hits.push({k:s.k, n:C.n, d, t:s.dano, h:s.hund});
+    }
+    const gana = mis.every(s => s.hund);
+    await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[...gast]});
+    await runTransaction(db, async tx => {
+      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+      if (!g.ataque) return;
+      const pts = {...g.pts}; pts[a.p] = (pts[a.p] || 0) + suma;
+      const patch = {lineas:[...(g.lineas || []), {p:a.p, m:a.m, b:a.b, rojo:toca, hits}], ataque:null, apunta:null, pts, ...avanzar(g, pts)};
+      if (gana){ patch.estado = "fin"; patch.ganador = a.p; }
+      tx.update(ref, patch);
+    });
+  } catch (e){ console.error(e); }
+  resolviendo = false;
+}
+async function pasar(){             // se acabó el tiempo: se pierde el ataque
+  if (pasando) return; pasando = true;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado !== "batalla" || g.ataque || Date.now() < g.tiempoFin) return;
+    tx.update(ref, {...avanzar(g, g.pts), apunta:null});
+  }); } catch {}
+  pasando = false;
+}
+setInterval(() => {
+  if (!G || !G.j2 || G.estado !== "batalla") return;
+  const r = Math.ceil((G.tiempoFin - Date.now()) / 1000), e = $("tm");
+  if (e) e.textContent = fmtT(r);
+  if (!G.ataque && ((G.turno === yo && r <= 0) || r <= -4)) pasar();
+}, 1000);
+
+async function guardarFin(){
+  const g = G, res = g.ganador === 0 ? "empate" : g.ganador === yo ? "victoria" : "derrota", ref = doc(db,"users",U.uid,"historial",gid);
+  try {
+    if ((await getDoc(ref)).exists()) return;
+    const sol = l => ({m:l.m, b:l.b, rojo:l.rojo});
+    await setDoc(ref, {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
+      mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
+      barcos:mis.map(s => ({c:CL[s.i].c, celdas:s.celdas})), fecha:serverTimestamp()});
+    const campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
+    await updateDoc(doc(db,"users",U.uid), {[campo]:increment(1), puntos:increment(g.pts[yo]), mejor:Math.max(P.mejor || 0, g.pts[yo])});
+  } catch (e){ console.error(e); }
+}
+
+function pintarSala(id, g){
+  $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
+    <p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: ${esc(g.n2 || "esperando rival…")}</p>
+    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p></div>
+    <button class="sec" data-go="partidas">Volver a mis partidas</button>`;
+}
+function abrirSala(id){
+  if (salaSub){ salaSub(); salaSub = null; }
+  ir("sala");
+  gid = null; salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()) alCambiar(id, s.data()); });
+}
+
 /* ---------- Acciones (delegación de eventos) ---------- */
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t || !U) return;
   const d = t.dataset;
   try {
-    if (d.ship!==undefined){seleccionNave=Number(d.ship);return pintarSala(salaId,salaData);}
-    if (d.orient){orientacion=d.orient;return pintarSala(salaId,salaData);}
-    
-    if (d.axis){axisSeleccionado=d.axis;if(celdaAtaque===null){const h=$("attackHint");if(h)h.textContent="Selecciona una casilla del radar.";return;}return publicarApuntado();}
-    if (d.target!==undefined){celdaAtaque=Number(d.target);const h=$("attackHint");if(h)h.textContent=`Casilla seleccionada: ${String.fromCharCode(65+celdaAtaque%15)}${Math.floor(celdaAtaque/15)+1}. Elige horizontal o vertical y lanza.`;document.querySelectorAll("[data-target]").forEach(x=>x.style.outline=Number(x.dataset.target)===celdaAtaque?"2px solid #0b9b58":"");if(axisSeleccionado)return publicarApuntado();return;}
-    if(t.id==="bLaunch"&&celdaAtaque!==null&&axisSeleccionado)return lanzarLinea(axisSeleccionado,celdaAtaque);
-    if (t.id==="bListo") return marcarListo();
     if (d.go) return ir(d.go);
     if (d.sala) return abrirSala(d.sala);
     if (t.id === "bCrear"){
       const id = cod(5);
-      await setDoc(doc(db,"games",id), {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", creada:serverTimestamp()});
-      await prepararPrivadoPartida(id);
+      await setDoc(doc(db,"games",id), {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
       return abrirSala(id);
     }
     if (t.id === "bUnir"){
@@ -362,9 +500,8 @@ document.addEventListener("click", async e => {
       const g = s.data();
       if (g.j1 !== U.uid && g.j2 !== U.uid){
         if (g.j2){ er.textContent = "Esa partida ya está llena."; return; }
-        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"lista", jugadores:arrayUnion(U.uid)});
+        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1});
       }
-      await prepararPrivadoPartida(id);
       return abrirSala(id);
     }
     if (t.id === "bAmigo"){
@@ -392,6 +529,7 @@ document.addEventListener("click", async e => {
       $("ePerfil").textContent = ""; return pintar();
     }
     if (t.id === "bCopiar"){ try { await navigator.clipboard.writeText(P.codigo || ""); t.textContent = "¡Copiado!"; } catch { t.textContent = P.codigo || ""; } return; }
+    if (t.id === "bEjemplo") return await ejemplo();
     if (t.id === "bSalir") return signOut(auth);
   } catch (er){
     const x = $("eInicio") || $("ePerfil"); if (vista === "amigos"){ msgAmigo = texto(er); pintarAmigos(); } else if (x) x.textContent = texto(er);
