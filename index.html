@@ -174,16 +174,24 @@ onAuthStateChanged(auth, async u => {
 async function prepararPerfil(u){
   const ref = doc(db,"users",u.uid);
   try {
-    const s = await getDoc(ref); let d = s.exists() ? s.data() : null;
-    if (!d || !d.codigo){
-      let c = "";
-      for (let i = 0; i < 4; i++){
-        const t = cod(6);
-        try { await setDoc(doc(db,"codigos",t), {uid:u.uid, nombre:nombreDe(u)}); c = t; break; } catch {}
-      }
-      await setDoc(ref, {nombre:d?.nombre || nombreDe(u), codigo:c, victorias:d?.victorias || 0, derrotas:d?.derrotas || 0, creado:d?.creado || serverTimestamp()}, {merge:true});
+    const actual = await getDoc(ref), d = actual.exists() ? actual.data() : {};
+    if (d.codigo) return;
+    // La transacción evita que dos sesiones creen códigos distintos para la misma cuenta
+    // y comprueba que el código no esté ocupado antes de reservarlo.
+    for (let intento = 0; intento < 8; intento++){
+      const codigo = cod(6), codigoRef = doc(db,"codigos",codigo);
+      try {
+        await runTransaction(db, async tx => {
+          const [perfil, ocupado] = await Promise.all([tx.get(ref), tx.get(codigoRef)]);
+          if (perfil.exists() && perfil.data().codigo) return;
+          if (ocupado.exists()) throw new Error("Código ocupado");
+          tx.set(codigoRef, {uid:u.uid, nombre:nombreDe(u)});
+          tx.set(ref, {nombre:d.nombre || nombreDe(u), codigo, victorias:d.victorias || 0, derrotas:d.derrotas || 0, empates:d.empates || 0, creado:d.creado || serverTimestamp()}, {merge:true});
+        });
+        return;
+      } catch (e){ if (e.message !== "Código ocupado" || intento === 7) throw e; }
     }
-  } catch {}
+  } catch (e){ console.error("No se pudo preparar el perfil:", e); }
 }
 
 /* ---------- Navegación ---------- */
@@ -443,7 +451,10 @@ async function listo(){
 
 /* --- ataque, resolución y turnos --- */
 async function fuego(){
-  const r = leerRecta(); if (!r){ msgP = "Escribe valores válidos."; return pintarPartida(); }
+  const r = leerRecta();
+  if (!r || !Number.isFinite(r.m) || !Number.isFinite(r.b) || Math.abs(r.m) > 20 || Math.abs(r.b) > 20){
+    msgP = "Usa valores numéricos entre -20 y 20 para m y b."; return pintarPartida();
+  }
   msgP = "";
   try { await updateDoc(doc(db,"games",gid), {ataque:{p:yo, m:r.m, b:r.b}, apunta:null}); } catch { msgP = "No se envió el ataque."; pintarPartida(); }
 }
@@ -534,12 +545,19 @@ async function guardarFin(){
   const res = g.ganador === 0 ? "empate" : g.ganador === yo ? "victoria" : "derrota", ref = doc(db,"users",U.uid,"historial",gid);
   const flota = F => F.ships.map(s => ({c:CL[s.i].c, celdas:s.celdas, hund:!!s.hund})), sol = l => ({m:l.m, b:l.b, rojo:l.rojo});
   try {
-    if ((await getDoc(ref)).exists()) return;
-    await setDoc(ref, {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
+    const registro = {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
       mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
-      barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, abandono:!!g.abandonoPor, fecha:serverTimestamp()});
-    const campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
-    await updateDoc(doc(db,"users",U.uid), {[campo]:increment(1), puntos:increment(g.pts[yo]), mejor:Math.max(P.mejor || 0, g.pts[yo])});
+      barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, abandono:!!g.abandonoPor, fecha:serverTimestamp()};
+    const perfilRef = doc(db,"users",U.uid), campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
+    // Historial y estadísticas se escriben juntos: evita contar dos veces
+    // una partida si llegan varias actualizaciones o se recarga la página.
+    await runTransaction(db, async tx => {
+      const [anterior, perfil] = await Promise.all([tx.get(ref), tx.get(perfilRef)]);
+      if (anterior.exists()) return;
+      const datos = perfil.data() || {};
+      tx.set(ref, registro);
+      tx.set(perfilRef, { [campo]: (datos[campo] || 0) + 1, puntos:(datos.puntos || 0) + g.pts[yo], mejor:Math.max(datos.mejor || 0, g.pts[yo]) }, {merge:true});
+    });
   } catch (e){ console.error(e); }
 }
 
@@ -563,20 +581,36 @@ document.addEventListener("click", async e => {
     if (d.go) return ir(d.go);
     if (d.sala) return abrirSala(d.sala);
     if (t.id === "bCrear"){
-      const id = cod(5);
-      await setDoc(doc(db,"games",id), {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
+      let id = "", creada = false;
+      // Se reserva el identificador de forma atómica para no sobrescribir otra sala.
+      for (let intento = 0; intento < 8 && !creada; intento++){
+        const candidato = cod(5), ref = doc(db,"games",candidato);
+        creada = await runTransaction(db, async tx => {
+          const existente = await tx.get(ref);
+          if (existente.exists()) return false;
+          tx.set(ref, {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
+          return true;
+        });
+        if (creada) id = candidato;
+      }
+      if (!creada) throw new Error("No se pudo generar un código. Inténtalo de nuevo.");
       return abrirSala(id);
     }
     if (t.id === "bUnir"){
       const id = $("codigo").value.trim().toUpperCase(), er = $("eInicio");
-      if (id.length !== 5){ er.textContent = "El código tiene 5 caracteres."; return; }
-      const ref = doc(db,"games",id), s = await getDoc(ref);
-      if (!s.exists()){ er.textContent = "No existe una partida con ese código."; return; }
-      const g = s.data();
-      if (g.j1 !== U.uid && g.j2 !== U.uid){
-        if (g.j2){ er.textContent = "Esa partida ya está llena."; return; }
-        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
-      }
+      if (!/^[A-HJ-NP-Z2-9]{5}$/.test(id)){ er.textContent = "El código debe tener 5 caracteres válidos."; return; }
+      const ref = doc(db,"games",id);
+      const resultado = await runTransaction(db, async tx => {
+        const s = await tx.get(ref);
+        if (!s.exists()) return "missing";
+        const g = s.data();
+        if (g.j1 === U.uid || g.j2 === U.uid) return "joined";
+        if (g.estado !== "esperando" || g.j2) return "full";
+        tx.update(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
+        return "joined";
+      });
+      if (resultado === "missing"){ er.textContent = "No existe una partida con ese código."; return; }
+      if (resultado === "full"){ er.textContent = "Esa partida ya está llena o ya comenzó."; return; }
       return abrirSala(id);
     }
     if (t.id === "bAmigo"){
@@ -587,9 +621,14 @@ document.addEventListener("click", async e => {
         if (!s.exists()) msgAmigo = "No existe ese código.";
         else if (s.data().uid === U.uid) msgAmigo = "Ese código es el tuyo.";
         else {
-          const o = s.data(), id = [U.uid, o.uid].sort().join("_");
-          await setDoc(doc(db,"amistades",id), {miembros:[U.uid,o.uid], nombres:{[U.uid]:nombre(), [o.uid]:o.nombre}, pedidoPor:U.uid, estado:"pendiente", creada:serverTimestamp()});
-          msgAmigo = "✓ Solicitud enviada a " + o.nombre;
+          const o = s.data(), id = [U.uid, o.uid].sort().join("_"), ref = doc(db,"amistades",id);
+          const estado = await runTransaction(db, async tx => {
+            const existente = await tx.get(ref);
+            if (existente.exists()) return existente.data().estado === "aceptada" ? "friends" : "pending";
+            tx.set(ref, {miembros:[U.uid,o.uid], nombres:{[U.uid]:nombre(), [o.uid]:o.nombre || "Jugador"}, pedidoPor:U.uid, estado:"pendiente", creada:serverTimestamp()});
+            return "sent";
+          });
+          msgAmigo = estado === "friends" ? "Ya son amigos." : estado === "pending" ? "Ya existe una solicitud pendiente entre ustedes." : "✓ Solicitud enviada a " + (o.nombre || "tu amigo");
         }
       }
       return pintarAmigos();
