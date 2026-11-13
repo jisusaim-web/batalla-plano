@@ -40,6 +40,12 @@ nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stro
 .dot{position:absolute;top:4px;left:55%;min-width:16px;height:16px;border-radius:8px;background:var(--err);color:#fff;font-size:.65rem;display:grid;place-items:center;padding:0 4px}
 summary{list-style:none;cursor:pointer}summary::-webkit-details-marker{display:none}
 details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child{border:0}
+.history-scroll{max-height:min(52vh,460px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:6px}
+.history-scroll:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.history-scroll::-webkit-scrollbar{width:8px}.history-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+.history-pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding:7px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.history-pager button{min-width:42px;padding:7px 12px}.history-pager button:disabled{opacity:.35;cursor:not-allowed}
+.history-page-label{flex:1;text-align:center;font-size:.85rem;color:var(--mut)}.history-page-label b{display:block;color:var(--ink);font-size:.9rem}
 .win{color:var(--ok)}.lose{color:var(--err)}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .bar{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:.85rem;color:var(--mut)}.bar b{color:var(--ink)}
 .rad{margin:6px 0}
@@ -119,7 +125,7 @@ const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo."
 const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
 
-let U = null, P = {}, kP = "", historial = [], amDocs = {}, amSubs = [], amistades = [], partidas = [], subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
+let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
 /* ---------- Autenticación ---------- */
@@ -269,6 +275,10 @@ function pintarPerfil(){
   const v = P.victorias || 0, d = P.derrotas || 0, e = P.empates || 0, j = v + d + e;
   const wr = j ? Math.round(v / j * 100) : 0;
   const lista = [...historial].sort((a,b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+  const porPagina = 10, totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
+  paginaHistorial = Math.min(paginaHistorial, totalPaginas - 1);
+  const inicioHistorial = paginaHistorial * porPagina;
+  const paginaLista = lista.slice(inicioHistorial, inicioHistorial + porPagina);
   const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
   $("v-perfil").innerHTML = `<h2 style="margin-top:6px">Mi perfil</h2>
     <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
@@ -276,7 +286,7 @@ function pintarPerfil(){
       <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
-    <h2>Historial</h2><div class="card">${lista.length ? lista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó.</small></details>`; }).join("") : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó.</small></details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
@@ -580,6 +590,7 @@ document.addEventListener("click", async e => {
   try {
     if (d.go) return ir(d.go);
     if (d.sala) return abrirSala(d.sala);
+    if (d.histPage){ paginaHistorial = Math.max(0, paginaHistorial + Number(d.histPage)); return pintarPerfil(); }
     if (t.id === "bCrear"){
       let id = "", creada = false;
       // Se reserva el identificador de forma atómica para no sobrescribir otra sala.
@@ -634,7 +645,22 @@ document.addEventListener("click", async e => {
       return pintarAmigos();
     }
     if (d.acep) return await updateDoc(doc(db,"amistades",d.acep), {estado:"aceptada"});
-    if (d.del) return await deleteDoc(doc(db,"amistades",d.del));
+    if (d.del){
+      const relacion = amistades.find(a => a.id === d.del);
+      if (!relacion) return;
+      const amigoNombre = relacion.nombres?.[otro(relacion)] || "este jugador";
+      const esAmistad = relacion.estado === "aceptada";
+      const pregunta = esAmistad
+        ? `¿Seguro que quieres cancelar la amistad con ${amigoNombre}?
+
+Ya no aparecerá en tu lista de amigos.`
+        : relacion.pedidoPor === U.uid
+          ? `¿Quieres cancelar la solicitud de amistad enviada a ${amigoNombre}?`
+          : `¿Quieres rechazar la solicitud de amistad de ${amigoNombre}?`;
+      if (!window.confirm(pregunta)) return;
+      await deleteDoc(doc(db,"amistades",d.del));
+      return;
+    }
     if (t.id === "bNombre"){
       const n = $("pNombre").value.trim(); if (n.length < 3){ $("ePerfil").textContent = ERR.nombre; return; }
       await updateProfile(U, {displayName:n});
