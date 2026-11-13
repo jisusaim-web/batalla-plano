@@ -101,6 +101,7 @@ const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
 
 let U = null, P = {}, historial = [], amistades = [], partidas = [], subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
+let presenciaTimer = null, presenciaUid = null;
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
 /* ---------- Autenticación ---------- */
@@ -136,6 +137,7 @@ let espera = Promise.resolve();
 onAuthStateChanged(auth, async u => {
   await espera; espera = Promise.resolve();
   subs.forEach(f => f()); subs = []; if (salaSub){ salaSub(); salaSub = null; }
+  clearInterval(presenciaTimer); presenciaTimer = null; presenciaUid = null;
   U = u;
   if (!u){ $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hAv").hidden = true; pintarModo(); return; }
   await prepararPerfil(u);
@@ -165,6 +167,7 @@ async function prepararPerfil(u){
 /* ---------- Navegación ---------- */
 const VISTAS = ["inicio","partidas","amigos","perfil","sala"];
 function ir(v){
+  if (v !== "sala" && gid && G && G.j2 && !["fin","cancelada"].includes(G.estado)) { marcarPresencia(gid, false); detenerLatido(); }
   vista = v;
   VISTAS.forEach(x => $("v-"+x).hidden = x !== v);
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === (v === "sala" ? "partidas" : v)));
@@ -176,7 +179,7 @@ $("hAv").onclick = () => ir("perfil");
 /* ---------- Pintar vistas ---------- */
 const nombre = () => P.nombre || (U && nombreDe(U)) || "Jugador";
 const rival = g => g.j1 === U.uid ? g.n2 : g.n1;
-const estadoTxt = g => g.j2 ? "Lista" : "Esperando rival";
+const estadoTxt = g => ({esperando:"Esperando rival", colocando:"Colocando barcos", batalla:"En curso", fin:"Terminada", cancelada:"Cancelada"}[g.estado] || "Partida");
 const pendientes = () => amistades.filter(a => a.estado === "pendiente" && a.pedidoPor !== U.uid);
 const otro = a => a.miembros.find(m => m !== U.uid);
 
@@ -192,7 +195,7 @@ function pintar(){
 }
 
 function pintarInicio(){
-  const act = partidas.filter(g => g.estado !== "terminada").length;
+  const act = partidas.filter(g => !["fin","cancelada"].includes(g.estado)).length;
   $("v-inicio").innerHTML = `
     <h2 style="margin-top:6px">Hola, ${esc(nombre())}</h2>
     <button class="big" id="bCrear">Crear partida</button>
@@ -204,10 +207,12 @@ function pintarInicio(){
 }
 
 function pintarPartidas(){
-  const l = [...partidas].sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
-  $("v-partidas").innerHTML = `<h2 style="margin-top:6px">Mis partidas</h2><div class="card">` +
+  // Esta vista contiene solo partidas que todavía pueden abrirse o jugarse.
+  const l = partidas.filter(g => !["fin","cancelada"].includes(g.estado))
+    .sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
+  $("v-partidas").innerHTML = `<h2 style="margin-top:6px">Partidas activas</h2><div class="card">` +
     (l.length ? l.map(g => `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${estadoTxt(g)}</span><br><small>Rival: ${esc(rival(g) || "esperando…")}</small></div><button class="mini" data-sala="${esc(g.id)}">Abrir</button></div>`).join("")
-      : `<p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p>`) + `</div>`;
+      : `<p class="mut">No tienes partidas activas. Las partidas terminadas y canceladas se conservan en el historial de tu perfil.</p>`) + `</div>`;
 }
 
 function pintarAmigos(){
@@ -227,14 +232,14 @@ function pintarPerfil(){
   const v = P.victorias || 0, d = P.derrotas || 0, e = P.empates || 0, j = v + d + e;
   const wr = j ? Math.round(v / j * 100) : 0;
   const lista = [...historial].sort((a,b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
-  const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
+  const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""], cancelada:["Cancelada",""]};
   $("v-perfil").innerHTML = `<h2 style="margin-top:6px">Mi perfil</h2>
     <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
       <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
       <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
-    <h2>Historial</h2><div class="card">${lista.length ? lista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"mios")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mis ataques</small>${mini(h,"mios")}</div><div><small>Ataques rivales en mi flota</small>${mini(h,"rival")}</div></div></details>`; }).join("") : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+    <h2>Historial</h2><div class="card">${lista.length ? lista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"mios")}</div><div style="flex:1"><b class="${r[1]}">${h.prueba ? "Prueba" : r[0]}</b>${h.rivalNombre ? " vs " + esc(h.rivalNombre) : ""}<br><small>${h.resultado === "cancelada" ? "Sin ganador · " : `${Number(h.miPuntaje || 0)} – ${Number(h.puntajeRival || 0)} pts · `}${fecha(h)}</small></div></summary><h3 style="margin:12px 0 6px">Planos finales</h3><div class="two"><div><small>Mi plano · mis barcos</small>${miniTablero(h.barcosMios || h.barcos || [])}</div><div><small>Plano rival · sus barcos</small>${miniTablero(h.barcosRival || [])}</div></div><div class="two" style="margin-top:10px"><div><small>Mis ataques</small>${mini(h,"mios")}</div><div><small>Ataques rivales</small>${mini(h,"rival")}</div></div></details>`; }).join("") : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de ejemplo (prueba)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
@@ -253,17 +258,26 @@ function mini(h, modo){   // vista previa del plano con las rectas de la partida
   }
   return `<svg viewBox="-6.2 -6.2 12.4 12.4" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
 }
+function miniTablero(barcos){
+  let g = "";
+  for (let x=-6; x<6; x++) for (let y=-6; y<6; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="var(--card)" stroke="var(--line)" stroke-width=".03"/>`;
+  for (const b of barcos || []) for (const c of b.celdas || []) g += `<rect x="${Number(c.x)+.06}" y="${Number(c.y)+.06}" width=".88" height=".88" rx=".12" fill="${esc(b.c || "#3a6ea5")}"/>`;
+  g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  return `<svg viewBox="-6.2 -6.2 12.4 12.4" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
+}
 // Se llamará al terminar una partida real; el botón de ejemplo la usa para probar el diseño.
 async function guardarPartida(d){
   await addDoc(collection(db,"users",U.uid,"historial"), {...d, fecha:serverTimestamp()});
-  const campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[d.resultado];
-  await updateDoc(doc(db,"users",U.uid), {[campo]:increment(1), puntos:increment(d.miPuntaje), mejor:Math.max(P.mejor || 0, d.miPuntaje)});
+  if (!d.prueba){
+    const campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[d.resultado];
+    await updateDoc(doc(db,"users",U.uid), {[campo]:increment(1), puntos:increment(d.miPuntaje), mejor:Math.max(P.mejor || 0, d.miPuntaje)});
+  }
 }
 async function ejemplo(){
   const lin = n => Array.from({length:n}, () => ({m:Math.round((Math.random() * 4 - 2) * 2) / 2, b:Math.round(Math.random() * 8 - 4), rojo:Math.random() < .5}));
   const a = Math.floor(Math.random() * 300), z = Math.floor(Math.random() * 300);
-  await guardarPartida({resultado:a > z ? "victoria" : a < z ? "derrota" : "empate", rivalNombre:"Rival de prueba", miPuntaje:a, puntajeRival:z, mios:lin(10), rival:lin(10),
-    barcos:[{c:"#3a6ea5", celdas:[0,1,2,3].map(i => ({x:i, y:2}))}, {c:"#4a9a5a", celdas:[{x:-3, y:-2}, {x:-3, y:-1}]}]});
+  await guardarPartida({prueba:true, resultado:a > z ? "victoria" : a < z ? "derrota" : "empate", rivalNombre:"Rival de prueba", miPuntaje:a, puntajeRival:z, mios:lin(10), rival:lin(10),
+    barcosMios:[{c:"#3a6ea5", celdas:[0,1,2,3].map(i => ({x:i, y:2}))}, {c:"#4a9a5a", celdas:[{x:-3, y:-2}, {x:-3, y:-1}]}], barcosRival:[{c:"#c9772b", celdas:[0,1,2].map(i => ({x:-i, y:-3}))}]});
 }
 /* ================= PARTIDA ONLINE ================= */
 const PERM = {1:[1,2,4], 2:[2,3,4]}, RONDAS = 10, SEG = 90, NN = 6;
@@ -290,7 +304,9 @@ async function alCambiar(id, g){
   G = g; yo = g.j1 === U.uid ? 1 : 2;
   if (!g.j2){ huella = ""; return pintarSala(id, g); }
   if (g.ataque && g.ataque.p !== yo && !resolviendo) resolver();
+  if (["fin","cancelada"].includes(g.estado)) detenerLatido();
   if (g.estado === "fin" && !guardado){ guardado = true; guardarFin(); }
+  if (g.estado === "cancelada" && !guardado){ guardado = true; guardarCancelada(); }
   const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts]);
   if (h !== huella){ huella = h; pintarPartida(); }
   else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
@@ -324,8 +340,12 @@ function resumenH(){
 function pintarPartida(){
   const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
   let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">—</b></span></div>`;
+  if (g.estado === "cancelada"){
+    h += `<div class="card"><h2 style="margin-top:0">Partida cancelada</h2><p>Los dos jugadores abandonaron la partida. No cuenta como victoria ni derrota.</p></div><button data-go="partidas">Volver a mis partidas</button>`;
+    $("v-sala").innerHTML = h; return;
+  }
   if (g.estado === "fin"){
-    h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>
+    h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.motivo === "abandono" ? (g.ganador === p ? "¡Ganaste por abandono!" : "Perdiste por abandono") : (g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste")}</b></p>
       <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p><small>Se guardó en tu historial.</small></div><button data-go="partidas">Volver a mis partidas</button>`;
     $("v-sala").innerHTML = h; return;
   }
@@ -391,7 +411,9 @@ async function listo(){
   try {
     await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[]});
     await runTransaction(db, async tx => {
-      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data(), l = {...(g.listo || {}), [U.uid]:true}, patch = {listo:l};
+      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data(), l = {...(g.listo || {}), [U.uid]:true};
+      const flotasPublicas = {...(g.flotasPublicas || {}), [U.uid]:mis.map(s => ({i:s.i, c:CL[s.i].c, celdas:s.celdas}))};
+      const patch = {listo:l, flotasPublicas};
       if (l[g.j1] && l[g.j2]) Object.assign(patch, {estado:"batalla", turno:1, ronda:1, tiempoFin:Date.now() + SEG*1000});
       tx.update(ref, patch);
     });
@@ -455,6 +477,26 @@ setInterval(() => {
   if (!G.ataque && ((G.turno === yo && r <= 0) || r <= -4)) pasar();
 }, 1000);
 
+async function guardarCancelada(){
+  const g = G, ref = doc(db,"users",U.uid,"historial",gid);
+  try {
+    if ((await getDoc(ref)).exists()) return;
+    const sol = l => ({m:l.m, b:l.b, rojo:l.rojo});
+    const uidRival = yo === 1 ? g.j2 : g.j1;
+    await setDoc(ref, {
+      resultado:"cancelada", motivo:g.motivo || "ambos_abandonaron",
+      rivalNombre:yo === 1 ? g.n2 : g.n1,
+      miPuntaje:g.pts?.[yo] || 0, puntajeRival:g.pts?.[3-yo] || 0,
+      mios:(g.lineas || []).filter(l => l.p === yo).map(sol),
+      rival:(g.lineas || []).filter(l => l.p !== yo).map(sol),
+      barcosMios:g.flotasPublicas?.[U.uid] || mis.map(x => ({c:CL[x.i].c, celdas:x.celdas})),
+      barcosRival:g.flotasPublicas?.[uidRival] || [],
+      barcos:g.flotasPublicas?.[U.uid] || mis.map(x => ({c:CL[x.i].c, celdas:x.celdas})),
+      fecha:serverTimestamp()
+    });
+  } catch (e){ console.error(e); }
+}
+
 async function guardarFin(){
   const g = G, res = g.ganador === 0 ? "empate" : g.ganador === yo ? "victoria" : "derrota", ref = doc(db,"users",U.uid,"historial",gid);
   try {
@@ -462,11 +504,27 @@ async function guardarFin(){
     const sol = l => ({m:l.m, b:l.b, rojo:l.rojo});
     await setDoc(ref, {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
       mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
-      barcos:mis.map(s => ({c:CL[s.i].c, celdas:s.celdas})), fecha:serverTimestamp()});
+      barcosMios:(g.flotasPublicas?.[U.uid] || mis.map(s => ({c:CL[s.i].c, celdas:s.celdas}))),
+      barcosRival:(g.flotasPublicas?.[yo === 1 ? g.j2 : g.j1] || []),
+      barcos:(g.flotasPublicas?.[U.uid] || mis.map(s => ({c:CL[s.i].c, celdas:s.celdas}))), fecha:serverTimestamp()});
     const campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
     await updateDoc(doc(db,"users",U.uid), {[campo]:increment(1), puntos:increment(g.pts[yo]), mejor:Math.max(P.mejor || 0, g.pts[yo])});
   } catch (e){ console.error(e); }
 }
+
+async function marcarPresencia(id, dentro=true){
+  if (!U || !id) return;
+  const patch = dentro
+    ? {[`presencia.${U.uid}`]:serverTimestamp(), [`salioEn.${U.uid}`]:null}
+    : {[`presencia.${U.uid}`]:null, [`salioEn.${U.uid}`]:serverTimestamp()};
+  try { await updateDoc(doc(db,"games",id), patch); } catch {}
+}
+function iniciarLatido(id){
+  clearInterval(presenciaTimer); presenciaUid = id;
+  marcarPresencia(id, true);
+  presenciaTimer = setInterval(() => { if (presenciaUid === id && gid === id) marcarPresencia(id, true); }, 20000);
+}
+function detenerLatido(){ clearInterval(presenciaTimer); presenciaTimer = null; presenciaUid = null; }
 
 function pintarSala(id, g){
   $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
@@ -477,7 +535,8 @@ function pintarSala(id, g){
 function abrirSala(id){
   if (salaSub){ salaSub(); salaSub = null; }
   ir("sala");
-  gid = null; salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()) alCambiar(id, s.data()); });
+  gid = null; detenerLatido(); iniciarLatido(id);
+  salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()) alCambiar(id, s.data()); });
 }
 
 /* ---------- Acciones (delegación de eventos) ---------- */
@@ -489,7 +548,7 @@ document.addEventListener("click", async e => {
     if (d.sala) return abrirSala(d.sala);
     if (t.id === "bCrear"){
       const id = cod(5);
-      await setDoc(doc(db,"games",id), {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
+      await setDoc(doc(db,"games",id), {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, presencia:{[U.uid]:serverTimestamp()}, salioEn:{}, creada:serverTimestamp()});
       return abrirSala(id);
     }
     if (t.id === "bUnir"){
@@ -500,7 +559,7 @@ document.addEventListener("click", async e => {
       const g = s.data();
       if (g.j1 !== U.uid && g.j2 !== U.uid){
         if (g.j2){ er.textContent = "Esa partida ya está llena."; return; }
-        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1});
+        await updateDoc(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, [`presencia.${U.uid}`]:serverTimestamp(), [`salioEn.${U.uid}`]:null});
       }
       return abrirSala(id);
     }
