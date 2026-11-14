@@ -195,7 +195,7 @@ const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo."
 const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
 
-let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
+let U = null, P = {}, kP = "", kR = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
 /* ---------- Autenticación ---------- */
