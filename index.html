@@ -68,6 +68,9 @@ details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child
 .fr{display:flex;flex-direction:column;align-items:center;width:92px}
 .fr input{text-align:center}
 .fr hr{width:100%;border:0;border-top:3px solid var(--ink);margin:5px 0}
+.reacs{display:flex;gap:6px;flex-wrap:wrap;min-height:1.7rem;margin:6px 0}
+.reac{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:1.05rem}
+button.emo{font-size:1.5rem;padding:6px 12px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -95,6 +98,7 @@ details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child
   <section id="v-inicio"></section>
   <section id="v-partidas" hidden></section>
   <section id="v-amigos" hidden></section>
+  <section id="v-ranking" hidden></section>
   <section id="v-perfil" hidden></section>
   <section id="v-sala" hidden></section>
 </div>
@@ -103,13 +107,14 @@ details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child
   <button data-v="inicio"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Inicio</button>
   <button data-v="partidas"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>Partidas</button>
   <button data-v="amigos"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 3-6 6.500-6s6.500 2 6.500 6M17 5a3.500 3.500 0 010 6.500M21.500 20c0-3-1.500-5-4-5.800"/></svg>Amigos<i class="dot" id="dotA" hidden>0</i></button>
+  <button data-v="ranking"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg>Ranking</button>
   <button data-v="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.500 3.500-7 8-7s8 2.500 8 7"/></svg>Perfil</button>
 </nav>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,addDoc,increment,runTransaction,onSnapshot,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,addDoc,increment,runTransaction,onSnapshot,orderBy,limit,getDocs,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU", authDomain:"prueba-2-df121.firebaseapp.com",
@@ -167,14 +172,14 @@ const latido = () => { if (U) updateDoc(doc(db,"users",U.uid), {visto:Date.now()
 setInterval(() => { latido(); const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }, 30000);
 onAuthStateChanged(auth, async u => {
   await espera; espera = Promise.resolve();
-  subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; if (salaSub){ salaSub(); salaSub = null; }
+  subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; if (salaSub){ salaSub(); salaSub = null; }
   U = u;
   const spl = $("splash");
   if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
   await prepararPerfil(u);
   await pausa(); spl.classList.add("fuera"); latido();
   $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hdr").hidden = false;
-  subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; if (k !== kP){ kP = k; pintar(); } }));
+  subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; sincRank(); if (k !== kP){ kP = k; pintar(); } }));
   subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); suscribirAmigos(); pintar(); }));
   subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); errPartidas = ""; pintar(); },
     e => { console.error("partidas:", e); errPartidas = e.code || "error"; pintar(); }));
@@ -206,9 +211,11 @@ async function prepararPerfil(u){
 }
 
 /* ---------- Navegación ---------- */
-const VISTAS = ["inicio","partidas","amigos","perfil","sala"];
+const VISTAS = ["inicio","partidas","amigos","ranking","perfil","sala"];
 function ir(v){
   vista = v;
+  if (v === "ranking") cargarRanking();
+  if (v !== "sala" && espSub){ espSub(); espSub = null; E = null; eid = null; }
   VISTAS.forEach(x => $("v-"+x).hidden = x !== v);
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === (v === "sala" ? "partidas" : v)));
   pintar(); window.scrollTo(0,0);
@@ -232,13 +239,15 @@ function pintar(){
   if (vista === "partidas") pintarPartidas();
   if (vista === "amigos") pintarAmigos();
   if (vista === "perfil") pintarPerfil();
+  if (vista === "ranking") pintarRanking();
 }
 
 function htmlAmigos(){
   const ac = amistades.filter(a => a.estado === "aceptada"), ahora = Date.now();
   if (!ac.length) return `<p class="mut">Aún no tienes amigos. Agrégalos con su código.</p>`;
-  return ac.map(a => { const id = otro(a), on = ahora - ((amDocs[id] || {}).visto || 0) < 75000;
-    return `<div class="item"><span><i class="dot2 ${on ? "on2" : ""}"></i>${esc(a.nombres?.[id] || "Jugador")}</span><small>${on ? "En línea" : "Desconectado"}</small></div>`; }).join("");
+  return ac.map(a => { const id = otro(a), d = amDocs[id] || {}, on = ahora - (d.visto || 0) < 75000;
+    const der = on && d.partidaActual ? `<span class="tag">En partida</span> <button class="mini" data-espectar="${esc(d.partidaActual)}">Espectear</button>` : `<small>${on ? "En línea" : "Desconectado"}</small>`;
+    return `<div class="item"><span><i class="dot2 ${on ? "on2" : ""}"></i>${esc(a.nombres?.[id] || "Jugador")}</span><span>${der}</span></div>`; }).join("");
 }
 function suscribirAmigos(){
   amSubs.forEach(f => f()); amSubs = [];
@@ -354,11 +363,15 @@ let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz
 async function alCambiar(id, g){
   g.lineas = g.lineas || []; g.listo = g.listo || {}; g.pts = g.pts || {1:0,2:0};
   if (id !== gid){
+    escucharReacs(id);
     gid = id; mis = []; gast = new Set(); guardado = false; publicado = false; msgP = ""; huella = ""; G = g; yo = g.j1 === U.uid ? 1 : 2;
     try { const s = await getDoc(doc(db,"games",id,"privado",U.uid)); if (s.exists()){ mis = s.data().ships; gast = new Set(s.data().gast); } } catch {}
   }
   G = g; yo = g.j1 === U.uid ? 1 : 2;
   if (!g.j2){ huella = ""; return pintarSala(id, g); }
+  // los amigos ven que estás en partida (para poder espectarla)
+  if (g.estado !== "fin" && P.partidaActual !== id) updateDoc(doc(db,"users",U.uid), {partidaActual:id}).catch(() => {});
+  if (g.estado === "fin" && P.partidaActual === id) updateDoc(doc(db,"users",U.uid), {partidaActual:null}).catch(() => {});
   const pausaActiva = g.pausa && (g.pausa.estado === "pausada" || g.pausa.estado === "reanudar");
   if (g.ataque && g.ataque.p !== yo && !resolviendo && !pausaActiva) resolver();
   if (g.estado === "fin"){
@@ -401,7 +414,7 @@ function resumenH(){
 function pintarPartida(){
   const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
   const pa = g.pausa || null, congelada = !!(pa && (pa.estado === "pausada" || pa.estado === "reanudar"));
-  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div>`;
+  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="reacs" id="reacs"></div>`;
   if (g.estado === "fin"){
     h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
       <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div><button data-go="partidas">Volver a mis partidas</button>`;
@@ -434,7 +447,7 @@ function pintarPartida(){
     h += `<div class="row" style="margin-top:16px"><button class="sec" id="solicitarPausa">Pausa</button></div>`;
   }
   h += `<div class="row" style="margin-top:10px"><button class="sec" id="abandonar">Abandonar partida</button></div>`;
-  $("v-sala").innerHTML = h; $("abandonar").onclick = abandonar;
+  $("v-sala").innerHTML = h; $("abandonar").onclick = abandonar; pintarReacs();
   if (congelada) return;
   if (!bat && !g.listo[U.uid]){
     enlazarDrag();
@@ -643,6 +656,94 @@ async function guardarFin(){
   } catch (e){ console.error(e); }
 }
 
+/* ================= ESPECTAR Y EMOJIS ================= */
+const EMOJIS = ["👏","🔥","😮","😂","💥","🎯"];
+let E = null, eid = null, espSub = null, reacSub = null, reacs = [], ultEmoji = 0;
+function escucharReacs(id){          // reacciones recientes: las ven jugadores y espectadores
+  if (reacSub){ reacSub(); reacSub = null; } reacs = [];
+  reacSub = onSnapshot(query(collection(db,"games",id,"reacciones"), orderBy("t","desc"), limit(6)),
+    s => { reacs = s.docs.map(d => d.data()); pintarReacs(); }, () => {});
+}
+function pintarReacs(){
+  const e = $("reacs"); if (!e) return;
+  e.innerHTML = reacs.filter(r => Date.now() - r.t < 60000).map(r => `<span class="reac">${esc(r.emoji)} <small>${esc(r.nombre)}</small></span>`).join("");
+}
+setInterval(pintarReacs, 5000);
+async function enviarEmoji(em){
+  if (!eid || !EMOJIS.includes(em) || Date.now() - ultEmoji < 2000) return;
+  ultEmoji = Date.now();
+  try { await addDoc(collection(db,"games",eid,"reacciones"), {uid:U.uid, nombre:nombre(), emoji:em, t:Date.now()}); } catch {}
+}
+function espectar(id){
+  if (salaSub){ salaSub(); salaSub = null; } if (espSub){ espSub(); espSub = null; }
+  eid = id; E = null; ir("sala"); escucharReacs(id);
+  $("v-sala").innerHTML = `<p class="mut">Conectando con la partida…</p>`;
+  espSub = onSnapshot(doc(db,"games",id),
+    s => { if (!s.exists()){ $("v-sala").innerHTML = `<p class="msg">Esa partida ya no existe.</p><button data-go="inicio">Volver</button>`; return; } E = s.data(); pintarEsp(); },
+    () => { $("v-sala").innerHTML = `<p class="err">No puedes ver esta partida. Solo la ven los amigos de los jugadores.</p><button data-go="inicio">Volver</button>`; });
+}
+function dejarEsp(){ if (espSub){ espSub(); espSub = null; } E = null; eid = null; ir("inicio"); }
+function radarEsp(g, p){                 // solo rectas: los barcos nunca se muestran
+  let c = "";
+  for (let x = -NN; x < NN; x++) for (let y = -NN; y < NN; y++) c += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PERM[3-p].includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
+  c += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of g.lineas.filter(l => l.p === p)) c += ln(Number(l.m), Number(l.b), l.rojo ? "var(--err)" : "#e0a800", .1, "");
+  return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${c}</g></svg>`;
+}
+function pintarEsp(){
+  const g = E; if (!g) return;
+  g.lineas = g.lineas || []; g.pts = g.pts || {1:0,2:0};
+  const nm = p => p === 1 ? g.n1 : g.n2, ult = g.lineas[g.lineas.length - 1];
+  const est = g.estado === "fin" ? "Terminada" : g.pausa && g.pausa.estado === "pausada" ? "En pausa" : g.estado === "colocando" ? "Colocando barcos" : `Ronda ${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}`;
+  const txt = l => `${nm(l.p)} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}`).join(" | ");
+  $("v-sala").innerHTML = `<div class="bar"><span>Espectando</span><span><b>${esc(g.n1)}</b> ${g.pts[1]} – ${g.pts[2]} <b>${esc(g.n2 || "…")}</b></span><span>${est}</span></div>
+    ${g.estado === "fin" ? `<p class="msg">${g.ganador === 0 ? "Empate" : "Ganó " + esc(nm(g.ganador))}</p>` : ""}
+    ${ult ? `<div class="card"><b>${esc(txt(ult))}</b></div>` : `<p class="mut">Aún no hay ataques.</p>`}
+    <div class="reacs" id="reacs"></div>
+    <div class="row">${EMOJIS.map(e => `<button class="sec emo" data-emoji="${e}" aria-label="Reaccionar ${e}">${e}</button>`).join("")}</div>
+    <h2>Ataques de ${esc(g.n1)}</h2>${radarEsp(g, 1)}
+    <h2>Ataques de ${esc(g.n2 || "…")}</h2>${radarEsp(g, 2)}
+    <div class="row" style="margin-top:14px"><button class="sec" id="dejarEsp">Dejar de espectar</button></div>`;
+  pintarReacs(); $("dejarEsp").onclick = dejarEsp;
+}
+
+/* ================= CLASIFICACIÓN ================= */
+const MIN_WR = 5;   // partidas mínimas para aparecer en el win rate
+let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
+function sincRank(){                 // copia tus estadísticas a la lista pública (sin tu código de amigo ni tu presencia)
+  if (!U) return;
+  const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
+  const k = JSON.stringify(d); if (k === kR) return; kR = k;
+  setDoc(doc(db,"ranking",U.uid), d).catch(() => { kR = ""; });
+}
+async function cargarRanking(){
+  rkCarga = true; rkErr = ""; pintarRanking();
+  try { const s = await getDocs(query(collection(db,"ranking"), orderBy("puntos","desc"), limit(100))); rank = s.docs.map(d => ({id:d.id, ...d.data()})); }
+  catch (e){ rkErr = e.code || "error"; }
+  rkCarga = false; pintarRanking();
+}
+const jug = r => (r.victorias || 0) + (r.derrotas || 0) + (r.empates || 0);
+const RK = {
+  puntos:    {t:"Puntos",        v:r => r.puntos || 0,    f:r => (r.puntos || 0) + " pts"},
+  victorias: {t:"Victorias",     v:r => r.victorias || 0, f:r => (r.victorias || 0) + " victorias"},
+  winrate:   {t:"Win rate",      v:r => jug(r) >= MIN_WR ? (r.victorias || 0) / jug(r) : -1, f:r => Math.round((r.victorias || 0) / jug(r) * 100) + "%"},
+  mejor:     {t:"Mejor partida", v:r => r.mejor || 0,     f:r => (r.mejor || 0) + " pts"}
+};
+function pintarRanking(){
+  if (!U) return;
+  const c = RK[rkTab], medalla = ["🥇","🥈","🥉"];
+  const lista = rank.filter(r => jug(r) > 0 && (rkTab !== "winrate" || jug(r) >= MIN_WR)).sort((a,b) => c.v(b) - c.v(a) || (b.puntos || 0) - (a.puntos || 0));
+  const mi = lista.findIndex(r => r.id === U.uid);
+  $("v-ranking").innerHTML = `<h2 style="margin-top:6px">Clasificación</h2>
+    <div class="row" style="margin:0 0 8px">${Object.entries(RK).map(([k,x]) => `<button class="mini ${k === rkTab ? "" : "sec"}" data-rk="${k}">${x.t}</button>`).join("")}<button class="mini sec" data-rk="actualizar">Actualizar</button></div>
+    ${rkErr ? `<p class="err">No se pudo cargar la clasificación (${esc(rkErr)}).</p>` : ""}
+    <div class="card">${rkCarga ? `<p class="mut">Cargando…</p>` : lista.length
+      ? lista.slice(0, 20).map((r,i) => `<div class="item"${r.id === U.uid ? ' style="font-weight:700"' : ""}><span>${medalla[i] || (i + 1) + "."} ${esc(r.nombre || "Jugador")}<br><small>${r.victorias || 0}V ${r.derrotas || 0}D ${r.empates || 0}E · ${r.puntos || 0} pts</small></span><b>${c.f(r)}</b></div>`).join("")
+      : `<p class="mut">Todavía no hay partidas${rkTab === "winrate" ? " con al menos " + MIN_WR + " jugadas" : ""}.</p>`}</div>
+    ${mi >= 20 ? `<p class="mut">Tu posición: #${mi + 1}</p>` : ""}
+    <small>${rkTab === "winrate" ? `Win rate: solo cuentan jugadores con ${MIN_WR} o más partidas. ` : ""}Se muestran los 100 jugadores con más puntos.</small>`;
+}
+
 function pintarSala(id, g){
   $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
     <p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: ${esc(g.n2 || "esperando rival…")}</p>
@@ -662,6 +763,9 @@ document.addEventListener("click", async e => {
   try {
     if (d.go) return ir(d.go);
     if (d.sala) return abrirSala(d.sala);
+    if (d.espectar) return espectar(d.espectar);
+    if (d.emoji) return enviarEmoji(d.emoji);
+    if (d.rk){ if (d.rk === "actualizar") return cargarRanking(); rkTab = d.rk; return pintarRanking(); }
     if (d.histPage){ paginaHistorial = Math.max(0, paginaHistorial + Number(d.histPage)); return pintarPerfil(); }
     if (t.id === "bCrear"){
       let id = "", creada = false;
