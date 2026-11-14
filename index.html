@@ -84,6 +84,57 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 </style>
 </head>
 <body>
+
+<script>
+/* Monitor independiente: funciona aunque Firebase no llegue a importar. */
+(function () {
+  var detalle = "Firebase no respondió durante el inicio.";
+  var iniciado = false;
+  var terminado = false;
+
+  window.__batallaBoot = { iniciar: function(){ iniciado = true; }, terminar: function(){ terminado = true; } };
+
+  function mostrar(mensaje) {
+    if (document.getElementById("boot-fallback")) return;
+    var panel = document.createElement("div");
+    panel.id = "boot-fallback";
+    panel.style.cssText = "position:fixed;inset:0;z-index:999999;background:#071419;color:#eaf4f6;display:grid;place-items:center;padding:24px;font:16px/1.5 system-ui,sans-serif;text-align:center";
+    var caja = document.createElement("div");
+    caja.style.cssText = "width:min(100%,420px)";
+    var titulo = document.createElement("h2");
+    titulo.textContent = "Batalla en el plano";
+    var texto = document.createElement("p");
+    texto.textContent = mensaje;
+    var info = document.createElement("p");
+    info.style.cssText = "font-size:13px;color:#ffb4ab;overflow-wrap:anywhere";
+    info.textContent = detalle;
+    var recargar = document.createElement("button");
+    recargar.textContent = "Volver a intentar";
+    recargar.style.cssText = "padding:12px 18px;border:0;border-radius:8px;background:#4fb3c6;color:#06222a;font-weight:700";
+    recargar.onclick = function(){ location.reload(); };
+    caja.append(titulo, texto, info, recargar);
+    panel.appendChild(caja);
+    document.body.appendChild(panel);
+  }
+
+  window.addEventListener("error", function(e) {
+    detalle = e.message || "No se pudo cargar un archivo de JavaScript.";
+  });
+  window.addEventListener("unhandledrejection", function(e) {
+    var r = e.reason;
+    detalle = r && (r.code || r.message) ? [r.code, r.message].filter(Boolean).join(" — ") : "Falló una operación al iniciar.";
+  });
+
+  window.setTimeout(function(){
+    if (!iniciado) {
+      mostrar("La parte de Firebase no llegó a iniciar. Comprueba que GitHub Pages esté publicando este index.html y que haya conexión a internet.");
+    } else if (!terminado) {
+      mostrar("Firebase comenzó a iniciar, pero no terminó de responder. Puede ser un problema de conexión o permisos de Firestore.");
+    }
+  }, 8000);
+})();
+</script>
+
 <div id="splash"><div>
   <svg class="radar" viewBox="-50 -50 100 100" aria-hidden="true"><circle r="46" fill="none" stroke="#4fb3c6" stroke-opacity=".55"/><circle r="30" fill="none" stroke="#4fb3c6" stroke-opacity=".4"/><circle r="14" fill="none" stroke="#4fb3c6" stroke-opacity=".3"/><path d="M-50 0H50M0 -50V50" stroke="#4fb3c6" stroke-opacity=".35"/><g class="sweep"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="#4fb3c6" fill-opacity=".38"/></g><circle cx="18" cy="-12" r="2.5" fill="#ff6b57"/><circle cx="-22" cy="16" r="2.5" fill="#e0a800"/></svg>
   <div style="font:700 1.9rem Georgia,serif">Batalla en el plano</div><small style="color:#8fa9b1">Cargando…</small><div class="load"><i></i></div>
@@ -181,13 +232,19 @@ const pausa = () => new Promise(r => setTimeout(r, Math.max(0, 1600 - performanc
 const latido = () => { if (U) updateDoc(doc(db,"users",U.uid), {visto:Date.now()}).catch(() => {}); };   // "estoy en línea"
 setInterval(() => { latido(); const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }, 30000);
 onAuthStateChanged(auth, async u => {
+  window.__batallaBoot?.iniciar();
   await espera; espera = Promise.resolve();
   subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; if (salaSub){ salaSub(); salaSub = null; }
   U = u;
   const spl = $("splash");
-  if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
-  await prepararPerfil(u);
+  if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); window.__batallaBoot?.terminar(); return; }
+  // No bloquea toda la aplicación si Firestore tarda o no responde.
+  await Promise.race([
+    prepararPerfil(u),
+    new Promise(resolve => setTimeout(resolve, 6000))
+  ]);
   await pausa(); spl.classList.add("fuera"); latido();
+  window.__batallaBoot?.terminar();
   $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hdr").hidden = false;
   subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; sincRank(); if (k !== kP){ kP = k; pintar(); } }));
   subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); suscribirAmigos(); pintar(); }));
@@ -230,45 +287,4 @@ function ir(v){
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === (v === "sala" ? "partidas" : v)));
   pintar(); window.scrollTo(0,0);
 }
-$("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); };
-$("hAv").onclick = () => ir("perfil");
-
-/* ---------- Pintar vistas ---------- */
-const nombre = () => P.nombre || (U && nombreDe(U)) || "Jugador";
-const rival = g => g.j1 === U.uid ? g.n2 : g.n1;
-const estadoTxt = g => g.estado === "fin" ? "Terminada" : g.j2 ? "En curso" : "Esperando rival";
-const pendientes = () => amistades.filter(a => a.estado === "pendiente" && a.pedidoPor !== U.uid);
-const otro = a => a.miembros.find(m => m !== U.uid);
-
-function pintar(){
-  if (!U) return;
-  const av = $("hAv");
-  av.innerHTML = AV_EMOJIS.includes(P.avatar) ? P.avatar : U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
-  av.style.background = P.avatarColor ? colorAv(P) : "";
-  const n = pendientes().length; $("dotA").hidden = !n; $("dotA").textContent = n;
-  if (vista === "inicio") pintarInicio();
-  if (vista === "partidas") pintarPartidas();
-  if (vista === "amigos") pintarAmigos();
-  if (vista === "perfil") pintarPerfil();
-  if (vista === "ranking") pintarRanking();
-}
-
-function htmlAmigos(){
-  const ac = amistades.filter(a => a.estado === "aceptada"), ahora = Date.now();
-  if (!ac.length) return `<p class="mut">Aún no tienes amigos. Agrégalos con su código.</p>`;
-  return ac.map(a => { const id = otro(a), d = amDocs[id] || {}, on = ahora - (d.visto || 0) < 75000;
-    const der = on && d.partidaActual ? `<span class="tag">En partida</span> <button class="mini" data-espectar="${esc(d.partidaActual)}">Espectear</button>` : `<small>${on ? "En línea" : "Desconectado"}</small>`;
-    return `<div class="item"><span><i class="dot2 ${on ? "on2" : ""}"></i>${avatarHTML({...d, nombre:a.nombres?.[id]}, 26)} <button class="link" data-perfil="${id}">${esc(a.nombres?.[id] || "Jugador")}</button></span><span>${der}</span></div>`; }).join("");
-}
-function suscribirAmigos(){
-  amSubs.forEach(f => f()); amSubs = [];
-  for (const a of amistades.filter(a => a.estado === "aceptada")){
-    const id = otro(a);
-    amSubs.push(onSnapshot(doc(db,"users",id), s => { amDocs[id] = s.data() || {}; const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }));
-  }
-}
-function pintarInicio(){
-  const cv = $("codigo")?.value || "";
-  $("v-inicio").innerHTML = `<div class="centro"><h2 style="margin:0">Hola, ${esc(nombre())}</h2>
-    <button class="big" id="bCrear">Crear partida</button><div class="o">o</div>
-    <div class="row"><input id="codigo" maxlength="5" style="text-transform:uppercase;text-align:center" placeholder="Código d
+$("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); }
