@@ -251,11 +251,20 @@ function pintarInicio(){
     <h2 style="display:flex;justify-content:space-between;align-items:center">Amigos <button class="mini sec" data-go="amigos">Agregar</button></h2>
     <div class="card" id="listaAm">${htmlAmigos()}</div>`;
 }
+const PAUSA_TXT = {solicitada:"Pausa solicitada", pausada:"Pausada", reanudar:"Esperando reanudación"};
+const enPausa = g => g.estado !== "fin" && !!(g.pausa && PAUSA_TXT[g.pausa.estado]);
+function filaPartida(g){
+  const pa = enPausa(g);
+  return `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${pa ? PAUSA_TXT[g.pausa.estado] : estadoTxt(g)}</span><br><small>Rival: ${esc(rival(g) || "esperando…")}</small></div><button class="mini" data-sala="${esc(g.id)}">${pa ? "Continuar" : "Abrir"}</button></div>`;
+}
 function pintarPartidas(){
   const l = [...partidas].sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
-  $("v-partidas").innerHTML = `<h2 style="margin-top:6px">Mis partidas</h2><div class="card">` +
-    (l.length ? l.map(g => `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${estadoTxt(g)}</span><br><small>Rival: ${esc(rival(g) || "esperando…")}</small></div><button class="mini" data-sala="${esc(g.id)}">Abrir</button></div>`).join("")
-      : `<p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p>`) + `</div>`;
+  const pausadas = l.filter(enPausa), otras = l.filter(g => !enPausa(g));
+  let h = `<h2 style="margin-top:6px">Mis partidas</h2>`;
+  if (!l.length) h += `<div class="card"><p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p></div>`;
+  if (pausadas.length) h += `<h2>Partidas pausadas</h2><div class="card">${pausadas.map(filaPartida).join("")}</div>`;
+  if (otras.length) h += `<h2>Otras partidas</h2><div class="card">${otras.map(filaPartida).join("")}</div>`;
+  $("v-partidas").innerHTML = h;
 }
 
 function pintarAmigos(){
