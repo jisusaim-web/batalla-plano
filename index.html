@@ -22,6 +22,14 @@ button.sec{background:transparent;color:var(--acc)}
 button.mini{padding:6px 10px;font-size:.85rem}
 button.link{border:0;background:none;color:var(--acc);text-decoration:underline;padding:6px 0}
 button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.teclado{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.teclado-titulo{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px;font-size:.85rem;color:var(--mut)}
+.teclado-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.teclado-grid button{min-height:48px;font-size:1.15rem;padding:9px}
+.teclado-grid button.util{background:var(--bg);color:var(--acc)}
+.teclado-grid button.activo{outline:2px solid var(--ink);outline-offset:1px}
+.campo-teclado{cursor:pointer;text-align:center;caret-color:transparent}
+.campo-teclado.activo{border:2px solid var(--acc);background:var(--card)}
 .row{display:flex;gap:8px;align-items:center}.row>input{flex:1}
 .item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
 .item:last-child{border:0}
@@ -382,7 +390,7 @@ const quad = (x,y) => x>=0&&y>=0 ? 1 : x<0&&y>=0 ? 2 : x<0&&y<0 ? 3 : 4;
 const kk = c => c.x + "," + c.y;
 const cruza = (c,m,b) => { const v = [[0,0],[1,0],[0,1],[1,1]].map(([i,j]) => c.y+j - m*(c.x+i) - b); return Math.min(...v) < -1e-9 && Math.max(...v) > 1e-9; };
 const fmtT = r => Math.floor(Math.max(r,0)/60) + ":" + String(Math.max(r,0)%60).padStart(2,"0");
-let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz = true, vmn = "1", vmd = "1", vb = "0",
+let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz = true, vmn = "1", vmd = "1", vb = "0", campoTeclado = "mn",
     huella = "", resolviendo = false, pasando = false, guardado = false, publicado = false, msgP = "", aimT = null;
 
 async function alCambiar(id, g){
@@ -461,8 +469,12 @@ function pintarPartida(){
       ${ult ? `<div class="card"><b>${esc(ultTxt(ult))}</b></div>` : ""}${msgP ? `<p class="msg">${msgP}</p>` : ""}
       <p><small>Barcos rivales tocados: ${esc(resumenH())}</small></p>
       <h2>Radar de ataque</h2><div class="rad" id="atk">${radarH("atk", {linea:miT ? leerRecta() : null})}</div>
-      ${miT ? `<div class="row"><div class="frac">m (pendiente)<div class="fr"><input id="mn" type="number" step="any" inputmode="decimal" aria-label="Numerador de m" value="${esc(vmn)}"><hr><input id="md" type="number" step="any" inputmode="decimal" aria-label="Denominador de m" value="${esc(vmd)}"></div></div>
-        <label>b (eje Y)<input id="b" type="number" step="0.5" inputmode="decimal" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div>` : ""}
+      ${miT ? `<div class="row"><div class="frac">m (pendiente)<div class="fr"><input id="mn" class="campo-teclado" type="text" inputmode="none" readonly aria-label="Numerador de m" data-campo="mn" value="${esc(vmn)}"><hr><input id="md" class="campo-teclado" type="text" inputmode="none" readonly aria-label="Denominador de m" data-campo="md" value="${esc(vmd)}"></div></div>
+        <label>b (eje Y)<input id="b" class="campo-teclado" type="text" inputmode="none" readonly data-campo="b" aria-label="Valor de b" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div>
+        <div class="teclado" id="tecladoJuego" aria-label="Teclado numérico del juego"><div class="teclado-titulo"><span>Teclado del juego · Editando <b id="tecladoCampo">${campoTeclado === "mn" ? "numerador" : campoTeclado === "md" ? "denominador" : "b (eje Y)"}</b></span><small>Selecciona un campo</small></div><div class="teclado-grid">
+          ${["1","2","3","4","5","6","7","8","9","−","0","⌫"].map(k => `<button type="button" class="${k === "−" || k === "⌫" ? "util" : ""}" data-tecla="${k === "−" ? "-" : k === "⌫" ? "borrar" : k}">${k}</button>`).join("")}
+          <button type="button" class="util" data-tecla=".">.</button><button type="button" class="util" data-tecla="limpiar">Limpiar</button><button type="button" class="util" data-tecla="listo">Listo</button>
+        </div></div>` : ""}
       <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
   }
   if (pa && pa.estado === "solicitada"){
@@ -482,8 +494,33 @@ function pintarPartida(){
   }
   if (bat && g.turno === p && !g.ataque){
     const redib = () => { vmn = $("mn").value; vmd = $("md").value; vb = $("b").value; $("atk").innerHTML = radarH("atk", {linea:leerRecta()}); apuntar(); };
-    $("mn").oninput = redib; $("md").oninput = redib; $("b").oninput = redib; $("fire").onclick = fuego;
+    ["mn","md","b"].forEach(id => { const campo = $(id); campo.onclick = () => seleccionarCampo(id); });
+    document.querySelectorAll("[data-tecla]").forEach(btn => btn.onclick = () => pulsarTecla(btn.dataset.tecla, redib));
+    actualizarTeclado(); $("fire").onclick = fuego;
   }
+}
+
+function seleccionarCampo(id){
+  if (id === "b" && G.ronda <= 4) return;
+  campoTeclado = id;
+  actualizarTeclado();
+}
+function actualizarTeclado(){
+  const nombres = {mn:"numerador", md:"denominador", b:"b (eje Y)"};
+  const etiqueta = $("tecladoCampo"); if (etiqueta) etiqueta.textContent = nombres[campoTeclado] || "numerador";
+  document.querySelectorAll("[data-campo]").forEach(el => el.classList.toggle("activo", el.dataset.campo === campoTeclado));
+}
+function pulsarTecla(tecla, redib){
+  const campo = $(campoTeclado); if (!campo || campo.disabled) return;
+  let valor = campo.value || "";
+  if (tecla === "listo"){ actualizarTeclado(); return; }
+  if (tecla === "limpiar") valor = "";
+  else if (tecla === "borrar") valor = valor.slice(0,-1);
+  else if (tecla === "-") valor = valor.startsWith("-") ? valor.slice(1) : "-" + valor;
+  else if (tecla === "."){ if (!valor.includes(".")) valor += valor ? "." : "0."; }
+  else if (/^\d$/.test(tecla)) valor += tecla;
+  campo.value = valor;
+  redib();
 }
 function leerRecta(){
   const mn = parseFloat($("mn")?.value ?? vmn), md = parseFloat($("md")?.value ?? vmd), m = mn / md;
