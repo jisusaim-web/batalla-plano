@@ -84,57 +84,6 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 </style>
 </head>
 <body>
-
-<script>
-/* Monitor independiente: funciona aunque Firebase no llegue a importar. */
-(function () {
-  var detalle = "Firebase no respondió durante el inicio.";
-  var iniciado = false;
-  var terminado = false;
-
-  window.__batallaBoot = { iniciar: function(){ iniciado = true; }, terminar: function(){ terminado = true; } };
-
-  function mostrar(mensaje) {
-    if (document.getElementById("boot-fallback")) return;
-    var panel = document.createElement("div");
-    panel.id = "boot-fallback";
-    panel.style.cssText = "position:fixed;inset:0;z-index:999999;background:#071419;color:#eaf4f6;display:grid;place-items:center;padding:24px;font:16px/1.5 system-ui,sans-serif;text-align:center";
-    var caja = document.createElement("div");
-    caja.style.cssText = "width:min(100%,420px)";
-    var titulo = document.createElement("h2");
-    titulo.textContent = "Batalla en el plano";
-    var texto = document.createElement("p");
-    texto.textContent = mensaje;
-    var info = document.createElement("p");
-    info.style.cssText = "font-size:13px;color:#ffb4ab;overflow-wrap:anywhere";
-    info.textContent = detalle;
-    var recargar = document.createElement("button");
-    recargar.textContent = "Volver a intentar";
-    recargar.style.cssText = "padding:12px 18px;border:0;border-radius:8px;background:#4fb3c6;color:#06222a;font-weight:700";
-    recargar.onclick = function(){ location.reload(); };
-    caja.append(titulo, texto, info, recargar);
-    panel.appendChild(caja);
-    document.body.appendChild(panel);
-  }
-
-  window.addEventListener("error", function(e) {
-    detalle = e.message || "No se pudo cargar un archivo de JavaScript.";
-  });
-  window.addEventListener("unhandledrejection", function(e) {
-    var r = e.reason;
-    detalle = r && (r.code || r.message) ? [r.code, r.message].filter(Boolean).join(" — ") : "Falló una operación al iniciar.";
-  });
-
-  window.setTimeout(function(){
-    if (!iniciado) {
-      mostrar("La parte de Firebase no llegó a iniciar. Comprueba que GitHub Pages esté publicando este index.html y que haya conexión a internet.");
-    } else if (!terminado) {
-      mostrar("Firebase comenzó a iniciar, pero no terminó de responder. Puede ser un problema de conexión o permisos de Firestore.");
-    }
-  }, 8000);
-})();
-</script>
-
 <div id="splash"><div>
   <svg class="radar" viewBox="-50 -50 100 100" aria-hidden="true"><circle r="46" fill="none" stroke="#4fb3c6" stroke-opacity=".55"/><circle r="30" fill="none" stroke="#4fb3c6" stroke-opacity=".4"/><circle r="14" fill="none" stroke="#4fb3c6" stroke-opacity=".3"/><path d="M-50 0H50M0 -50V50" stroke="#4fb3c6" stroke-opacity=".35"/><g class="sweep"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="#4fb3c6" fill-opacity=".38"/></g><circle cx="18" cy="-12" r="2.5" fill="#ff6b57"/><circle cx="-22" cy="16" r="2.5" fill="#e0a800"/></svg>
   <div style="font:700 1.9rem Georgia,serif">Batalla en el plano</div><small style="color:#8fa9b1">Cargando…</small><div class="load"><i></i></div>
@@ -195,7 +144,7 @@ const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo."
 const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
 
-let U = null, P = {}, kP = "", kR = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
+let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
 /* ---------- Autenticación ---------- */
@@ -232,19 +181,13 @@ const pausa = () => new Promise(r => setTimeout(r, Math.max(0, 1600 - performanc
 const latido = () => { if (U) updateDoc(doc(db,"users",U.uid), {visto:Date.now()}).catch(() => {}); };   // "estoy en línea"
 setInterval(() => { latido(); const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }, 30000);
 onAuthStateChanged(auth, async u => {
-  window.__batallaBoot?.iniciar();
   await espera; espera = Promise.resolve();
   subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; if (salaSub){ salaSub(); salaSub = null; }
   U = u;
   const spl = $("splash");
-  if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); window.__batallaBoot?.terminar(); return; }
-  // No bloquea toda la aplicación si Firestore tarda o no responde.
-  await Promise.race([
-    prepararPerfil(u),
-    new Promise(resolve => setTimeout(resolve, 6000))
-  ]);
+  if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
+  await prepararPerfil(u);
   await pausa(); spl.classList.add("fuera"); latido();
-  window.__batallaBoot?.terminar();
   $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hdr").hidden = false;
   subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; sincRank(); if (k !== kP){ kP = k; pintar(); } }));
   subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); suscribirAmigos(); pintar(); }));
@@ -287,5 +230,709 @@ function ir(v){
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === (v === "sala" ? "partidas" : v)));
   pintar(); window.scrollTo(0,0);
 }
-$("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); }
-  </script>
+$("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); };
+$("hAv").onclick = () => ir("perfil");
+
+/* ---------- Pintar vistas ---------- */
+const nombre = () => P.nombre || (U && nombreDe(U)) || "Jugador";
+const rival = g => g.j1 === U.uid ? g.n2 : g.n1;
+const estadoTxt = g => g.estado === "fin" ? "Terminada" : g.j2 ? "En curso" : "Esperando rival";
+const pendientes = () => amistades.filter(a => a.estado === "pendiente" && a.pedidoPor !== U.uid);
+const otro = a => a.miembros.find(m => m !== U.uid);
+
+function pintar(){
+  if (!U) return;
+  const av = $("hAv");
+  av.innerHTML = AV_EMOJIS.includes(P.avatar) ? P.avatar : U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
+  av.style.background = P.avatarColor ? colorAv(P) : "";
+  const n = pendientes().length; $("dotA").hidden = !n; $("dotA").textContent = n;
+  if (vista === "inicio") pintarInicio();
+  if (vista === "partidas") pintarPartidas();
+  if (vista === "amigos") pintarAmigos();
+  if (vista === "perfil") pintarPerfil();
+  if (vista === "ranking") pintarRanking();
+}
+
+function htmlAmigos(){
+  const ac = amistades.filter(a => a.estado === "aceptada"), ahora = Date.now();
+  if (!ac.length) return `<p class="mut">Aún no tienes amigos. Agrégalos con su código.</p>`;
+  return ac.map(a => { const id = otro(a), d = amDocs[id] || {}, on = ahora - (d.visto || 0) < 75000;
+    const der = on && d.partidaActual ? `<span class="tag">En partida</span> <button class="mini" data-espectar="${esc(d.partidaActual)}">Espectear</button>` : `<small>${on ? "En línea" : "Desconectado"}</small>`;
+    return `<div class="item"><span><i class="dot2 ${on ? "on2" : ""}"></i>${avatarHTML({...d, nombre:a.nombres?.[id]}, 26)} <button class="link" data-perfil="${id}">${esc(a.nombres?.[id] || "Jugador")}</button></span><span>${der}</span></div>`; }).join("");
+}
+function suscribirAmigos(){
+  amSubs.forEach(f => f()); amSubs = [];
+  for (const a of amistades.filter(a => a.estado === "aceptada")){
+    const id = otro(a);
+    amSubs.push(onSnapshot(doc(db,"users",id), s => { amDocs[id] = s.data() || {}; const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }));
+  }
+}
+function pintarInicio(){
+  const cv = $("codigo")?.value || "";
+  $("v-inicio").innerHTML = `<div class="centro"><h2 style="margin:0">Hola, ${esc(nombre())}</h2>
+    <button class="big" id="bCrear">Crear partida</button><div class="o">o</div>
+    <div class="row"><input id="codigo" maxlength="5" style="text-transform:uppercase;text-align:center" placeholder="Código de la partida" value="${esc(cv)}"><button id="bUnir">Unirse</button></div>
+    <p class="err" id="eInicio"></p></div>
+    <h2 style="display:flex;justify-content:space-between;align-items:center">Amigos <button class="mini sec" data-go="amigos">Agregar</button></h2>
+    <div class="card" id="listaAm">${htmlAmigos()}</div>`;
+}
+const PAUSA_TXT = {solicitada:"Pausa solicitada", pausada:"Pausada", reanudar:"Esperando reanudación"};
+const enPausa = g => g.estado !== "fin" && !!(g.pausa && PAUSA_TXT[g.pausa.estado]);
+function filaPartida(g){
+  const pa = enPausa(g);
+  return `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${pa ? PAUSA_TXT[g.pausa.estado] : estadoTxt(g)}</span><br><small>Rival: ${esc(rival(g) || "esperando…")}</small></div><button class="mini" data-sala="${esc(g.id)}">${pa ? "Continuar" : "Abrir"}</button></div>`;
+}
+function pintarPartidas(){
+  const l = [...partidas].sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
+  const pausadas = l.filter(enPausa), otras = l.filter(g => !enPausa(g));
+  let h = `<h2 style="margin-top:6px">Mis partidas</h2>`;
+  if (errPartidas) h += `<div class="card"><p class="err">No se pudieron cargar tus partidas (${esc(errPartidas)}). Revisa que las reglas de Firestore estén publicadas y recarga la página.</p></div>`;
+  if (!l.length && !errPartidas) h += `<div class="card"><p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p></div>`;
+  if (pausadas.length) h += `<h2>Partidas pausadas</h2><div class="card">${pausadas.map(filaPartida).join("")}</div>`;
+  if (otras.length) h += `<h2>Otras partidas</h2><div class="card">${otras.map(filaPartida).join("")}</div>`;
+  $("v-partidas").innerHTML = h;
+}
+
+function pintarAmigos(){
+  const acept = amistades.filter(a => a.estado === "aceptada");
+  const rec = pendientes(), env = amistades.filter(a => a.estado === "pendiente" && a.pedidoPor === U.uid);
+  const fila = (a, bot) => `<div class="item"><span><button class="link" data-perfil="${otro(a)}">${esc(a.nombres?.[otro(a)] || "Jugador")}</button></span><span>${bot}</span></div>`;
+  $("v-amigos").innerHTML = `<h2 style="margin-top:6px">Amigos</h2>
+    <div class="card"><label for="cAmigo" style="margin-top:0">Agregar amigo con su código</label>
+      <div class="row"><input id="cAmigo" maxlength="6" style="text-transform:uppercase" placeholder="Código de 6 letras"><button id="bAmigo">Enviar</button></div>
+      <p class="${msgAmigo.startsWith("✓") ? "mut" : "err"}">${esc(msgAmigo)}</p></div>
+    ${rec.length ? `<h2>Solicitudes</h2><div class="card">${rec.map(a => fila(a, `<button class="mini" data-acep="${a.id}">Aceptar</button> <button class="mini sec" data-del="${a.id}">Rechazar</button>`)).join("")}</div>` : ""}
+    <h2>Mis amigos</h2><div class="card">${acept.length ? acept.map(a => fila(a, `<button class="mini sec" data-del="${a.id}">Quitar</button>`)).join("") : `<p class="mut">Todavía no tienes amigos agregados.</p>`}</div>
+    ${env.length ? `<h2>Enviadas</h2><div class="card">${env.map(a => fila(a, `<span class="tag">Pendiente</span> <button class="mini sec" data-del="${a.id}">Cancelar</button>`)).join("")}</div>` : ""}`;
+}
+
+function pintarPerfil(){
+  const v = P.victorias || 0, d = P.derrotas || 0, e = P.empates || 0, j = v + d + e;
+  const wr = j ? Math.round(v / j * 100) : 0;
+  const lista = [...historial].sort((a,b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+  const porPagina = 10, totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
+  paginaHistorial = Math.min(paginaHistorial, totalPaginas - 1);
+  const inicioHistorial = paginaHistorial * porPagina;
+  const paginaLista = lista.slice(inicioHistorial, inicioHistorial + porPagina);
+  const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
+  $("v-perfil").innerHTML = `<h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio())}
+    <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
+      <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
+      <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
+    ${personalizarHTML()}${logrosHTML(perfilMio())}
+    <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
+      <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
+    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó.</small></details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+      <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
+    <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
+      <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
+    <button class="sec big" id="bSalir">Cerrar sesión</button>`;
+}
+
+const fecha = h => h.fecha?.seconds ? new Date(h.fecha.seconds * 1000).toLocaleDateString("es") : "";
+function mini(h, modo){   // "mio": mi plano (mis barcos + ataques del rival) · "riv": plano del rival (sus barcos + mis ataques)
+  const mio = modo === "mio", flota = (mio ? h.barcos : h.barcosRival) || [], lin = (mio ? h.rival : h.mios) || [], gs = new Set((mio ? h.gast : h.gastRival) || []);
+  let g = "";
+  for (let x = -6; x < 6; x++) for (let y = -6; y < 6; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="var(--card)" stroke="var(--line)" stroke-width=".03"/>`;
+  for (const b of flota) for (const c of b.celdas){
+    const x = Number(c.x), y = Number(c.y);
+    g += `<rect x="${x + .06}" y="${y + .06}" width=".88" height=".88" rx=".12" fill="${esc(b.c)}" opacity="${b.hund ? .45 : 1}"/>`;
+    if (gs.has(x + "," + y)) g += `<path d="M${x + .25} ${y + .25}L${x + .75} ${y + .75}M${x + .75} ${y + .25}L${x + .25} ${y + .75}" stroke="#fff" stroke-width=".1"/>`;
+  }
+  g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of lin){
+    const m = Number(l.m), b = Number(l.b);
+    g += `<line x1="-8" y1="${m * -8 + b}" x2="8" y2="${m * 8 + b}" stroke="${l.rojo ? "var(--err)" : "#e0a800"}" stroke-width=".13" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="-6.2 -6.2 12.4 12.4" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
+}
+// Partida de prueba: aparece en el historial, pero NO suma a las estadísticas.
+async function ejemplo(){
+  const lin = n => Array.from({length:n}, () => ({m:Math.round((Math.random() * 4 - 2) * 2) / 2, b:Math.round(Math.random() * 8 - 4), rojo:Math.random() < .5}));
+  const a = Math.floor(Math.random() * 300), z = Math.floor(Math.random() * 300);
+  await addDoc(collection(db,"users",U.uid,"historial"), {prueba:true, resultado:a > z ? "victoria" : a < z ? "derrota" : "empate", rivalNombre:"Rival de prueba", miPuntaje:a, puntajeRival:z, mios:lin(10), rival:lin(10),
+    barcos:[{c:"#3a6ea5", celdas:[0,1,2,3].map(i => ({x:i, y:2})), hund:true}, {c:"#4a9a5a", celdas:[{x:-3, y:-2}, {x:-3, y:-1}], hund:false}], gast:["0,2","1,2","-3,-2"],
+    barcosRival:[{c:"#c9772b", celdas:[{x:-4, y:3}, {x:-3, y:3}, {x:-2, y:3}], hund:false}, {c:"#7b5ea7", celdas:[{x:2, y:-3}, {x:2, y:-4}], hund:true}], gastRival:["2,-3","2,-4","-3,3"],
+    fecha:serverTimestamp()});
+}
+
+/* ================= PARTIDA ONLINE ================= */
+const PERM = {1:[1,2,4], 2:[2,3,4]}, RONDAS = 10, SEG = 90, NN = 6;
+const CL = [
+  {n:"Portaaviones", L:4, pts:100, um:70, d:[20,50,50,20], c:"#3a6ea5", q:2},
+  {n:"Acorazado",    L:3, pts:90,  um:65, d:[25,45,25],    c:"#c9772b", q:2},
+  {n:"Destructor",   L:2, pts:60,  um:50, d:[30,30],       c:"#4a9a5a", q:3},
+  {n:"Submarino",    L:2, pts:30,  um:50, d:[50,50],       c:"#7b5ea7", q:2}
+];
+const FLOTA = CL.flatMap((c,i) => Array(c.q).fill(i));
+const quad = (x,y) => x>=0&&y>=0 ? 1 : x<0&&y>=0 ? 2 : x<0&&y<0 ? 3 : 4;
+const kk = c => c.x + "," + c.y;
+const cruza = (c,m,b) => { const v = [[0,0],[1,0],[0,1],[1,1]].map(([i,j]) => c.y+j - m*(c.x+i) - b); return Math.min(...v) < -1e-9 && Math.max(...v) > 1e-9; };
+const fmtT = r => Math.floor(Math.max(r,0)/60) + ":" + String(Math.max(r,0)%60).padStart(2,"0");
+let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz = true, vmn = "1", vmd = "1", vb = "0",
+    huella = "", resolviendo = false, pasando = false, guardado = false, publicado = false, msgP = "", aimT = null;
+
+async function alCambiar(id, g){
+  g.lineas = g.lineas || []; g.listo = g.listo || {}; g.pts = g.pts || {1:0,2:0};
+  if (id !== gid){
+    escucharReacs(id);
+    gid = id; mis = []; gast = new Set(); guardado = false; publicado = false; msgP = ""; huella = ""; G = g; yo = g.j1 === U.uid ? 1 : 2;
+    try { const s = await getDoc(doc(db,"games",id,"privado",U.uid)); if (s.exists()){ mis = s.data().ships; gast = new Set(s.data().gast); } } catch {}
+  }
+  G = g; yo = g.j1 === U.uid ? 1 : 2;
+  if (!g.j2){ huella = ""; return pintarSala(id, g); }
+  // los amigos ven que estás en partida (para poder espectarla)
+  if (g.estado !== "fin" && P.partidaActual !== id) updateDoc(doc(db,"users",U.uid), {partidaActual:id}).catch(() => {});
+  if (g.estado === "fin" && P.partidaActual === id) updateDoc(doc(db,"users",U.uid), {partidaActual:null}).catch(() => {});
+  const pausaActiva = g.pausa && (g.pausa.estado === "pausada" || g.pausa.estado === "reanudar");
+  if (g.ataque && g.ataque.p !== yo && !resolviendo && !pausaActiva) resolver();
+  if (g.estado === "fin"){
+    const f = g.finales || {};
+    if (!f[U.uid] && !publicado){ publicado = true; updateDoc(doc(db,"games",gid), {[`finales.${U.uid}`]:{ships:mis, gast:[...gast]}}).catch(() => {}); }
+    if (g.cancelada) guardado = true;
+    if (!guardado && f[U.uid] && (f[yo === 1 ? g.j2 : g.j1] || g.abandonoPor)){ guardado = true; guardarFin(); }
+  }
+  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null]);
+  if (h !== huella){ huella = h; pintarPartida(); }
+  else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
+}
+
+/* --- dibujo --- */
+const ln = (m,b,c,w,d) => `<line x1="-8" y1="${m*-8+b}" x2="8" y2="${m*8+b}" stroke="${c}" stroke-width="${w}" ${d ? `stroke-dasharray="${d}"` : ""} stroke-linecap="round"/>`;
+function radarH(modo, prev, place){
+  const p = modo === "def" ? yo : 3 - yo, zona = PERM[p];
+  let g = "";
+  for (let x=-NN; x<NN; x++) for (let y=-NN; y<NN; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="${zona.includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
+  if (modo === "def") for (const s of mis) for (const c of s.celdas){
+    g += `<rect x="${c.x+.06}" y="${c.y+.06}" width=".88" height=".88" rx=".12" fill="${CL[s.i].c}" opacity="${s.hund ? .45 : 1}"/>`;
+    if (gast.has(kk(c))) g += `<path d="M${c.x+.25} ${c.y+.25}L${c.x+.75} ${c.y+.75}M${c.x+.75} ${c.y+.25}L${c.x+.25} ${c.y+.75}" stroke="#fff" stroke-width=".1"/>`;
+  }
+  if (prev && prev.celdas) for (const c of prev.celdas) g += `<rect x="${c.x}" y="${c.y}" width="1" height="1" fill="${prev.ok ? "#2e7d32" : "#d23a2a"}" opacity=".55"/>`;
+  g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of G.lineas.filter(l => modo === "atk" ? l.p === yo : l.p !== yo)) g += ln(l.m, l.b, l.rojo ? "var(--err)" : "#e0a800", .1, "");
+  if (modo === "def" && G.apunta && G.apunta.p !== yo) g += ln(G.apunta.m, G.apunta.b, "var(--err)", .06, ".25 .2");
+  if (prev && prev.linea) g += ln(prev.linea.m, prev.linea.b, "var(--acc)", .08, ".25 .2");
+  let t = "";
+  for (let i=-6; i<=6; i+=2) if (i) t += `<text x="${i}" y="-.3" font-size=".5" text-anchor="middle" fill="var(--mut)">${i}</text><text x=".2" y="${-i+.17}" font-size=".5" fill="var(--mut)">${i}</text>`;
+  return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px;${place ? "touch-action:none" : ""}"><g transform="scale(1,-1)">${g}</g>${t}</svg>`;
+}
+const mTxt = l => l.md != null ? (l.md === 1 ? String(l.mn) : l.mn + "/" + l.md) : String(Math.round(l.m * 1000) / 1000);
+const ultTxt = l => `${l.p === yo ? "Tu ataque" : "Ataque rival"} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}`).join(" | ");
+function resumenH(){
+  const m = new Map(); for (const l of G.lineas.filter(l => l.p === yo)) for (const h of l.hits || []) m.set(h.k, h);
+  const v = [...m.values()], tot = {}, c = {}; v.forEach(h => tot[h.n] = (tot[h.n] || 0) + 1);
+  return v.length ? v.map(h => { c[h.n] = (c[h.n] || 0) + 1; return `${h.n}${tot[h.n] > 1 ? " " + c[h.n] : ""}: ${h.h ? "derribado" : h.t + "%"}`; }).join(" · ") : "ninguno todavía";
+}
+function pintarPartida(){
+  const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
+  const pa = g.pausa || null, congelada = !!(pa && (pa.estado === "pausada" || pa.estado === "reanudar"));
+  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="reacs" id="reacs"></div>`;
+  if (g.estado === "fin"){
+    h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
+      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div><button data-go="partidas">Volver a mis partidas</button>`;
+    $("v-sala").innerHTML = h; return;
+  }
+  if (congelada){
+    const yaPidioReanudar = pa.confirmacionesReanudar && pa.confirmacionesReanudar[U.uid];
+    h += `<div class="card"><h2 style="margin-top:0">Partida pausada</h2><p>${pa.estado === "reanudar" && yaPidioReanudar ? "Confirmaste reanudar. Esperando a que tu rival también pulse Reanudar partida." : "Los dos jugadores deben pulsar Reanudar partida para continuar."}</p><button id="reanudarPartida" ${yaPidioReanudar ? "disabled" : ""}>Reanudar partida</button></div>`;
+  } else if (!bat){
+    const n = mis.length, cls = CL[FLOTA[n]], yaListo = g.listo[U.uid];
+    h += yaListo ? `<p class="msg">Flota lista. Esperando a que ${esc(riv)} termine de colocar…</p><div class="rad" id="def">${radarH("def")}</div>`
+      : `<p class="msg">${cls ? `Arrastra sobre el plano para colocar tu ${cls.n} (${cls.L} cuadros). ${n}/9` : "Flota completa: toca Listo."}</p>${msgP ? `<p class="msg">${msgP}</p>` : ""}
+      <div class="rad" id="def">${radarH("def", null, true)}</div>
+      <div class="row"><button class="sec" id="ori">${horiz ? "Horizontal" : "Vertical"} (al tocar)</button><button class="sec" id="undo" ${n ? "" : "disabled"}>Deshacer</button><button id="listo" ${n === 9 ? "" : "disabled"}>Listo</button></div>
+      <p><small>Tus cuadrantes: ${PERM[p].join(", ")}. Los apagados no se pueden usar.</small></p>`;
+  } else {
+    const miT = g.turno === p && !g.ataque;
+    h += `<p class="msg">${g.ataque ? "Resolviendo el ataque…" : miT ? (g.ronda <= 4 ? "Tu turno: ataque desde el origen, elige la pendiente m." : "Tu turno: elige m y b.") : "Turno de " + esc(riv) + "…"}</p>
+      ${ult ? `<div class="card"><b>${esc(ultTxt(ult))}</b></div>` : ""}${msgP ? `<p class="msg">${msgP}</p>` : ""}
+      <p><small>Barcos rivales tocados: ${esc(resumenH())}</small></p>
+      <h2>Radar de ataque</h2><div class="rad" id="atk">${radarH("atk", {linea:miT ? leerRecta() : null})}</div>
+      ${miT ? `<div class="row"><div class="frac">m (pendiente)<div class="fr"><input id="mn" type="number" step="any" inputmode="decimal" aria-label="Numerador de m" value="${esc(vmn)}"><hr><input id="md" type="number" step="any" inputmode="decimal" aria-label="Denominador de m" value="${esc(vmd)}"></div></div>
+        <label>b (eje Y)<input id="b" type="number" step="0.5" inputmode="decimal" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div>` : ""}
+      <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
+  }
+  if (pa && pa.estado === "solicitada"){
+    const yoSolicite = pa.solicitadaPor === U.uid;
+    h += `<div class="card"><b>Solicitud de pausa</b><p>${yoSolicite ? "Esperando a que tu rival confirme la pausa." : esc(riv) + " quiere pausar la partida. ¿Aceptas?"}</p>${yoSolicite ? "" : `<button id="confirmarPausa">Confirmar pausa</button>`}</div>`;
+  } else if (!congelada){
+    h += `<div class="row" style="margin-top:16px"><button class="sec" id="solicitarPausa">Pausa</button></div>`;
+  }
+  h += `<div class="row" style="margin-top:10px"><button class="sec" id="abandonar">Abandonar partida</button></div>`;
+  $("v-sala").innerHTML = h; $("abandonar").onclick = abandonar; pintarReacs();
+  if (congelada) return;
+  if (!bat && !g.listo[U.uid]){
+    enlazarDrag();
+    $("ori").onclick = () => { horiz = !horiz; pintarPartida(); };
+    $("undo").onclick = () => { mis.pop(); msgP = ""; pintarPartida(); };
+    $("listo").onclick = listo;
+  }
+  if (bat && g.turno === p && !g.ataque){
+    const redib = () => { vmn = $("mn").value; vmd = $("md").value; vb = $("b").value; $("atk").innerHTML = radarH("atk", {linea:leerRecta()}); apuntar(); };
+    $("mn").oninput = redib; $("md").oninput = redib; $("b").oninput = redib; $("fire").onclick = fuego;
+  }
+}
+function leerRecta(){
+  const mn = parseFloat($("mn")?.value ?? vmn), md = parseFloat($("md")?.value ?? vmd), m = mn / md;
+  const b = G.ronda <= 4 ? 0 : parseFloat($("b")?.value ?? vb);
+  return isNaN(m) || !isFinite(m) || isNaN(b) ? null : {m, b, mn, md};
+}
+function apuntar(){
+  clearTimeout(aimT);
+  aimT = setTimeout(() => { const r = leerRecta(); if (r) updateDoc(doc(db,"games",gid), {apunta:{p:yo, m:r.m, b:r.b}}).catch(() => {}); }, 500);
+}
+
+/* --- colocar barcos arrastrando --- */
+function celdasDrag(cls){
+  const dx = drag.c.x - drag.a.x, dy = drag.c.y - drag.a.y, h = dx || dy ? Math.abs(dx) >= Math.abs(dy) : horiz, s = (h ? dx : dy) < 0 ? -1 : 1;
+  return Array.from({length:cls.L}, (_,i) => h ? {x:drag.a.x + i*s, y:drag.a.y} : {x:drag.a.x, y:drag.a.y + i*s});
+}
+const validas = cs => { const oc = new Set(mis.flatMap(s => s.celdas.map(kk))); return cs.every(c => c.x >= -NN && c.x < NN && c.y >= -NN && c.y < NN && PERM[yo].includes(quad(c.x,c.y)) && !oc.has(kk(c))); };
+function enlazarDrag(){
+  const el = $("def"), cls = CL[FLOTA[mis.length]]; if (!cls) return;
+  const celda = e => { const s = el.querySelector("svg"), pt = s.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(s.getScreenCTM().inverse()); return {x:Math.floor(q.x), y:Math.floor(-q.y)}; };
+  const dib = () => { const cs = celdasDrag(cls); el.innerHTML = radarH("def", {celdas:cs, ok:validas(cs)}, true); };
+  el.onpointerdown = e => { drag = {a:celda(e), c:celda(e)}; el.setPointerCapture?.(e.pointerId); dib(); };
+  el.onpointermove = e => { if (drag){ drag.c = celda(e); dib(); } };
+  el.onpointerup = e => {
+    if (!drag) return; drag.c = celda(e);
+    const cs = celdasDrag(cls);
+    if (validas(cs)){ mis.push({i:FLOTA[mis.length], k:mis.length, celdas:cs, dano:0, hund:false}); msgP = ""; }
+    else msgP = "No cabe ahí: debe quedar en tus cuadrantes y sin tocar otro barco.";
+    drag = null; pintarPartida();
+  };
+}
+async function listo(){
+  try {
+    await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[]});
+    await runTransaction(db, async tx => {
+      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data(), l = {...(g.listo || {}), [U.uid]:true}, patch = {listo:l};
+      if (l[g.j1] && l[g.j2]) Object.assign(patch, {estado:"batalla", turno:1, ronda:1, tiempoFin:Date.now() + SEG*1000});
+      tx.update(ref, patch);
+    });
+  } catch (e){ msgP = "No se pudo guardar tu flota. Inténtalo otra vez."; pintarPartida(); }
+}
+
+/* --- ataque, resolución y turnos --- */
+async function fuego(){
+  const r = leerRecta();
+  if (!r || !Number.isFinite(r.m) || !Number.isFinite(r.b) || Math.abs(r.m) > 20 || Math.abs(r.b) > 20){
+    msgP = "Escribe números válidos: el denominador no puede ser 0 y la pendiente y b deben quedar entre -20 y 20."; return pintarPartida();
+  }
+  msgP = "";
+  try { await updateDoc(doc(db,"games",gid), {ataque:{p:yo, m:r.m, b:r.b, mn:r.mn, md:r.md}, apunta:null}); } catch { msgP = "No se envió el ataque."; pintarPartida(); }
+}
+function avanzar(g, pts){
+  let turno = g.turno, ronda = g.ronda;
+  if (turno === 1) turno = 2; else { turno = 1; ronda++; }
+  const r = {turno, ronda, tiempoFin:Date.now() + SEG*1000};
+  if (ronda > RONDAS){ r.estado = "fin"; r.ganador = pts[1] > pts[2] ? 1 : pts[2] > pts[1] ? 2 : 0; }
+  return r;
+}
+async function resolver(){          // lo hace el defensor: solo él conoce sus barcos
+  resolviendo = true;
+  try {
+    const a = G.ataque, hits = []; let toca = false, suma = 0;
+    for (const s of mis){
+      const C = CL[s.i], tocados = s.celdas.filter(c => cruza(c, a.m, a.b));
+      if (tocados.length) toca = true;
+      const libres = tocados.filter(c => !gast.has(kk(c)));
+      if (!libres.length) continue;
+      libres.sort((u,v) => Math.hypot(u.x+.5, u.y+.5-a.b) - Math.hypot(v.x+.5, v.y+.5-a.b));   // el más cercano a (0, b)
+      const c = libres[0], d = C.d[s.celdas.findIndex(z => z.x === c.x && z.y === c.y)];
+      gast.add(kk(c)); s.dano += d;
+      if (!s.hund && s.dano >= C.um){ s.hund = true; suma += C.pts; }
+      hits.push({k:s.k, n:C.n, d, t:s.dano, h:s.hund});
+    }
+    const gana = mis.every(s => s.hund);
+    await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[...gast]});
+    await runTransaction(db, async tx => {
+      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+      if (!g.ataque) return;
+      const pts = {...g.pts}; pts[a.p] = (pts[a.p] || 0) + suma;
+      const patch = {lineas:[...(g.lineas || []), {p:a.p, m:a.m, b:a.b, mn:a.mn ?? null, md:a.md ?? null, rojo:toca, hits}], ataque:null, apunta:null, pts, fallos:{...(g.fallos || {1:0,2:0}), [a.p]:0}, ...avanzar(g, pts)};
+      if (gana){ patch.estado = "fin"; patch.ganador = a.p; }
+      tx.update(ref, patch);
+    });
+  } catch (e){ console.error(e); }
+  resolviendo = false;
+}
+async function pasar(){             // se acabó el tiempo: se pierde el ataque
+  if (pasando || (G && G.pausa && ["pausada","reanudar"].includes(G.pausa.estado))) return; pasando = true;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado !== "batalla" || g.pausa && ["pausada","reanudar"].includes(g.pausa.estado) || g.ataque || Date.now() < g.tiempoFin) return;
+    const f = {...(g.fallos || {1:0,2:0})}; f[g.turno] = (f[g.turno] || 0) + 1;
+    const patch = {...avanzar(g, g.pts), apunta:null, fallos:f};
+    if (f[g.turno] >= 3){ patch.estado = "fin"; patch.ganador = 3 - g.turno; patch.abandonoPor = g.turno; }   // 3 turnos seguidos sin atacar
+    tx.update(ref, patch);
+  }); } catch {}
+  pasando = false;
+}
+const COLOCAR_MS = 300000;   // 5 minutos para colocar la flota
+async function cancelarColocacion(){
+  if (pasando) return; pasando = true;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado !== "colocando" || g.pausa && ["pausada","reanudar"].includes(g.pausa.estado) || !g.inicio || Date.now() - g.inicio <= COLOCAR_MS) return;
+    const l = g.listo || {}, a = !!l[g.j1], b = !!l[g.j2];
+    if (a === b) tx.update(ref, {estado:"fin", cancelada:true, ganador:0});                    // nadie terminó: se cancela
+    else tx.update(ref, {estado:"fin", ganador:a ? 1 : 2, abandonoPor:a ? 2 : 1});            // gana quien sí terminó
+  }); } catch {}
+  pasando = false;
+}
+async function abandonar(){
+  if (!confirm("¿Seguro que quieres abandonar? Perderás la partida.")) return;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado === "fin") return;
+    tx.update(ref, {estado:"fin", ganador:3 - yo, abandonoPor:yo, ataque:null, apunta:null, [`finales.${U.uid}`]:{ships:mis, gast:[...gast]}});
+  }); publicado = true; } catch {}
+}
+setInterval(() => {
+  if (!G || !G.j2) return;
+  const e = $("tm");
+  if (G.pausa && ["pausada","reanudar"].includes(G.pausa.estado)) return;
+  if (G.estado === "colocando" && G.inicio){
+    const r = Math.ceil((G.inicio + COLOCAR_MS - Date.now()) / 1000);
+    if (e) e.textContent = fmtT(r);
+    if (r <= 0) cancelarColocacion();
+    return;
+  }
+  if (G.estado !== "batalla") return;
+  const r = Math.ceil((G.tiempoFin - Date.now()) / 1000);
+  if (e) e.textContent = fmtT(r);
+  if (!G.ataque && ((G.turno === yo && r <= 0) || r <= -4)) pasar();
+}, 1000);
+
+async function solicitarPausa(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data();
+    if (!g.jugadores || !g.jugadores.includes(U.uid) || !g.j2) throw new Error("No puedes pausar esta partida.");
+    if (!["colocando","batalla"].includes(g.estado) || g.pausa) return;
+    tx.update(ref, {pausa:{estado:"solicitada", solicitadaPor:U.uid, confirmaciones:{[U.uid]:true}, creada:Date.now()}});
+  });
+}
+async function confirmarPausa(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data(), pa = g.pausa || {};
+    if (!["colocando","batalla"].includes(g.estado) || pa.estado !== "solicitada" || pa.solicitadaPor === U.uid) return;
+    const ahora = Date.now(), restante = g.estado === "batalla"
+      ? Math.max(0, (g.tiempoFin || ahora) - ahora)
+      : Math.max(0, (g.inicio || ahora) + COLOCAR_MS - ahora);
+    tx.update(ref, {pausa:{estado:"pausada", solicitadaPor:pa.solicitadaPor,
+      confirmaciones:{...(pa.confirmaciones || {}), [U.uid]:true}, restante,
+      tipo:g.estado, pausadaEn:ahora}});
+  });
+}
+async function reanudarPartida(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data(), pa = g.pausa || {};
+    if (!["pausada","reanudar"].includes(pa.estado)) return;
+    const confirmaciones = {...(pa.confirmacionesReanudar || {}), [U.uid]:true};
+    if (!confirmaciones[g.j1] || !confirmaciones[g.j2]){
+      tx.update(ref, {pausa:{...pa, estado:"reanudar", confirmacionesReanudar:confirmaciones}});
+      return;
+    }
+    const restante = Math.max(0, Number(pa.restante) || 0), ahora = Date.now(), patch = {pausa:null};
+    if (pa.tipo === "batalla") patch.tiempoFin = ahora + restante;
+    if (pa.tipo === "colocando") patch.inicio = ahora + restante - COLOCAR_MS;
+    tx.update(ref, {...patch});
+  });
+}
+
+async function guardarFin(){
+  const g = G, f = g.finales, mio = f[U.uid], rv = f[yo === 1 ? g.j2 : g.j1] || {ships:[], gast:[]};
+  const res = g.ganador === 0 ? "empate" : g.ganador === yo ? "victoria" : "derrota", ref = doc(db,"users",U.uid,"historial",gid);
+  const flota = F => F.ships.map(s => ({c:CL[s.i].c, celdas:s.celdas, hund:!!s.hund})), sol = l => ({m:l.m, b:l.b, rojo:l.rojo});
+  try {
+    const registro = {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
+      mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
+      barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, abandono:!!g.abandonoPor, fecha:serverTimestamp()};
+    const perfilRef = doc(db,"users",U.uid), campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
+    // Historial y estadísticas se escriben juntos: evita contar dos veces
+    // una partida si llegan varias actualizaciones o se recarga la página.
+    await runTransaction(db, async tx => {
+      const [anterior, perfil] = await Promise.all([tx.get(ref), tx.get(perfilRef)]);
+      if (anterior.exists()) return;
+      const datos = perfil.data() || {};
+      tx.set(ref, registro);
+      tx.set(perfilRef, { [campo]: (datos[campo] || 0) + 1, puntos:(datos.puntos || 0) + g.pts[yo], mejor:Math.max(datos.mejor || 0, g.pts[yo]) }, {merge:true});
+    });
+  } catch (e){ console.error(e); }
+}
+
+/* ================= ESPECTAR Y EMOJIS ================= */
+const EMOJIS = ["👏","🔥","😮","😂","💥","🎯"];
+let E = null, eid = null, espSub = null, reacSub = null, reacs = [], ultEmoji = 0;
+function escucharReacs(id){          // reacciones recientes: las ven jugadores y espectadores
+  if (reacSub){ reacSub(); reacSub = null; } reacs = [];
+  reacSub = onSnapshot(query(collection(db,"games",id,"reacciones"), orderBy("t","desc"), limit(6)),
+    s => { reacs = s.docs.map(d => d.data()); pintarReacs(); }, () => {});
+}
+function pintarReacs(){
+  const e = $("reacs"); if (!e) return;
+  e.innerHTML = reacs.filter(r => Date.now() - r.t < 60000).map(r => `<span class="reac">${esc(r.emoji)} <small>${esc(r.nombre)}</small></span>`).join("");
+}
+setInterval(pintarReacs, 5000);
+async function enviarEmoji(em){
+  if (!eid || !EMOJIS.includes(em) || Date.now() - ultEmoji < 2000) return;
+  ultEmoji = Date.now();
+  try { await addDoc(collection(db,"games",eid,"reacciones"), {uid:U.uid, nombre:nombre(), emoji:em, t:Date.now()}); } catch {}
+}
+function espectar(id){
+  if (salaSub){ salaSub(); salaSub = null; } if (espSub){ espSub(); espSub = null; }
+  eid = id; E = null; ir("sala"); escucharReacs(id);
+  $("v-sala").innerHTML = `<p class="mut">Conectando con la partida…</p>`;
+  espSub = onSnapshot(doc(db,"games",id),
+    s => { if (!s.exists()){ $("v-sala").innerHTML = `<p class="msg">Esa partida ya no existe.</p><button data-go="inicio">Volver</button>`; return; } E = s.data(); pintarEsp(); },
+    () => { $("v-sala").innerHTML = `<p class="err">No puedes ver esta partida. Solo la ven los amigos de los jugadores.</p><button data-go="inicio">Volver</button>`; });
+}
+function dejarEsp(){ if (espSub){ espSub(); espSub = null; } E = null; eid = null; ir("inicio"); }
+function radarEsp(g, p){                 // solo rectas: los barcos nunca se muestran
+  let c = "";
+  for (let x = -NN; x < NN; x++) for (let y = -NN; y < NN; y++) c += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PERM[3-p].includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
+  c += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of g.lineas.filter(l => l.p === p)) c += ln(Number(l.m), Number(l.b), l.rojo ? "var(--err)" : "#e0a800", .1, "");
+  return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${c}</g></svg>`;
+}
+function pintarEsp(){
+  const g = E; if (!g) return;
+  g.lineas = g.lineas || []; g.pts = g.pts || {1:0,2:0};
+  const nm = p => p === 1 ? g.n1 : g.n2, ult = g.lineas[g.lineas.length - 1];
+  const est = g.estado === "fin" ? "Terminada" : g.pausa && g.pausa.estado === "pausada" ? "En pausa" : g.estado === "colocando" ? "Colocando barcos" : `Ronda ${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}`;
+  const txt = l => `${nm(l.p)} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}`).join(" | ");
+  $("v-sala").innerHTML = `<div class="bar"><span>Espectando</span><span><b>${esc(g.n1)}</b> ${g.pts[1]} – ${g.pts[2]} <b>${esc(g.n2 || "…")}</b></span><span>${est}</span></div>
+    ${g.estado === "fin" ? `<p class="msg">${g.ganador === 0 ? "Empate" : "Ganó " + esc(nm(g.ganador))}</p>` : ""}
+    ${ult ? `<div class="card"><b>${esc(txt(ult))}</b></div>` : `<p class="mut">Aún no hay ataques.</p>`}
+    <div class="reacs" id="reacs"></div>
+    <div class="row">${EMOJIS.map(e => `<button class="sec emo" data-emoji="${e}" aria-label="Reaccionar ${e}">${e}</button>`).join("")}</div>
+    <h2>Ataques de ${esc(g.n1)}</h2>${radarEsp(g, 1)}
+    <h2>Ataques de ${esc(g.n2 || "…")}</h2>${radarEsp(g, 2)}
+    <div class="row" style="margin-top:14px"><button class="sec" id="dejarEsp">Dejar de espectar</button></div>`;
+  pintarReacs(); $("dejarEsp").onclick = dejarEsp;
+}
+
+/* ================= CLASIFICACIÓN ================= */
+const MIN_WR = 5;   // partidas mínimas para aparecer en el win rate
+let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
+function sincRank(){                 // copia tus estadísticas a la lista pública (sin tu código de amigo ni tu presencia)
+  if (!U) return;
+  const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
+  for (const c of ["avatar","avatarColor","bio","fondo","titulo"]) if (P[c]) d[c] = P[c];
+  const k = JSON.stringify(d); if (k === kR) return; kR = k;
+  setDoc(doc(db,"ranking",U.uid), d).catch(() => { kR = ""; });
+}
+async function cargarRanking(){
+  rkCarga = true; rkErr = ""; pintarRanking();
+  try { const s = await getDocs(query(collection(db,"ranking"), orderBy("puntos","desc"), limit(100))); rank = s.docs.map(d => ({id:d.id, ...d.data()})); }
+  catch (e){ rkErr = e.code || "error"; }
+  rkCarga = false; pintarRanking();
+}
+const jug = r => (r.victorias || 0) + (r.derrotas || 0) + (r.empates || 0);
+const RK = {
+  puntos:    {t:"Puntos",        v:r => r.puntos || 0,    f:r => (r.puntos || 0) + " pts"},
+  victorias: {t:"Victorias",     v:r => r.victorias || 0, f:r => (r.victorias || 0) + " victorias"},
+  winrate:   {t:"Win rate",      v:r => jug(r) >= MIN_WR ? (r.victorias || 0) / jug(r) : -1, f:r => Math.round((r.victorias || 0) / jug(r) * 100) + "%"},
+  mejor:     {t:"Mejor partida", v:r => r.mejor || 0,     f:r => (r.mejor || 0) + " pts"}
+};
+function pintarRanking(){
+  if (!U) return;
+  const c = RK[rkTab], medalla = ["🥇","🥈","🥉"];
+  const lista = rank.filter(r => jug(r) > 0 && (rkTab !== "winrate" || jug(r) >= MIN_WR)).sort((a,b) => c.v(b) - c.v(a) || (b.puntos || 0) - (a.puntos || 0));
+  const mi = lista.findIndex(r => r.id === U.uid);
+  $("v-ranking").innerHTML = `<h2 style="margin-top:6px">Clasificación</h2>
+    <div class="row" style="margin:0 0 8px;flex-wrap:wrap">${Object.entries(RK).map(([k,x]) => `<button class="mini ${k === rkTab ? "" : "sec"}" data-rk="${k}">${x.t}</button>`).join("")}<button class="mini sec" data-rk="actualizar">Actualizar</button></div>
+    ${rkErr ? `<p class="err">No se pudo cargar la clasificación (${esc(rkErr)}).</p>` : ""}
+    <div class="card">${rkCarga ? `<p class="mut">Cargando…</p>` : lista.length
+      ? lista.slice(0, 20).map((r,i) => `<div class="item"${r.id === U.uid ? ' style="font-weight:700"' : ""}><span>${medalla[i] || (i + 1) + "."} ${avatarHTML(r, 26)} <button class="link" data-perfil="${r.id}">${esc(r.nombre || "Jugador")}</button><br><small>${r.victorias || 0}V ${r.derrotas || 0}D ${r.empates || 0}E · ${r.puntos || 0} pts</small></span><b>${c.f(r)}</b></div>`).join("")
+      : `<p class="mut">Todavía no hay partidas${rkTab === "winrate" ? " con al menos " + MIN_WR + " jugadas" : ""}.</p>`}</div>
+    ${mi >= 20 ? `<p class="mut">Tu posición: #${mi + 1}</p>` : ""}
+    <small>${rkTab === "winrate" ? `Win rate: solo cuentan jugadores con ${MIN_WR} o más partidas. ` : ""}Se muestran los 100 jugadores con más puntos.</small>`;
+}
+
+/* ================= PERSONALIZACIÓN Y PERFILES ================= */
+const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","👑"];
+const AV_COLORES = ["#0f6b7a","#c4452d","#e0a800","#2e7d32","#7b5ea7","#3a6ea5","#c9772b","#5d7882"];
+const FONDOS = {oceano:["Océano","#0f6b7a","#16414d"], atardecer:["Atardecer","#e4572e","#7b2d5b"], bosque:["Bosque","#2e7d32","#12351a"],
+                noche:["Noche","#3a3f8f","#0d1033"], coral:["Coral","#e0707a","#8a2f4a"], hielo:["Hielo","#6aa8d8","#2f5f8f"]};
+const LOGROS = [
+  {id:"v1",   i:"🎖️", n:"Primera victoria", d:"Gana una partida",                 ok:(s,j) => s.victorias >= 1},
+  {id:"v5",   i:"⚔️", n:"Marinero curtido", d:"Gana 5 partidas",                  ok:(s,j) => s.victorias >= 5},
+  {id:"v25",  i:"🏆", n:"Lobo de mar",      d:"Gana 25 partidas",                 ok:(s,j) => s.victorias >= 25},
+  {id:"j10",  i:"🧭", n:"Veterano",         d:"Juega 10 partidas",                ok:(s,j) => j >= 10},
+  {id:"p500", i:"💰", n:"Tesoro",           d:"Suma 500 puntos",                  ok:(s,j) => s.puntos >= 500},
+  {id:"p2000",i:"💎", n:"Gran tesoro",      d:"Suma 2000 puntos",                 ok:(s,j) => s.puntos >= 2000},
+  {id:"m150", i:"🎯", n:"Puntería",         d:"Una partida de 150 pts o más",     ok:(s,j) => s.mejor >= 150},
+  {id:"m300", i:"💥", n:"Tiro maestro",     d:"Una partida de 300 pts o más",     ok:(s,j) => s.mejor >= 300},
+  {id:"wr",   i:"📈", n:"Estratega",        d:"60% de victorias con 10+ partidas", ok:(s,j) => j >= 10 && s.victorias / j >= 0.6}
+];
+function estad(d){ const s = {victorias:d.victorias || 0, derrotas:d.derrotas || 0, empates:d.empates || 0, puntos:d.puntos || 0, mejor:d.mejor || 0}; return [s, s.victorias + s.derrotas + s.empates]; }
+function logrosDe(d){ const [s, j] = estad(d); return LOGROS.map(l => ({...l, ok:l.ok(s, j)})); }
+function tituloDe(d){ const l = logrosDe(d).find(x => x.id === d.titulo && x.ok); return l ? l.n : "Grumete"; }
+function colorAv(d){ return AV_COLORES.includes(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
+function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
+  const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
+  return `<span class="avt" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
+}
+const perfilMio = () => ({...P, nombre:nombre()});
+function cabeceraPerfil(d){
+  const f = FONDOS[d.fondo] || FONDOS.oceano;
+  return `<div class="ph" style="background:linear-gradient(135deg,${f[1]},${f[2]})">${avatarHTML(d, 64)}<div><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
+}
+function logrosHTML(d){
+  const l = logrosDe(d);
+  return `<h2>Insignias (${l.filter(x => x.ok).length}/${l.length})</h2><div class="card"><div class="logros">${l.map(x => `<div class="logro ${x.ok ? "" : "off"}"><b>${x.i}</b>${esc(x.n)}<br><small>${esc(x.d)}</small></div>`).join("")}</div></div>`;
+}
+function personalizarHTML(){
+  const m = perfilMio(), lg = logrosDe(m).filter(x => x.ok);
+  return `<h2>Personalizar</h2><div class="card">
+    <small>Avatar</small><div class="opts">${AV_EMOJIS.map(e => `<button class="emo ${m.avatar === e ? "" : "sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div>
+    <small>Color del avatar</small><div class="opts">${AV_COLORES.map(c => `<button class="sw" style="background:${c}" data-avc="${c}" aria-label="Color ${c}">${m.avatarColor === c ? "✓" : ""}</button>`).join("")}</div>
+    <small>Fondo del perfil</small><div class="opts">${Object.entries(FONDOS).map(([k, f]) => `<button class="mini ${m.fondo === k ? "" : "sec"}" data-fondo="${k}">${f[0]}</button>`).join("")}</div>
+    <label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio || "")}"><button id="bBio">Guardar</button></div>
+    <label for="selTitulo">Título (se desbloquean con las insignias)</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x => `<option value="${x.id}" ${P.titulo === x.id ? "selected" : ""}>${esc(x.n)}</option>`).join("")}</select></div>`;
+}
+document.addEventListener("change", e => { if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {}); });
+
+let verDoc = null, vistaPrev = "inicio";
+async function verPerfil(uid){
+  if (vista !== "usuario") vistaPrev = vista;
+  verDoc = null; ir("usuario");
+  $("v-usuario").innerHTML = `<p class="mut">Cargando perfil…</p>`;
+  try { const s = await getDoc(doc(db,"ranking",uid)); verDoc = s.exists() ? {...s.data()} : null; } catch { verDoc = null; }
+  pintarUsuario();
+}
+function pintarUsuario(){
+  const d = verDoc, volver = `<button class="sec" data-go="${esc(vistaPrev)}">← Volver</button>`;
+  if (!d){ $("v-usuario").innerHTML = volver + `<p class="mut" style="margin-top:12px">Este jugador todavía no tiene perfil público. Aparecerá cuando abra la versión nueva del juego.</p>`; return; }
+  const [s, j] = estad(d), wr = j ? Math.round(s.victorias / j * 100) : 0;
+  $("v-usuario").innerHTML = volver + `<div style="margin-top:10px">${cabeceraPerfil(d)}</div>
+    <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${s.victorias}</b><span>Victorias</span></div><div><b>${s.derrotas}</b><span>Derrotas</span></div>
+      <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d);
+}
+
+function pintarSala(id, g){
+  $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
+    <p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: ${esc(g.n2 || "esperando rival…")}</p>
+    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p></div>
+    <button class="sec" data-go="partidas">Volver a mis partidas</button>`;
+}
+function abrirSala(id){
+  if (salaSub){ salaSub(); salaSub = null; }
+  ir("sala");
+  gid = null; salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()) alCambiar(id, s.data()); });
+}
+
+/* ---------- Acciones (delegación de eventos) ---------- */
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t || !U) return;
+  const d = t.dataset;
+  try {
+    if (d.go) return ir(d.go);
+    if (d.sala) return abrirSala(d.sala);
+    if (d.espectar) return espectar(d.espectar);
+    if (d.emoji) return enviarEmoji(d.emoji);
+    if (d.perfil) return verPerfil(d.perfil);
+    if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
+    if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
+    if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
+    if (t.id === "bBio") return await updateDoc(doc(db,"users",U.uid), {bio:$("pBio").value.trim().slice(0, 80)});
+    if (d.rk){ if (d.rk === "actualizar") return cargarRanking(); rkTab = d.rk; return pintarRanking(); }
+    if (d.histPage){ paginaHistorial = Math.max(0, paginaHistorial + Number(d.histPage)); return pintarPerfil(); }
+    if (t.id === "bCrear"){
+      let id = "", creada = false;
+      // Se reserva el identificador de forma atómica para no sobrescribir otra sala.
+      for (let intento = 0; intento < 8 && !creada; intento++){
+        const candidato = cod(5), ref = doc(db,"games",candidato);
+        creada = await runTransaction(db, async tx => {
+          const existente = await tx.get(ref);
+          if (existente.exists()) return false;
+          tx.set(ref, {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
+          return true;
+        });
+        if (creada) id = candidato;
+      }
+      if (!creada) throw new Error("No se pudo generar un código. Inténtalo de nuevo.");
+      return abrirSala(id);
+    }
+    if (t.id === "bUnir"){
+      const id = $("codigo").value.trim().toUpperCase(), er = $("eInicio");
+      if (!/^[A-HJ-NP-Z2-9]{5}$/.test(id)){ er.textContent = "El código debe tener 5 caracteres válidos."; return; }
+      const ref = doc(db,"games",id);
+      const resultado = await runTransaction(db, async tx => {
+        const s = await tx.get(ref);
+        if (!s.exists()) return "missing";
+        const g = s.data();
+        if (g.j1 === U.uid || g.j2 === U.uid) return "joined";
+        if (g.estado !== "esperando" || g.j2) return "full";
+        tx.update(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
+        return "joined";
+      });
+      if (resultado === "missing"){ er.textContent = "No existe una partida con ese código."; return; }
+      if (resultado === "full"){ er.textContent = "Esa partida ya está llena o ya comenzó."; return; }
+      return abrirSala(id);
+    }
+    if (t.id === "bAmigo"){
+      const c = $("cAmigo").value.trim().toUpperCase(); msgAmigo = "";
+      if (c.length !== 6) msgAmigo = "El código tiene 6 caracteres.";
+      else {
+        const s = await getDoc(doc(db,"codigos",c));
+        if (!s.exists()) msgAmigo = "No existe ese código.";
+        else if (s.data().uid === U.uid) msgAmigo = "Ese código es el tuyo.";
+        else {
+          const o = s.data(), id = [U.uid, o.uid].sort().join("_"), ref = doc(db,"amistades",id);
+          const estado = await runTransaction(db, async tx => {
+            const existente = await tx.get(ref);
+            if (existente.exists()) return existente.data().estado === "aceptada" ? "friends" : "pending";
+            tx.set(ref, {miembros:[U.uid,o.uid], nombres:{[U.uid]:nombre(), [o.uid]:o.nombre || "Jugador"}, pedidoPor:U.uid, estado:"pendiente", creada:serverTimestamp()});
+            return "sent";
+          });
+          msgAmigo = estado === "friends" ? "Ya son amigos." : estado === "pending" ? "Ya existe una solicitud pendiente entre ustedes." : "✓ Solicitud enviada a " + (o.nombre || "tu amigo");
+        }
+      }
+      return pintarAmigos();
+    }
+    if (d.acep) return await updateDoc(doc(db,"amistades",d.acep), {estado:"aceptada"});
+    if (d.del){
+      const relacion = amistades.find(a => a.id === d.del);
+      if (!relacion) return;
+      const amigoNombre = relacion.nombres?.[otro(relacion)] || "este jugador";
+      const esAmistad = relacion.estado === "aceptada";
+      const pregunta = esAmistad
+        ? `¿Seguro que quieres cancelar la amistad con ${amigoNombre}?
+
+Ya no aparecerá en tu lista de amigos.`
+        : relacion.pedidoPor === U.uid
+          ? `¿Quieres cancelar la solicitud de amistad enviada a ${amigoNombre}?`
+          : `¿Quieres rechazar la solicitud de amistad de ${amigoNombre}?`;
+      if (!window.confirm(pregunta)) return;
+      await deleteDoc(doc(db,"amistades",d.del));
+      return;
+    }
+    if (t.id === "bNombre"){
+      const n = $("pNombre").value.trim(); if (n.length < 3){ $("ePerfil").textContent = ERR.nombre; return; }
+      await updateProfile(U, {displayName:n});
+      await updateDoc(doc(db,"users",U.uid), {nombre:n});
+      if (P.codigo) await updateDoc(doc(db,"codigos",P.codigo), {nombre:n});
+      $("ePerfil").textContent = ""; return pintar();
+    }
+    if (t.id === "bCopiar"){ try { await navigator.clipboard.writeText(P.codigo || ""); t.textContent = "¡Copiado!"; } catch { t.textContent = P.codigo || ""; } return; }
+    if (t.id === "bEjemplo") return await ejemplo();
+    if (t.id === "solicitarPausa") return await solicitarPausa();
+    if (t.id === "confirmarPausa") return await confirmarPausa();
+    if (t.id === "reanudarPartida") return await reanudarPartida();
+    if (t.id === "bSalir") return signOut(auth);
+  } catch (er){
+    const x = $("eInicio") || $("ePerfil"); if (vista === "amigos"){ msgAmigo = texto(er); pintarAmigos(); } else if (x) x.textContent = texto(er);
+  }
+});
+</script>
+</body>
+</html>
