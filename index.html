@@ -80,6 +80,13 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 .logro{border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;font-size:.78rem;line-height:1.2}
 .logro b{display:block;font-size:1.6rem}.logro.off{opacity:.35;filter:grayscale(1)}
 select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.ins{display:flex;flex-wrap:wrap;gap:6px}
+.insb{background:var(--bg);color:inherit;border:1px solid var(--line);font-size:1.5rem;padding:6px 10px;border-radius:10px;line-height:1}
+.insb.off{opacity:.35;filter:grayscale(1)}
+#zoom{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.78);display:grid;place-items:center;padding:12px}
+#zoom .zbox{background:var(--card);color:var(--ink);border-radius:12px;padding:12px;width:min(96vw,80vh);max-height:96vh;overflow:auto}
+#zoom svg{width:100%!important;height:auto}
+.two svg{cursor:zoom-in}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -103,6 +110,7 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
   </div>
 </section>
 
+<div id="invBar"></div>
 <div id="app" hidden>
   <section id="v-inicio"></section>
   <section id="v-partidas" hidden></section>
@@ -121,6 +129,7 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
   <button data-v="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.500 3.500-7 8-7s8 2.500 8 7"/></svg>Perfil</button>
 </nav>
 
+<div id="zoom" role="dialog" aria-modal="true" aria-label="Plano ampliado" hidden><div class="zbox" id="zoomBody"></div></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
@@ -182,7 +191,7 @@ const latido = () => { if (U) updateDoc(doc(db,"users",U.uid), {visto:Date.now()
 setInterval(() => { latido(); const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }, 30000);
 onAuthStateChanged(auth, async u => {
   await espera; espera = Promise.resolve();
-  subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; if (salaSub){ salaSub(); salaSub = null; }
+  subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; invRec = []; invEnv = []; pintarInv(); if (salaSub){ salaSub(); salaSub = null; }
   U = u;
   const spl = $("splash");
   if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
@@ -194,6 +203,10 @@ onAuthStateChanged(auth, async u => {
   subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); errPartidas = ""; pintar(); },
     e => { console.error("partidas:", e); errPartidas = e.code || "error"; pintar(); }));
   subs.push(onSnapshot(collection(db,"users",u.uid,"historial"), s => { historial = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
+  subs.push(onSnapshot(query(collection(db,"invitaciones"), where("para","==",u.uid), where("estado","==","pendiente")),
+    s => { invRec = s.docs.map(d => ({id:d.id, ...d.data()})); pintarInv(); }, () => {}));
+  subs.push(onSnapshot(query(collection(db,"invitaciones"), where("de","==",u.uid)),
+    s => { invEnv = s.docs.map(d => ({id:d.id, ...d.data()})); if (vista === "sala" && G && !G.j2 && gid) pintarSala(gid, G); }, () => {}));
   ir("inicio");
 });
 
@@ -257,7 +270,7 @@ function htmlAmigos(){
   const ac = amistades.filter(a => a.estado === "aceptada"), ahora = Date.now();
   if (!ac.length) return `<p class="mut">Aún no tienes amigos. Agrégalos con su código.</p>`;
   return ac.map(a => { const id = otro(a), d = amDocs[id] || {}, on = ahora - (d.visto || 0) < 75000;
-    const der = on && d.partidaActual ? `<span class="tag">En partida</span> <button class="mini" data-espectar="${esc(d.partidaActual)}">Espectear</button>` : `<small>${on ? "En línea" : "Desconectado"}</small>`;
+    const der = on && d.partidaActual ? `<span class="tag">En partida</span> <button class="mini" data-espectar="${esc(d.partidaActual)}">Espectear</button>` : on ? `<small>En línea</small> <button class="mini" data-invitar="${id}" data-nombre="${esc(a.nombres?.[id] || "Jugador")}">Invitar</button>` : `<small>Desconectado</small>`;
     return `<div class="item"><span><i class="dot2 ${on ? "on2" : ""}"></i>${avatarHTML({...d, nombre:a.nombres?.[id]}, 26)} <button class="link" data-perfil="${id}">${esc(a.nombres?.[id] || "Jugador")}</button></span><span>${der}</span></div>`; }).join("");
 }
 function suscribirAmigos(){
@@ -322,7 +335,7 @@ function pintarPerfil(){
     ${personalizarHTML()}${logrosHTML(perfilMio())}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
-    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó.</small></details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó. Toca un plano para ampliarlo.</small></details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
@@ -788,7 +801,7 @@ function cabeceraPerfil(d){
 }
 function logrosHTML(d){
   const l = logrosDe(d);
-  return `<h2>Insignias (${l.filter(x => x.ok).length}/${l.length})</h2><div class="card"><div class="logros">${l.map(x => `<div class="logro ${x.ok ? "" : "off"}"><b>${x.i}</b>${esc(x.n)}<br><small>${esc(x.d)}</small></div>`).join("")}</div></div>`;
+  return `<h2>Insignias (${l.filter(x => x.ok).length}/${l.length})</h2><div class="card"><div class="ins">${l.map(x => `<button class="insb ${x.ok ? "" : "off"}" data-ins="${esc(`${x.i} ${x.n} — ${x.d}. ${x.ok ? "✓ Conseguida" : "🔒 Bloqueada"}`)}" aria-label="${esc(x.n)}">${x.i}</button>`).join("")}</div><p class="mut insTxt" style="margin:8px 0 0;min-height:1.4em">Toca una insignia para ver qué es.</p></div>`;
 }
 function personalizarHTML(){
   const m = perfilMio(), lg = logrosDe(m).filter(x => x.ok);
@@ -801,13 +814,37 @@ function personalizarHTML(){
 }
 document.addEventListener("change", e => { if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {}); });
 
-let verDoc = null, vistaPrev = "inicio";
+// Tocar un plano del historial lo amplía; otro toque (o Esc) lo cierra.
+function cerrarZoom(){ $("zoom").hidden = true; $("zoomBody").innerHTML = ""; }
+document.addEventListener("click", e => {
+  if (!$("zoom").hidden){ cerrarZoom(); return; }
+  const sv = e.target.closest(".two svg"); if (!sv) return;
+  let n = "";
+  for (let i = -6; i <= 6; i += 2) if (i) n += `<text x="${i}" y="-.3" font-size=".5" text-anchor="middle" fill="var(--mut)">${i}</text><text x=".2" y="${-i + .17}" font-size=".5" fill="var(--mut)">${i}</text>`;
+  const cap = sv.parentElement.querySelector("small")?.textContent || "";
+  $("zoomBody").innerHTML = `<p style="margin:0 0 8px"><b>${esc(cap)}</b></p>${sv.outerHTML.replace(/<\/svg>$/, n + "</svg>")}
+    <p class="mut" style="margin:8px 0 0;font-size:.8rem">Rojo: la recta tocó barcos · Amarillo: no tocó · ✕ cuadro dañado · barco apagado: derribado.<br>Toca para cerrar.</p>`;
+  $("zoom").hidden = false;
+}, true);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("zoom").hidden) cerrarZoom(); });
+
+let verDoc = null, verHist = [], vistaPrev = "inicio";
 async function verPerfil(uid){
   if (vista !== "usuario") vistaPrev = vista;
   verDoc = null; ir("usuario");
   $("v-usuario").innerHTML = `<p class="mut">Cargando perfil…</p>`;
   try { const s = await getDoc(doc(db,"ranking",uid)); verDoc = s.exists() ? {...s.data()} : null; } catch { verDoc = null; }
+  try { const h = await getDocs(query(collection(db,"users",uid,"historial"), orderBy("fecha","desc"), limit(20))); verHist = h.docs.map(x => x.data()).filter(x => !x.prueba); } catch { verHist = null; }
   pintarUsuario();
+}
+const RESH = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
+function filaHist(h, dueno){
+  const r = RESH[h.resultado] || ["Partida",""];
+  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Plano de ${esc(dueno)}</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Toca un plano para ampliarlo.</small></details>`;
+}
+function historialOtro(d){
+  return `<h2>Historial</h2><div class="card">${verHist === null ? `<p class="mut">No se pudo cargar el historial.</p>` : verHist.length
+    ? verHist.map(h => filaHist(h, d.nombre || "Jugador")).join("") + `<small>Últimas ${verHist.length} partidas.</small>` : `<p class="mut">Todavía no tiene partidas.</p>`}</div>`;
 }
 function pintarUsuario(){
   const d = verDoc, volver = `<button class="sec" data-go="${esc(vistaPrev)}">← Volver</button>`;
@@ -815,13 +852,61 @@ function pintarUsuario(){
   const [s, j] = estad(d), wr = j ? Math.round(s.victorias / j * 100) : 0;
   $("v-usuario").innerHTML = volver + `<div style="margin-top:10px">${cabeceraPerfil(d)}</div>
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${s.victorias}</b><span>Victorias</span></div><div><b>${s.derrotas}</b><span>Derrotas</span></div>
-      <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d);
+      <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d) + historialOtro(d);
+}
+
+/* ================= INVITACIONES A PARTIDA ================= */
+let invRec = [], invEnv = [], invMsg = "";
+const INV_MS = 600000, INV_TXT = {pendiente:"esperando respuesta…", aceptada:"aceptó", rechazada:"rechazó la invitación", cancelada:"invitación cancelada"};
+function pintarInv(){
+  const e = $("invBar"); if (!e) return;
+  const v = invRec.filter(i => Date.now() - i.t < INV_MS);
+  e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button></div></div>`).join("")
+    + (invMsg ? `<p class="err" style="max-width:480px;margin:6px auto;padding:0 16px">${esc(invMsg)}</p>` : "");
+}
+setInterval(pintarInv, 30000);
+function avisoInv(t){ invMsg = t; pintarInv(); setTimeout(() => { invMsg = ""; pintarInv(); }, 6000); }
+function invitesSala(id){
+  return invEnv.filter(i => i.partida === id).map(i => `<p>Invitaste a <b>${esc(i.paraNombre)}</b>: ${INV_TXT[i.estado] || esc(i.estado)} ${i.estado === "pendiente" ? `<button class="mini sec" data-invcan="${esc(i.id)}">Cancelar</button>` : ""}</p>`).join("");
+}
+async function crearPartidaId(){
+  for (let n = 0; n < 8; n++){
+    const c = cod(5), ref = doc(db,"games",c);
+    const ok = await runTransaction(db, async tx => {
+      if ((await tx.get(ref)).exists()) return false;
+      tx.set(ref, {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
+      return true;
+    });
+    if (ok) return c;
+  }
+  throw new Error("No se pudo generar un código.");
+}
+async function invitar(uidAmigo, nom){
+  const id = await crearPartidaId();
+  await setDoc(doc(db,"invitaciones", id + "_" + uidAmigo), {de:U.uid, deNombre:nombre(), para:uidAmigo, paraNombre:nom || "Amigo", partida:id, estado:"pendiente", t:Date.now()});
+  abrirSala(id);
+}
+async function aceptarInv(id){
+  const inv = invRec.find(i => i.id === id); if (!inv) return;
+  try {
+    const ref = doc(db,"games",inv.partida);
+    await runTransaction(db, async tx => {
+      const s = await tx.get(ref), g = s.exists() ? s.data() : null;
+      if (!g || g.j2 || g.estado !== "esperando") throw {code:"no-disponible"};
+      tx.update(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
+    });
+    await updateDoc(doc(db,"invitaciones",id), {estado:"aceptada"});
+    abrirSala(inv.partida);
+  } catch (e){
+    await updateDoc(doc(db,"invitaciones",id), {estado:"cancelada"}).catch(() => {});
+    avisoInv("Esa partida ya no está disponible.");
+  }
 }
 
 function pintarSala(id, g){
   $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
     <p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: ${esc(g.n2 || "esperando rival…")}</p>
-    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p></div>
+    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p>${g.j2 ? "" : invitesSala(id)}</div>
     <button class="sec" data-go="partidas">Volver a mis partidas</button>`;
 }
 function abrirSala(id){
@@ -840,6 +925,11 @@ document.addEventListener("click", async e => {
     if (d.espectar) return espectar(d.espectar);
     if (d.emoji) return enviarEmoji(d.emoji);
     if (d.perfil) return verPerfil(d.perfil);
+    if (d.ins !== undefined){ const e = t.closest(".card")?.querySelector(".insTxt"); if (e) e.textContent = d.ins; return; }
+    if (d.invitar) return await invitar(d.invitar, d.nombre);
+    if (d.invacep) return await aceptarInv(d.invacep);
+    if (d.invrech) return await updateDoc(doc(db,"invitaciones",d.invrech), {estado:"rechazada"});
+    if (d.invcan) return await updateDoc(doc(db,"invitaciones",d.invcan), {estado:"cancelada"});
     if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
     if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
     if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
