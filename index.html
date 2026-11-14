@@ -125,7 +125,7 @@ const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo."
 const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
 
-let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
+let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
 /* ---------- Autenticación ---------- */
@@ -172,7 +172,8 @@ onAuthStateChanged(auth, async u => {
   $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hdr").hidden = false;
   subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; if (k !== kP){ kP = k; pintar(); } }));
   subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); suscribirAmigos(); pintar(); }));
-  subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
+  subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); errPartidas = ""; pintar(); },
+    e => { console.error("partidas:", e); errPartidas = e.code || "error"; pintar(); }));
   subs.push(onSnapshot(collection(db,"users",u.uid,"historial"), s => { historial = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
   ir("inicio");
 });
@@ -261,7 +262,8 @@ function pintarPartidas(){
   const l = [...partidas].sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
   const pausadas = l.filter(enPausa), otras = l.filter(g => !enPausa(g));
   let h = `<h2 style="margin-top:6px">Mis partidas</h2>`;
-  if (!l.length) h += `<div class="card"><p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p></div>`;
+  if (errPartidas) h += `<div class="card"><p class="err">No se pudieron cargar tus partidas (${esc(errPartidas)}). Revisa que las reglas de Firestore estén publicadas y recarga la página.</p></div>`;
+  if (!l.length && !errPartidas) h += `<div class="card"><p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p></div>`;
   if (pausadas.length) h += `<h2>Partidas pausadas</h2><div class="card">${pausadas.map(filaPartida).join("")}</div>`;
   if (otras.length) h += `<h2>Otras partidas</h2><div class="card">${otras.map(filaPartida).join("")}</div>`;
   $("v-partidas").innerHTML = h;
