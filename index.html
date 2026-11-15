@@ -847,7 +847,11 @@ function logrosHTML(d){
   const l = logrosDe(d);
   return `<h2>Insignias (${l.filter(x => x.ok).length}/${l.length})</h2><div class="card"><div class="ins">${l.map(x => `<button class="insb ${x.ok ? "" : "off"}" data-ins="${esc(`${x.i} ${x.n} — ${x.d}. ${x.ok ? "✓ Conseguida" : "🔒 Bloqueada"}`)}" aria-label="${esc(x.n)}">${x.i}</button>`).join("")}</div><p class="mut insTxt" style="margin:8px 0 0;min-height:1.4em">Toca una insignia para ver qué es.</p></div>`;
 }
+let persAbierto = false;   // la personalización se abre solo al tocar el botón
 function personalizarHTML(){
+  return `<div class="row" style="margin:12px 0 4px"><button class="${persAbierto ? "sec" : ""}" data-pers="1" aria-expanded="${persAbierto}">${persAbierto ? "Cerrar personalización" : "✏️ Personalizar perfil"}</button></div>` + (persAbierto ? personalizarPanel() : "");
+}
+function personalizarPanel(){
   const m = perfilMio(), lg = logrosDe(m).filter(x => x.ok);
   return `<h2>Personalizar</h2><div class="card">
     <small>Avatar</small><div class="opts">${AV_EMOJIS.map(e => `<button class="emo ${m.avatar === e ? "" : "sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div>
@@ -1000,6 +1004,7 @@ document.addEventListener("click", async e => {
     if (d.espectar) return espectar(d.espectar);
     if (d.emoji) return enviarEmoji(d.emoji);
     if (d.perfil) return verPerfil(d.perfil);
+    if (d.pers){ persAbierto = !persAbierto; return pintarPerfil(); }
     if (d.agregar) return await agregarAmigo(d.agregar);
     if (d.ins !== undefined){ const e = t.closest(".card")?.querySelector(".insTxt"); if (e) e.textContent = d.ins; return; }
     if (d.invitar) return await invitar(d.invitar, d.nombre);
