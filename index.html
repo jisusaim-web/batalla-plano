@@ -67,6 +67,14 @@ details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child
 .frac{display:flex;flex-direction:column;font-size:.8rem;color:var(--mut);gap:2px}
 .fr{display:flex;flex-direction:column;align-items:center;width:92px}
 .fr input{text-align:center}
+/* Teclado numérico del juego */
+.keypad{margin:10px 0 14px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.keypad-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:.85rem;color:var(--mut)}
+.keypad-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.keypad-grid button{min-height:46px;font-size:1.1rem;padding:8px}
+.keypad-grid button.kwide{font-size:.9rem}
+.keypad-grid button.kclear{background:transparent;color:var(--acc)}
+.keypad-grid button:active{filter:brightness(.88);transform:scale(.98)}
 .fr hr{width:100%;border:0;border-top:3px solid var(--ink);margin:5px 0}
 .reacs{display:flex;gap:6px;flex-wrap:wrap;min-height:1.7rem;margin:6px 0}
 .reac{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:1.05rem}
@@ -385,7 +393,7 @@ const kk = c => c.x + "," + c.y;
 const cruza = (c,m,b) => { const v = [[0,0],[1,0],[0,1],[1,1]].map(([i,j]) => c.y+j - m*(c.x+i) - b); return Math.min(...v) < -1e-9 && Math.max(...v) > 1e-9; };
 const fmtT = r => Math.floor(Math.max(r,0)/60) + ":" + String(Math.max(r,0)%60).padStart(2,"0");
 let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz = true, vmn = "1", vmd = "1", vb = "0",
-    huella = "", resolviendo = false, pasando = false, guardado = false, publicado = false, msgP = "", aimT = null;
+    huella = "", resolviendo = false, pasando = false, guardado = false, publicado = false, msgP = "", aimT = null, campoTeclado = "mn";
 
 async function alCambiar(id, g){
   g.lineas = g.lineas || []; g.listo = g.listo || {}; g.pts = g.pts || {1:0,2:0};
@@ -463,8 +471,8 @@ function pintarPartida(){
       ${ult ? `<div class="card"><b>${esc(ultTxt(ult))}</b></div>` : ""}${msgP ? `<p class="msg">${msgP}</p>` : ""}
       <p><small>Barcos rivales tocados: ${esc(resumenH())}</small></p>
       <h2>Radar de ataque</h2><div class="rad" id="atk">${radarH("atk", {linea:miT ? leerRecta() : null})}</div>
-      ${miT ? `<div class="row"><div class="frac">m (pendiente)<div class="fr"><input id="mn" type="number" step="any" inputmode="decimal" aria-label="Numerador de m" value="${esc(vmn)}"><hr><input id="md" type="number" step="any" inputmode="decimal" aria-label="Denominador de m" value="${esc(vmd)}"></div></div>
-        <label>b (eje Y)<input id="b" type="number" step="0.5" inputmode="decimal" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div>` : ""}
+      ${miT ? `<div class="row"><div class="frac">m (pendiente)<div class="fr"><input id="mn" type="text" inputmode="none" autocomplete="off" aria-label="Numerador de m" value="${esc(vmn)}"><hr><input id="md" type="text" inputmode="none" autocomplete="off" aria-label="Denominador de m" value="${esc(vmd)}"></div></div>
+        <label>b (eje Y)<input id="b" type="text" inputmode="none" autocomplete="off" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div><div class="keypad" aria-label="Teclado numérico"><div class="keypad-head"><span>Teclado numérico</span><span id="keyTarget">Editando: numerador</span></div><div class="keypad-grid">${["7","8","9","4","5","6","1","2","3","−","0","."].map(k => `<button type="button" class="sec" data-key="${k}">${k}</button>`).join("")}<button type="button" class="sec kwide" data-key="back">⌫ Borrar</button><button type="button" class="sec kwide kclear" data-key="clear">Limpiar</button><button type="button" class="sec kwide" data-key="sign">+/−</button></div></div>` : ""}
       <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
   }
   if (pa && pa.estado === "solicitada"){
@@ -484,7 +492,22 @@ function pintarPartida(){
   }
   if (bat && g.turno === p && !g.ataque){
     const redib = () => { vmn = $("mn").value; vmd = $("md").value; vb = $("b").value; $("atk").innerHTML = radarH("atk", {linea:leerRecta()}); apuntar(); };
-    $("mn").oninput = redib; $("md").oninput = redib; $("b").oninput = redib; $("fire").onclick = fuego;
+    for (const id of ["mn","md","b"]) {
+      const el = $(id);
+      el.onfocus = el.onclick = () => { campoTeclado = id; $("keyTarget").textContent = "Editando: " + ({mn:"numerador",md:"denominador",b:"b (eje Y)"}[id]); };
+      el.oninput = redib;
+    }
+    document.querySelectorAll("[data-key]").forEach(btn => btn.onclick = () => {
+      const el = $(campoTeclado); if (!el || el.disabled) return;
+      let v = el.value, k = btn.dataset.key;
+      if (k === "clear") v = "";
+      else if (k === "back") v = v.slice(0,-1);
+      else if (k === "sign" || k === "−") v = v.startsWith("-") ? v.slice(1) : "-" + v;
+      else if (k === ".") { if (!v.includes(".")) v = (v || "0") + "."; }
+      else if (/^\d$/.test(k)) v += k;
+      el.value = v; el.focus(); el.dispatchEvent(new Event("input", {bubbles:true}));
+    });
+    $("fire").onclick = fuego;
   }
 }
 function leerRecta(){
