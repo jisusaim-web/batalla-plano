@@ -97,6 +97,53 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 @keyframes perfilOleaje{to{transform:translateY(-8px)}}
 @keyframes perfilEstrellas{to{background-position:28px 28px,56px 60px}}
 
+
+/* Decoraciones globales: cubren cabecera, tarjetas, logros, estadísticas e historial */
+.profile-decor-shell{position:relative;isolation:isolate;padding:12px;border:3px solid transparent;border-radius:20px;margin:4px -4px 14px;overflow:hidden;transition:box-shadow .3s,border-color .3s}
+.profile-decor-shell>*:not(.profile-decor-layer){position:relative;z-index:1}
+.profile-decor-layer{position:absolute!important;z-index:0!important;inset:0;pointer-events:none;opacity:.22;border-radius:inherit}
+.profile-decor-shell>.card{background:color-mix(in srgb,var(--card) 91%,transparent);backdrop-filter:blur(2px)}
+.profile-decor-shell.frame-bronce{border-color:#cd8b55;box-shadow:0 0 0 2px #cd8b5544,0 8px 25px #8b451333}
+.profile-decor-shell.frame-plata{border-color:#cbd5e1;box-shadow:0 0 0 3px #cbd5e155,0 8px 25px #94a3b833}
+.profile-decor-shell.frame-oro{border-color:#ffd166;box-shadow:0 0 0 3px #ffd16666,0 0 25px #ffd16666}
+.profile-decor-shell.frame-diamante{border-color:#7de8ff;box-shadow:0 0 0 3px #7de8ff77,0 0 30px #7de8ff66}
+.profile-decor-shell.frame-fuego{border-color:#ff7043;box-shadow:0 0 0 3px #ff704355,0 0 28px #ff572266}
+.profile-decor-shell.frame-obsidiana{border-color:#8270a8;box-shadow:inset 0 0 0 2px #c4b5fd55,0 0 25px #5b21b655}
+.profile-decor-shell.frame-esmeralda{border-color:#34d399;box-shadow:inset 0 0 0 2px #a7f3d055,0 0 24px #05966966}
+.profile-decor-shell.frame-rubi{border-color:#fb7185;box-shadow:inset 0 0 0 2px #fecdd355,0 0 25px #e11d4866}
+.profile-decor-shell.frame-zafiro{border-color:#60a5fa;box-shadow:inset 0 0 0 2px #bfdbfe55,0 0 25px #2563eb66}
+.profile-decor-shell.frame-arcoiris{border:4px solid transparent;background:linear-gradient(var(--bg),var(--bg)) padding-box,linear-gradient(120deg,red,#ff0,#0f0,#0ff,#00f,#f0f,red) border-box}
+.profile-decor-shell.frame-cosmico{border-color:#c084fc;box-shadow:0 0 0 3px #c084fc55,0 0 35px #7e22ce77}
+.profile-decor-shell.frame-electrico{border-color:#facc15;box-shadow:0 0 0 2px #facc1566,0 0 28px #eab30877}
+.profile-decor-shell.frame-hielo{border-color:#a5f3fc;box-shadow:inset 0 0 20px #67e8f955,0 0 25px #22d3ee66}
+.profile-decor-shell.frame-corona{border:4px double #fcd34d;box-shadow:0 0 0 2px #92400e55,0 0 30px #f59e0b66}
+.profile-decor-shell.frame-glitch{border-color:#f0abfc;box-shadow:5px 0 #22d3ee55,-5px 0 #f43f5e55,0 0 25px #d946ef66}
+.profile-decor-shell.frame-dragon{border-color:#f97316;box-shadow:inset 0 0 24px #dc262644,0 0 30px #ea580c77}
+.profile-decor-shell.effect-brillo .profile-decor-layer{background:linear-gradient(115deg,transparent 35%,#fff 50%,transparent 65%);background-size:220% 100%;animation:globalShine 5s linear infinite}
+.profile-decor-shell.effect-oleaje .profile-decor-layer{background:radial-gradient(ellipse at 15% 100%,#38bdf866,transparent 45%),radial-gradient(ellipse at 90% 0%,#a78bfa66,transparent 48%);animation:globalFloat 5s ease-in-out infinite alternate}
+.profile-decor-shell.effect-estrellas .profile-decor-layer{background-image:radial-gradient(#fff 1px,transparent 1.8px),radial-gradient(#fff9 1px,transparent 1.8px);background-size:25px 25px,43px 43px;animation:globalStars 10s linear infinite}
+.profile-decor-shell.effect-particulas .profile-decor-layer{background-image:radial-gradient(circle,#fff 1px,transparent 2px),radial-gradient(circle,#7dd3fc 2px,transparent 3px);background-size:37px 41px,61px 67px;animation:globalStars 12s linear infinite}
+.profile-decor-shell.effect-pulso{animation:globalPulse 3s ease-in-out infinite}
+.profile-decor-shell.effect-aurora .profile-decor-layer{background:linear-gradient(120deg,#22d3ee55,#a78bfa66,#4ade8055,#f0abfc55);background-size:250% 250%;animation:globalAurora 8s ease infinite}
+.profile-decor-shell.effect-lluvia .profile-decor-layer{background:repeating-linear-gradient(110deg,transparent 0 18px,#7dd3fc66 19px 20px,transparent 21px 35px);animation:globalRain 1.5s linear infinite}
+.profile-decor-shell.effect-ondas .profile-decor-layer{background:repeating-radial-gradient(ellipse at 50% 50%,transparent 0 18px,#fff4 19px 20px,transparent 21px 35px);animation:globalWave 8s linear infinite}
+.profile-decor-shell.effect-fuego .profile-decor-layer{background:radial-gradient(ellipse at 10% 100%,#fb923c88,transparent 35%),radial-gradient(ellipse at 90% 100%,#ef444488,transparent 35%);animation:globalFire 2s ease-in-out infinite alternate}
+.profile-decor-shell.effect-holograma .profile-decor-layer{background:repeating-linear-gradient(0deg,#22d3ee22 0 2px,transparent 3px 7px),linear-gradient(120deg,#a78bfa33,#22d3ee33,#f0abfc33)}
+.profile-decor-shell.effect-confeti .profile-decor-layer{background-image:radial-gradient(#f472b6 2px,transparent 3px),radial-gradient(#facc15 2px,transparent 3px),radial-gradient(#38bdf8 2px,transparent 3px);background-size:43px 51px,61px 57px,73px 67px;animation:globalStars 9s linear infinite}
+.profile-decor-shell.effect-electricidad .profile-decor-layer{background:repeating-linear-gradient(125deg,transparent 0 32px,#fde04777 33px 35px,transparent 36px 57px);animation:globalRain 2s linear infinite}
+.profile-decor-shell.effect-nebulosa .profile-decor-layer{background:radial-gradient(ellipse at 20% 20%,#c084fc77,transparent 40%),radial-gradient(ellipse at 80% 70%,#60a5fa77,transparent 45%),radial-gradient(ellipse at 40% 90%,#f472b677,transparent 40%);animation:globalAurora 10s ease infinite}
+.profile-decor-shell.effect-matrix .profile-decor-layer{background:repeating-linear-gradient(0deg,transparent 0 12px,#4ade8033 13px 14px);animation:globalRain 1s linear infinite}
+.profile-decor-shell.effect-cometa .profile-decor-layer{background:linear-gradient(120deg,transparent 20%,#fff8 48%,transparent 52%);background-size:250% 100%;animation:globalShine 3s linear infinite}
+.profile-decor-shell.effect-prisma .profile-decor-layer{background:linear-gradient(120deg,#f472b633,#60a5fa33,#4ade8033,#facc1533);background-size:300% 300%;animation:globalAurora 6s ease infinite}
+@keyframes globalShine{to{background-position:-220% 0}}
+@keyframes globalFloat{to{transform:translateY(-10px) scale(1.02)}}
+@keyframes globalStars{to{background-position:70px 90px,100px 120px}}
+@keyframes globalPulse{50%{box-shadow:0 0 28px #a78bfa55}}
+@keyframes globalAurora{50%{background-position:100% 100%}}
+@keyframes globalRain{to{background-position:0 90px}}
+@keyframes globalWave{to{background-position:100px 70px}}
+@keyframes globalFire{to{opacity:.42;filter:hue-rotate(18deg)}}
+
 /* Estilos artísticos del avatar */
 .avt{display:inline-grid;place-items:center;flex:0 0 auto;border-radius:50%;border:2px solid #ffffff88;box-shadow:0 3px 10px #0004;position:relative}
 .avt.style-pixel{border-radius:5px;image-rendering:pixelated;box-shadow:3px 3px 0 #0007,inset 0 0 0 2px #ffffff55;filter:saturate(1.25);font-family:monospace}
@@ -108,38 +155,6 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 .avt.style-orbit{border:2px solid #d7faff;box-shadow:0 0 0 4px #ffffff22,0 0 0 7px #ffffff44,0 0 16px #8df}
 .avt.style-retro{border-radius:8px;border:3px double #ffe29a;box-shadow:inset 0 0 0 3px #0003,3px 3px 0 #0006;font-family:Georgia,serif}
 .ph{display:flex;align-items:center;gap:14px;padding:17px;border-radius:14px;background-size:cover!important;background-position:center!important;isolation:isolate}
-.ph .banner-art{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.95}
-.ph .banner-art:before,.ph .banner-art:after{content:"";position:absolute;inset:0}
-.ph.banner-aurora .banner-art:before,.banner-choice.banner-aurora .banner-art:before{background:radial-gradient(ellipse at 15% 15%,#8affd988,transparent 42%),radial-gradient(ellipse at 85% 85%,#b77aff99,transparent 48%),linear-gradient(120deg,#071d38aa,#14234aaa)}
-.ph.banner-mountains .banner-art:before,.banner-choice.banner-mountains .banner-art:before{background:linear-gradient(145deg,transparent 48%,#11182799 49% 62%,transparent 63%),linear-gradient(35deg,transparent 35%,#ffffff55 36% 47%,transparent 48%),linear-gradient(120deg,#6dd5edaa,#2193b0aa)}
-.ph.banner-sakura .banner-art:before,.banner-choice.banner-sakura .banner-art:before{background:radial-gradient(ellipse at 20% 25%,#ffd1e6 0 3%,transparent 4%),radial-gradient(ellipse at 75% 70%,#ffb4d5 0 4%,transparent 5%),radial-gradient(ellipse at 85% 15%,#fff 0 2%,transparent 3%),linear-gradient(120deg,#55234e,#d66b9b)}
-.ph.banner-cyber .banner-art:before,.banner-choice.banner-cyber .banner-art:before{background:repeating-linear-gradient(120deg,transparent 0 16px,#00f0ff33 17px 19px),linear-gradient(120deg,#09001f,#3a0ca3 55%,#f72585)}
-.ph.banner-galaxy .banner-art:before,.banner-choice.banner-galaxy .banner-art:before{background:radial-gradient(circle at 20% 25%,#fff 0 1px,transparent 2px),radial-gradient(circle at 75% 70%,#fff 0 1px,transparent 2px),radial-gradient(ellipse at 60% 40%,#a855f7aa,transparent 50%),linear-gradient(120deg,#050816,#16104a)}
-.ph.banner-ocean .banner-art:before,.banner-choice.banner-ocean .banner-art:before{background:repeating-radial-gradient(ellipse at 50% 120%,transparent 0 12px,#b5f7ff55 13px 15px),linear-gradient(120deg,#003049,#0077b6)}
-.ph.banner-flame .banner-art:before,.banner-choice.banner-flame .banner-art:before{background:radial-gradient(ellipse at 50% 120%,#ffea00aa,transparent 48%),linear-gradient(130deg,#360000,#b22222,#ff6b00)}
-.ph.banner-watercolor .banner-art:before,.banner-choice.banner-watercolor .banner-art:before{background:radial-gradient(ellipse at 15% 30%,#ffb3c6bb,transparent 40%),radial-gradient(ellipse at 80% 20%,#a0c4ffbb,transparent 45%),radial-gradient(ellipse at 60% 100%,#caffbfaa,transparent 45%),linear-gradient(120deg,#6d597a,#355070)}
-.ph.banner-pixel .banner-art:before,.banner-choice.banner-pixel .banner-art:before{background:linear-gradient(90deg,#0003 50%,transparent 50%),linear-gradient(#0003 50%,transparent 50%),linear-gradient(120deg,#ff006e,#8338ec,#3a86ff);background-size:16px 16px,16px 16px,cover;image-rendering:pixelated}
-.ph.banner-paper .banner-art:before,.banner-choice.banner-paper .banner-art:before{background:repeating-linear-gradient(135deg,#fff2 0 2px,transparent 2px 7px),linear-gradient(120deg,#6b705c,#a5a58d,#cb997e)}
-.ph.banner-gold .banner-art:before,.banner-choice.banner-gold .banner-art:before{background:radial-gradient(circle at 80% 15%,#fff9,transparent 22%),linear-gradient(120deg,#3b2500,#bd8b16,#fff0a8)}
-.ph.banner-forest .banner-art:before,.banner-choice.banner-forest .banner-art:before{background:radial-gradient(ellipse at 30% 120%,#50a45b,transparent 55%),linear-gradient(120deg,#081c15,#1b4332,#40916c)}
-.ph.banner-candy .banner-art:before,.banner-choice.banner-candy .banner-art:before{background:repeating-linear-gradient(135deg,#ff8fab55 0 12px,#ffc2d155 12px 24px),linear-gradient(120deg,#9d4edd,#f15bb5)}
-.ph.banner-space .banner-art:before,.banner-choice.banner-space .banner-art:before{background:radial-gradient(circle at 20% 20%,#fff 0 2px,transparent 3px),radial-gradient(circle at 80% 60%,#fff 0 1px,transparent 2px),linear-gradient(120deg,#03045e,#7209b7,#3a0ca3)}
-.ph.banner-geometric .banner-art:before,.banner-choice.banner-geometric .banner-art:before{background:linear-gradient(135deg,transparent 45%,#ffffff33 46% 55%,transparent 56%),linear-gradient(45deg,transparent 40%,#0003 41% 60%,transparent 61%),linear-gradient(120deg,#264653,#2a9d8f,#e9c46a)}
-.ph.banner-ink .banner-art:before,.banner-choice.banner-ink .banner-art:before{background:radial-gradient(ellipse at 15% 80%,#111 0 12%,transparent 45%),radial-gradient(ellipse at 85% 10%,#222 0 8%,transparent 40%),linear-gradient(120deg,#f4f1de,#d8d4c5)}
-.ph.banner-sunset .banner-art:before,.banner-choice.banner-sunset .banner-art:before{background:radial-gradient(ellipse at 50% 110%,#ffd166,transparent 45%),linear-gradient(120deg,#6a0572,#ab83a1,#f78c6b)}
-.ph.banner-crystal .banner-art:before,.banner-choice.banner-crystal .banner-art:before{background:linear-gradient(135deg,transparent 35%,#ffffff66 36% 42%,transparent 43%),linear-gradient(45deg,transparent 55%,#ffffff44 56% 64%,transparent 65%),linear-gradient(120deg,#0077b6,#48cae4,#caf0f8)}
-.ph.banner-comic .banner-art:before,.banner-choice.banner-comic .banner-art:before{background:radial-gradient(#fff8 1px,transparent 1.8px),linear-gradient(120deg,#ffbe0b,#fb5607,#ff006e);background-size:9px 9px,cover}
-.ph.banner-night .banner-art:before,.banner-choice.banner-night .banner-art:before{background:radial-gradient(ellipse at 70% 10%,#8ecae6aa,transparent 40%),linear-gradient(120deg,#03045e,#001219,#14213d)}
-.ph.banner-rainbow .banner-art:before,.banner-choice.banner-rainbow .banner-art:before{background:linear-gradient(110deg,#ff595e,#ffca3a,#8ac926,#1982c4,#6a4c93)}
-.ph.banner-lavender .banner-art:before,.banner-choice.banner-lavender .banner-art:before{background:radial-gradient(ellipse at 15% 80%,#fff9,transparent 35%),linear-gradient(120deg,#7b2cbf,#c77dff,#e0aaff)}
-.ph.banner-desert .banner-art:before,.banner-choice.banner-desert .banner-art:before{background:radial-gradient(ellipse at 75% 100%,#f4a261,transparent 45%),linear-gradient(120deg,#6f4e37,#bc8a5f,#e6ccb2)}
-.ph.banner-glitch .banner-art:before,.banner-choice.banner-glitch .banner-art:before{background:repeating-linear-gradient(0deg,transparent 0 9px,#00ffff33 10px 12px),linear-gradient(120deg,#090909,#5a189a,#ff0054)}
-.ph.banner-paint .banner-art:before,.banner-choice.banner-paint .banner-art:before{background:radial-gradient(ellipse at 15% 15%,#ff006eaa,transparent 42%),radial-gradient(ellipse at 90% 80%,#3a86ffaa,transparent 48%),radial-gradient(ellipse at 50% 50%,#ffbe0baa,transparent 50%),linear-gradient(120deg,#242038,#514878)}
-.ph.banner-constellation .banner-art:before,.banner-choice.banner-constellation .banner-art:before{background:radial-gradient(circle at 15% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 40% 70%,#fff 0 1px,transparent 2px),radial-gradient(circle at 78% 25%,#fff 0 1px,transparent 2px),linear-gradient(120deg,#03071e,#370617,#6a040f)}
-.ph.banner-floral .banner-art:before,.banner-choice.banner-floral .banner-art:before{background:radial-gradient(circle at 20% 30%,#ffcad4 0 8px,transparent 9px),radial-gradient(circle at 75% 70%,#f4acb7 0 10px,transparent 11px),linear-gradient(120deg,#386641,#a7c957)}
-.ph.banner-ice .banner-art:before,.banner-choice.banner-ice .banner-art:before{background:repeating-linear-gradient(130deg,#ffffff22 0 3px,transparent 3px 18px),linear-gradient(120deg,#03045e,#48cae4,#caf0f8)}
-.ph.banner-leather .banner-art:before,.banner-choice.banner-leather .banner-art:before{background:repeating-linear-gradient(45deg,#ffffff0a 0 2px,transparent 2px 5px),linear-gradient(120deg,#3d1f14,#8b5e34,#c08552)}
-.ph.banner-minimal .banner-art:before,.banner-choice.banner-minimal .banner-art:before{background:linear-gradient(110deg,#00000022 25%,transparent 25% 75%,#ffffff22 75%),linear-gradient(120deg,#343a40,#6c757d)}
 .ph.style-pixel .profile-copy{font-family:monospace;text-shadow:2px 2px #000}
 .ph.style-paint{border-radius:22px 5px 22px 5px}
 .ph.style-paint .pn{font-family:Georgia,serif;font-style:italic;letter-spacing:.04em}
@@ -445,7 +460,9 @@ function pintarPerfil(){
   const inicioHistorial = paginaHistorial * porPagina;
   const paginaLista = lista.slice(inicioHistorial, inicioHistorial + porPagina);
   const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
-  $("v-perfil").innerHTML = `<h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio())}
+  const decoMarco = Object.hasOwn(MARCOS,P.marco) && desbloqueado(MARCOS[P.marco],P) ? P.marco : "ninguno";
+  const decoEfecto = Object.hasOwn(EFECTOS,P.efecto) && desbloqueado(EFECTOS[P.efecto],P) ? P.efecto : "ninguno";
+  $("v-perfil").innerHTML = `<div class="profile-decor-shell frame-${decoMarco} effect-${decoEfecto}"><div class="profile-decor-layer"></div><h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio())}
     <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
       <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
       <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
@@ -456,7 +473,7 @@ function pintarPerfil(){
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
-    <button class="sec big" id="bSalir">Cerrar sesión</button>`;
+    <button class="sec big" id="bSalir">Cerrar sesión</button></div>`;
 }
 
 const fecha = h => h.fecha?.seconds ? new Date(h.fecha.seconds * 1000).toLocaleDateString("es") : "";
@@ -878,7 +895,7 @@ let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
 function sincRank(){                 // copia tus estadísticas a la lista pública (sin tu código de amigo ni tu presencia)
   if (!U) return;
   const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
-  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia","estiloAvatar","banner"]) if (P[c]) d[c] = P[c];
+  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia","estiloAvatar"]) if (P[c]) d[c] = P[c];
   const k = JSON.stringify(d); if (k === kR) return; kR = k;
   setDoc(doc(db,"ranking",U.uid), d).catch(() => { kR = ""; });
 }
@@ -950,20 +967,27 @@ const fondoDe = d => {
   return FONDOS[d.fondo] || FONDOS.oceano;
 };
 
-const MARCOS = {ninguno:{n:"Sin marco",victorias:0}, bronce:{n:"Bronce",victorias:1}, plata:{n:"Plata",victorias:5}, oro:{n:"Oro",victorias:15}, diamante:{n:"Diamante",victorias:25}, fuego:{n:"Llama",victorias:10,mejor:300}};
-const EFECTOS = {ninguno:{n:"Sin efecto",req:0}, brillo:{n:"Destello",req:5}, oleaje:{n:"Oleaje",req:10}, estrellas:{n:"Estrellas",req:25,puntos:1000}};
+const MARCOS = {
+  ninguno:{n:"Sin marco",victorias:0},bronce:{n:"Bronce",victorias:1},plata:{n:"Plata",victorias:5},oro:{n:"Oro",victorias:15},
+  diamante:{n:"Diamante",victorias:25},fuego:{n:"Llama",victorias:10,mejor:300},
+  obsidiana:{n:"Obsidiana",victorias:35},esmeralda:{n:"Esmeralda",victorias:40},rubi:{n:"Rubí",victorias:50},
+  zafiro:{n:"Zafiro",victorias:60},arcoiris:{n:"Arcoíris",victorias:75},cosmico:{n:"Cósmico",victorias:90},
+  electrico:{n:"Eléctrico",victorias:100},hielo:{n:"Hielo",victorias:120},corona:{n:"Corona real",victorias:150},
+  glitch:{n:"Glitch",victorias:175},dragon:{n:"Dragón",victorias:200}
+};
+const EFECTOS = {
+  ninguno:{n:"Sin efecto",req:0},brillo:{n:"Destello",req:5},oleaje:{n:"Oleaje",req:10},estrellas:{n:"Estrellas",req:25,puntos:1000},
+  particulas:{n:"Partículas",req:30},pulso:{n:"Pulso",req:35},aurora:{n:"Aurora",req:45},lluvia:{n:"Lluvia digital",req:50},
+  ondas:{n:"Ondas",req:60},fuego:{n:"Fuego vivo",req:70},holograma:{n:"Holograma",req:80},confeti:{n:"Confeti",req:90},
+  electricidad:{n:"Electricidad",req:100},nebulosa:{n:"Nebulosa",req:125},matrix:{n:"Código Matrix",req:150},cometa:{n:"Cometa",req:175},
+  prisma:{n:"Prisma",req:200}
+};
 const ESTILOS_AVATAR = {
   clasico:{n:"Clásico",d:"Limpio y redondo"},pixel:{n:"Pixel art",d:"Bloques retro"},paint:{n:"Pintura",d:"Trazo artístico"},
   neon:{n:"Neón",d:"Brillo eléctrico"},sketch:{n:"Boceto",d:"Dibujo a mano"},glass:{n:"Cristal",d:"Vidrio brillante"},
   sticker:{n:"Sticker",d:"Pegatina inclinada"},orbit:{n:"Órbita",d:"Anillos luminosos"},retro:{n:"Retro",d:"Marco vintage"}
 };
-const BANNERS = {
-  aurora:"Aurora boreal",mountains:"Montañas",sakura:"Flores sakura",cyber:"Cyberpunk",galaxy:"Galaxia",ocean:"Océano",
-  flame:"Llamas",watercolor:"Acuarela",pixel:"Pixel art",paper:"Papel artesanal",gold:"Oro líquido",forest:"Bosque",
-  candy:"Dulce pastel",space:"Espacio",geometric:"Geométrico",ink:"Tinta y papel",sunset:"Atardecer",crystal:"Cristales",
-  comic:"Cómic",night:"Medianoche",rainbow:"Arcoíris",lavender:"Lavanda",desert:"Desierto",glitch:"Glitch",
-  paint:"Pintura abstracta",constellation:"Constelaciones",floral:"Jardín floral",ice:"Hielo",leather:"Cuero",minimal:"Minimalista"
-};
+
 const LOGROS = [
   {id:"v1",   i:"🎖️", n:"Primera victoria", d:"Gana una partida",                 ok:(s,j) => s.victorias >= 1},
   {id:"v5",   i:"⚔️", n:"Marinero curtido", d:"Gana 5 partidas",                  ok:(s,j) => s.victorias >= 5},
@@ -993,9 +1017,8 @@ function cabeceraPerfil(d){
   const marco = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
   const efecto = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
   const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
-  const banner = Object.hasOwn(BANNERS,d.banner) ? d.banner : "aurora";
   const ins=insigniaDe(d);
-  return `<div class="ph banner-${banner} style-${estilo} frame-${marco} effect-${efecto}" style="${fondo}"><div class="banner-art"></div>${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
+  return `<div class="ph style-${estilo} frame-${marco} effect-${efecto}" style="${fondo}">${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
 }
 function logrosHTML(d){
   const l = logrosDe(d);
@@ -1007,7 +1030,7 @@ function personalizarHTML(){
 }
 function personalizarPanel(){
   const m=perfilMio(), lg=logrosDe(m).filter(x=>x.ok), f=fondoDe(m);
-  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["banners","🖼️ Banners"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
+  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
   const botones=(items,actual,attr)=>Object.entries(items).map(([k,x])=>{
     const ok=desbloqueado(x,m),sel=(actual||"ninguno")===k;
     return `<button class="cosmetic ${sel?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${x.victorias?x.victorias+" victorias":(x.req||0)+" partidas"}</small>`}</button>`;
@@ -1015,12 +1038,11 @@ function personalizarPanel(){
   const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
   let contenido="";
   if(persTab==="avatar") contenido=`<div class="pers-section"><b>Elige tu avatar</b><div class="opts">${AV_EMOJIS.map(e=>`<button class="emo ${m.avatar===e?"":"sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div><p class="mut">Elige un símbolo que te represente. Puedes cambiarlo cuando quieras.</p></div>`;
-  if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual: pixel art, pintura, neón, boceto y más. Se aplica al avatar y adapta algunos detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">⚓</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
+  if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual del avatar y los detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">⚓</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
   if(persTab==="colores") contenido=`<div class="pers-section"><b>Color del avatar · ${AV_COLORES.length} tonos</b><div class="palette-grid">${AV_COLORES.map(c=>`<button class="palette-swatch ${m.avatarColor===c?"sel":""}" style="background:${c}" data-avc="${c}" title="${c}" aria-label="Color ${c}">${m.avatarColor===c?"✓":""}</button>`).join("")}</div><label for="colorAvatarLibre">O crea tu propio color</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:48px;padding:3px"></div>`;
   if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondos y combinaciones · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
-  if(persTab==="banners") contenido=`<div class="pers-section"><b>Banners artísticos · ${Object.keys(BANNERS).length} diseños</b><p class="mut">Fondos ilustrados con formas, texturas, luces y ambientes. No necesitas subir imágenes.</p><div class="cosmetic-grid">${Object.entries(BANNERS).map(([k,n])=>`<button class="banner-choice ${((m.banner||"aurora")===k)?"sel":""}" data-banner="${k}"><i class="banner-art"></i><span>${n}${((m.banner||"aurora")===k)?" ✓":""}</span></button>`).join("")}</div></div>`;
-  if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Desbloquea diseños especiales jugando partidas.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
-  if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Dale movimiento y brillo a tu tarjeta de jugador.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
+  if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Los marcos rodean todo tu perfil, no solamente el avatar o la cabecera.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
+  if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Los efectos decoran todo tu perfil: cabecera, logros, estadísticas e historial.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
   if(persTab==="identidad") contenido=`<div class="pers-section"><label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select><label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio||"")}"><button id="bBio">Guardar</button></div><label for="selTitulo">Título</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x=>`<option value="${x.id}" ${P.titulo===x.id?"selected":""}>${esc(x.n)}</option>`).join("")}</select><small class="mut">Los títulos e insignias se consiguen completando logros.</small></div>`;
   return `<h2>Personalizar perfil</h2><div class="card"><div class="pers-tabs" role="tablist" aria-label="Categorías de personalización">${tabs.map(([k,n])=>`<button class="pers-tab ${persTab===k?"active":""}" data-perstab="${k}" role="tab" aria-selected="${persTab===k}">${n}</button>`).join("")}</div>${contenido}</div>`;
 }
@@ -1098,9 +1120,11 @@ function pintarUsuario(){
   const d = verDoc, volver = `<button class="sec" data-go="${esc(vistaPrev)}">← Volver</button>`;
   if (!d){ $("v-usuario").innerHTML = volver + `<p class="mut" style="margin-top:12px">Este jugador todavía no tiene perfil público. Aparecerá cuando abra la versión nueva del juego.</p>`; return; }
   const [s, j] = estad(d), wr = j ? Math.round(s.victorias / j * 100) : 0;
-  $("v-usuario").innerHTML = volver + `<div style="margin-top:10px">${cabeceraPerfil(d)}</div>${bloqueAmistad()}
+  const marcoPub = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
+  const efectoPub = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
+  $("v-usuario").innerHTML = volver + `<div class="profile-decor-shell frame-${marcoPub} effect-${efectoPub}"><div class="profile-decor-layer"></div><div style="margin-top:10px">${cabeceraPerfil(d)}</div>${bloqueAmistad()}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${s.victorias}</b><span>Victorias</span></div><div><b>${s.derrotas}</b><span>Derrotas</span></div>
-      <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d) + historialOtro(d);
+      <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d) + historialOtro(d) + `</div>`;
 }
 
 /* ================= INVITACIONES A PARTIDA ================= */
@@ -1195,7 +1219,6 @@ document.addEventListener("click", async e => {
     if (d.invrech) return await updateDoc(doc(db,"invitaciones",d.invrech), {estado:"rechazada"});
     if (d.invcan) return await updateDoc(doc(db,"invitaciones",d.invcan), {estado:"cancelada"});
     if (d.estilo && Object.hasOwn(ESTILOS_AVATAR,d.estilo)) return await updateDoc(doc(db,"users",U.uid), {estiloAvatar:d.estilo});
-    if (d.banner && Object.hasOwn(BANNERS,d.banner)) return await updateDoc(doc(db,"users",U.uid), {banner:d.banner});
     if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
     if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
     if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
