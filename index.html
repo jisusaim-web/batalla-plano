@@ -31,6 +31,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .err{color:var(--err);min-height:1.3em;margin:8px 0 0;font-size:.9rem}
 .av{width:36px;height:36px;border-radius:50%;background:var(--acc);color:var(--on);display:grid;place-items:center;font-weight:700;overflow:hidden;padding:0;border:0}
 .av img{width:100%;height:100%;object-fit:cover}
+.avt{overflow:hidden}.avt img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ph{background-size:cover;background-position:center;min-height:132px}
+.media-preview{display:flex;align-items:center;gap:10px;margin:8px 0 14px}.media-preview img{object-fit:cover;border:1px solid var(--line);background:var(--bg)}.media-preview .avatar-preview{width:58px;height:58px;border-radius:50%}.media-preview .banner-preview{width:120px;height:58px;border-radius:8px}
 .code{font:700 2rem ui-monospace,Menlo,monospace;letter-spacing:.2em}
 .tag{font-size:.75rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
 nav{position:fixed;z-index:6;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -157,13 +160,14 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,addDoc,increment,runTransaction,onSnapshot,orderBy,limit,getDocs,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import {getStorage,ref as storageRef,uploadBytes,getDownloadURL} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU", authDomain:"prueba-2-df121.firebaseapp.com",
   projectId:"prueba-2-df121", storageBucket:"prueba-2-df121.firebasestorage.app",
   messagingSenderId:"147257342708", appId:"1:147257342708:web:81be883437b83c7e443ca1"
 });
-const auth = getAuth(app), db = getFirestore(app);
+const auth = getAuth(app), db = getFirestore(app), storage = getStorage(app);
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR = {
@@ -279,7 +283,7 @@ const otro = a => a.miembros.find(m => m !== U.uid);
 function pintar(){
   if (!U) return;
   const av = $("hAv");
-  av.innerHTML = AV_EMOJIS.includes(P.avatar) ? P.avatar : U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
+  av.innerHTML = P.avatarUrl ? `<img src="${esc(P.avatarUrl)}" alt="Foto de perfil">` : AV_EMOJIS.includes(P.avatar) ? P.avatar : U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
   av.style.background = P.avatarColor ? colorAv(P) : "";
   const n = pendientes().length; $("dotA").hidden = !n; $("dotA").textContent = n;
   if (vista === "inicio") pintarInicio();
@@ -786,7 +790,7 @@ let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
 function sincRank(){                 // copia tus estadísticas a la lista pública (sin tu código de amigo ni tu presencia)
   if (!U) return;
   const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
-  for (const c of ["avatar","avatarColor","bio","fondo","titulo"]) if (P[c]) d[c] = P[c];
+  for (const c of ["avatar","avatarColor","bio","fondo","titulo","avatarUrl","bannerUrl"]) if (P[c]) d[c] = P[c];
   const k = JSON.stringify(d); if (k === kR) return; kR = k;
   setDoc(doc(db,"ranking",U.uid), d).catch(() => { kR = ""; });
 }
@@ -839,13 +843,14 @@ function logrosDe(d){ const [s, j] = estad(d); return LOGROS.map(l => ({...l, ok
 function tituloDe(d){ const l = logrosDe(d).find(x => x.id === d.titulo && x.ok); return l ? l.n : "Grumete"; }
 function colorAv(d){ return AV_COLORES.includes(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
 function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
-  const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
+  const e = d.avatarUrl ? `<img src="${esc(d.avatarUrl)}" alt="Foto de ${esc(d.nombre || "jugador")}">` : AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
   return `<span class="avt" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
 function cabeceraPerfil(d){
   const f = FONDOS[d.fondo] || FONDOS.oceano;
-  return `<div class="ph" style="background:linear-gradient(135deg,${f[1]},${f[2]})">${avatarHTML(d, 64)}<div><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
+  const fondo = d.bannerUrl ? `background-image:linear-gradient(135deg,#0007,#0005),url(&quot;${esc(d.bannerUrl)}&quot;)` : `background:linear-gradient(135deg,${f[1]},${f[2]})`;
+  return `<div class="ph" style="${fondo}">${avatarHTML(d, 64)}<div><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
 }
 function logrosHTML(d){
   const l = logrosDe(d);
@@ -858,13 +863,34 @@ function personalizarHTML(){
 function personalizarPanel(){
   const m = perfilMio(), lg = logrosDe(m).filter(x => x.ok);
   return `<h2>Personalizar</h2><div class="card">
+    <small>Foto de perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoAvatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${m.avatarUrl ? `<img class="avatar-preview" src="${esc(m.avatarUrl)}" alt="Foto actual">` : `<span class="mut">Sin foto personalizada</span>`}</div>
+    <small>Banner del perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoBanner" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${m.bannerUrl ? `<img class="banner-preview" src="${esc(m.bannerUrl)}" alt="Banner actual">` : `<span class="mut">Sin banner personalizado</span>`}</div>
     <small>Avatar</small><div class="opts">${AV_EMOJIS.map(e => `<button class="emo ${m.avatar === e ? "" : "sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div>
     <small>Color del avatar</small><div class="opts">${AV_COLORES.map(c => `<button class="sw" style="background:${c}" data-avc="${c}" aria-label="Color ${c}">${m.avatarColor === c ? "✓" : ""}</button>`).join("")}</div>
     <small>Fondo del perfil</small><div class="opts">${Object.entries(FONDOS).map(([k, f]) => `<button class="mini ${m.fondo === k ? "" : "sec"}" data-fondo="${k}">${f[0]}</button>`).join("")}</div>
     <label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio || "")}"><button id="bBio">Guardar</button></div>
     <label for="selTitulo">Título (se desbloquean con las insignias)</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x => `<option value="${x.id}" ${P.titulo === x.id ? "selected" : ""}>${esc(x.n)}</option>`).join("")}</select></div>`;
 }
-document.addEventListener("change", e => { if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {}); });
+async function subirImagenPerfil(file, tipo){
+  if (!U || !file) return;
+  const tipos = ["image/jpeg","image/png","image/webp","image/gif"];
+  if (!tipos.includes(file.type)){ alert("Usa una imagen JPG, PNG, WEBP o GIF."); return; }
+  if (file.size > 5 * 1024 * 1024){ alert("La imagen no debe superar 5 MB."); return; }
+  const ext = ({"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif"})[file.type];
+  const ruta = `profiles/${U.uid}/${tipo}_${Date.now()}.${ext}`;
+  try {
+    const ref = storageRef(storage, ruta);
+    await uploadBytes(ref, file, {contentType:file.type});
+    const url = await getDownloadURL(ref);
+    await updateDoc(doc(db,"users",U.uid), {[tipo === "avatar" ? "avatarUrl" : "bannerUrl"]:url});
+    pintarPerfil();
+  } catch (err){ console.error("Error al subir imagen:", err); alert("No se pudo subir la imagen. Revisa que Firebase Storage esté habilitado y que sus reglas estén publicadas."); }
+}
+document.addEventListener("change", e => {
+  if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {});
+  if (e.target.id === "archivoAvatar" && e.target.files?.[0]) subirImagenPerfil(e.target.files[0], "avatar");
+  if (e.target.id === "archivoBanner" && e.target.files?.[0]) subirImagenPerfil(e.target.files[0], "banner");
+});
 
 // Tocar un plano del historial lo amplía; otro toque (o Esc) lo cierra.
 function cerrarZoom(){ $("zoom").hidden = true; $("zoomBody").innerHTML = ""; }
@@ -940,17 +966,17 @@ function pintarUsuario(){
 
 /* ================= INVITACIONES A PARTIDA ================= */
 let invRec = [], invEnv = [], invMsg = "";
-const INV_MS = 600000, INV_TXT = {pendiente:"esperando respuesta…", aceptada:"aceptó", rechazada:"rechazó la invitación", cancelada:"invitación cancelada"};
+const INV_MS = 60000, INV_TXT = {pendiente:"esperando respuesta…", aceptada:"aceptó", rechazada:"rechazó la invitación", cancelada:"invitación cancelada", vencida:"invitación vencida"};
 function pintarInv(){
   const e = $("invBar"); if (!e) return;
-  const v = invRec.filter(i => Date.now() - i.t < INV_MS);
-  e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button></div></div>`).join("")
+  const v = invRec.filter(i => i.estado === "pendiente" && Date.now() - Number(i.t || 0) < INV_MS);
+  e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button><small>Expira en ${Math.max(0,Math.ceil((INV_MS-(Date.now()-Number(i.t||0)))/1000))} s</small></div></div>`).join("")
     + (invMsg ? `<p class="err" style="max-width:480px;margin:6px auto;padding:0 16px">${esc(invMsg)}</p>` : "");
 }
-setInterval(pintarInv, 30000);
+setInterval(() => { pintarInv(); if (vista === "sala" && G && !G.j2 && gid) pintarSala(gid, G); }, 1000);
 function avisoInv(t){ invMsg = t; pintarInv(); setTimeout(() => { invMsg = ""; pintarInv(); }, 6000); }
 function invitesSala(id){
-  return invEnv.filter(i => i.partida === id).map(i => `<p>Invitaste a <b>${esc(i.paraNombre)}</b>: ${INV_TXT[i.estado] || esc(i.estado)} ${i.estado === "pendiente" ? `<button class="mini sec" data-invcan="${esc(i.id)}">Cancelar</button>` : ""}</p>`).join("");
+  return invEnv.filter(i => i.partida === id).map(i => { const vencida = i.estado === "pendiente" && Date.now() - Number(i.t || 0) >= INV_MS; return `<p>Invitaste a <b>${esc(i.paraNombre)}</b>: ${vencida ? "invitación vencida" : (INV_TXT[i.estado] || esc(i.estado))} ${i.estado === "pendiente" && !vencida ? `<button class="mini sec" data-invcan="${esc(i.id)}">Cancelar</button>` : ""}</p>`; }).join("");
 }
 async function crearPartidaId(){
   for (let n = 0; n < 8; n++){
@@ -971,18 +997,21 @@ async function invitar(uidAmigo, nom){
 }
 async function aceptarInv(id){
   const inv = invRec.find(i => i.id === id); if (!inv) return;
+  if (inv.estado !== "pendiente" || Date.now() - Number(inv.t || 0) >= INV_MS){ avisoInv("Esta invitación ya venció. Pide que te envíen otra."); pintarInv(); return; }
   try {
-    const ref = doc(db,"games",inv.partida);
+    const invRef = doc(db,"invitaciones",id), ref = doc(db,"games",inv.partida);
     await runTransaction(db, async tx => {
-      const s = await tx.get(ref), g = s.exists() ? s.data() : null;
+      const [si, s] = await Promise.all([tx.get(invRef), tx.get(ref)]);
+      const actualInv = si.exists() ? si.data() : null, g = s.exists() ? s.data() : null;
+      if (!actualInv || actualInv.estado !== "pendiente" || Date.now() - Number(actualInv.t || 0) >= INV_MS) throw {code:"invitacion-vencida"};
       if (!g || g.j2 || g.estado !== "esperando") throw {code:"no-disponible"};
       tx.update(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
+      tx.update(invRef, {estado:"aceptada"});
     });
-    await updateDoc(doc(db,"invitaciones",id), {estado:"aceptada"});
     abrirSala(inv.partida);
   } catch (e){
     await updateDoc(doc(db,"invitaciones",id), {estado:"cancelada"}).catch(() => {});
-    avisoInv("Esa partida ya no está disponible.");
+    avisoInv(e.code === "invitacion-vencida" ? "Esta invitación ya venció. Pide que te envíen otra." : "Esa partida ya no está disponible.");
   }
 }
 
@@ -1015,7 +1044,7 @@ document.addEventListener("click", async e => {
     if (d.invacep) return await aceptarInv(d.invacep);
     if (d.invrech) return await updateDoc(doc(db,"invitaciones",d.invrech), {estado:"rechazada"});
     if (d.invcan) return await updateDoc(doc(db,"invitaciones",d.invcan), {estado:"cancelada"});
-    if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
+    if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av, avatarUrl:""});
     if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
     if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
     if (t.id === "bBio") return await updateDoc(doc(db,"users",U.uid), {bio:$("pBio").value.trim().slice(0, 80)});
