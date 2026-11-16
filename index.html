@@ -252,6 +252,7 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 #previewCosmetic .preview-box{width:min(96vw,560px);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 18px 60px #0009}
 .preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
 .preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.score-card{margin:10px 0}.score-table{width:100%;border-collapse:collapse;margin-top:8px}.score-table th,.score-table td{padding:9px 11px;border:1px solid var(--line);text-align:left}.score-table th{background:var(--off);font-size:.85rem}.score-table td:last-child,.score-table th:last-child{text-align:right}.score-table-wrap{min-width:min(100%,320px)}
 </style>
 </head>
 <body>
@@ -729,10 +730,10 @@ function botonInforme(h, nombreDueno){
 function pintarPartida(){
   const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
   const pa = g.pausa || null, congelada = !!(pa && (pa.estado === "pausada" || pa.estado === "reanudar"));
-  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="reacs" id="reacs"></div>`;
+  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="card score-card"><b>Tabla de puntajes</b><table class="score-table"><thead><tr><th>Jugador</th><th>Puntos</th></tr></thead><tbody><tr><td>${esc(g.n1 || "Jugador 1")}${p === 1 ? " (tú)" : ""}</td><td><b>${Number(g.pts[1]) || 0}</b></td></tr><tr><td>${esc(g.n2 || "Jugador 2")}${p === 2 ? " (tú)" : ""}</td><td><b>${Number(g.pts[2]) || 0}</b></td></tr></tbody></table></div><div class="reacs" id="reacs"></div>`;
   if (g.estado === "fin"){
     h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
-      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div>${g.cancelada ? "" : `<button class="big" data-live-report="1">Abrir mi informe individual</button>`}<button data-go="partidas">Volver a mis partidas</button>`;
+      <table class="score-table"><thead><tr><th>Jugador</th><th>Puntaje final</th></tr></thead><tbody><tr><td>${esc(g.n1 || "Jugador 1")}</td><td><b>${Number(g.pts[1]) || 0} pts</b></td></tr><tr><td>${esc(g.n2 || "Jugador 2")}</td><td><b>${Number(g.pts[2]) || 0} pts</b></td></tr></tbody></table>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div>${g.cancelada ? "" : `<button class="big" data-live-report="1">Abrir mi informe individual</button>`}<button data-go="partidas">Volver a mis partidas</button>`;
     $("v-sala").innerHTML = h; return;
   }
   if (congelada){
@@ -1242,13 +1243,20 @@ document.addEventListener("change", e => {
   if (e.target.id === "selInsignia" && U) updateDoc(doc(db,"users",U.uid), {insignia:e.target.value}).catch(() => {});
 });
 
-// Botón explícito para abrir la tabla final desde el historial de un amigo.
+// Abre la tabla de puntajes de la partida desde el historial público.
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-ver-tabla]");
+  const b = e.target.closest("[data-ver-puntajes]");
   if (!b) return;
-  const sv = b.closest(".board-view")?.querySelector("svg");
-  if (sv) sv.dispatchEvent(new Event("click", {bubbles:true}));
+  const details = b.closest("details.h");
+  const summary = details?.querySelector("summary");
+  const small = summary?.querySelector("small")?.textContent || "";
+  try {
+    const d = JSON.parse(decodeURIComponent(b.getAttribute("data-ver-puntajes")));
+    $("zoomBody").innerHTML = `<div class="score-table-wrap"><h2 style="margin:0 0 12px">Tabla final de puntajes</h2><table class="score-table"><thead><tr><th>Jugador</th><th>Puntaje final</th></tr></thead><tbody><tr><td>${esc(d.n1)}</td><td><b>${Number(d.p1)||0} pts</b></td></tr><tr><td>${esc(d.n2)}</td><td><b>${Number(d.p2)||0} pts</b></td></tr></tbody></table><p class="mut" style="margin-top:12px">${esc(small)}</p><p class="mut">Esta tabla es de solo lectura.</p></div>`;
+    $("zoom").hidden = false;
+  } catch (err) { console.error("No se pudo abrir la tabla de puntajes", err); }
 });
+document.addEventListener("click", e => { if (e.target.closest("[data-close-score]")) cerrarZoom(); });
 
 // Tocar un plano del historial lo amplía; otro toque (o Esc) lo cierra.
 function cerrarZoom(){ $("zoom").hidden = true; $("zoomBody").innerHTML = ""; }
@@ -1293,9 +1301,23 @@ async function verPerfil(uid){
   }, e => { console.error("perfil público:", e); if (verUid === uid){ verDoc = null; pintarUsuario(); } });
 }
 const RESH = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
+function datosPuntajes(h){
+  let p1 = Number(h.puntajeJ1), p2 = Number(h.puntajeJ2);
+  if (!Number.isFinite(p1) || !Number.isFinite(p2) || (!h.puntajeJ1 && !h.puntajeJ2)) {
+    const mio = Number(h.miPuntaje) || 0, rival = Number(h.puntajeRival) || 0;
+    if (Number(h.jugadorNumero) === 2) { p1 = rival; p2 = mio; }
+    else { p1 = mio; p2 = rival; }
+  }
+  return {n1:h.nombreJ1 || (Number(h.jugadorNumero) === 2 ? h.rivalNombre : h.nombreJugador) || "Jugador 1", n2:h.nombreJ2 || (Number(h.jugadorNumero) === 2 ? h.nombreJugador : h.rivalNombre) || "Jugador 2", p1, p2};
+}
+function htmlTablaPuntajes(h){
+  const d = datosPuntajes(h);
+  return `<div class="score-table-wrap"><h3 style="margin:0 0 10px">Tabla final de puntajes</h3><table class="score-table"><thead><tr><th>Jugador</th><th>Puntaje final</th></tr></thead><tbody><tr><td>${esc(d.n1)}</td><td><b>${d.p1} pts</b></td></tr><tr><td>${esc(d.n2)}</td><td><b>${d.p2} pts</b></td></tr></tbody></table><p class="mut" style="margin:10px 0 0">Resultado: ${esc(RESH[h.resultado]?.[0] || "Partida finalizada")} · ${fecha(h)}</p></div>`;
+}
 function filaHist(h, dueno){
   const r = RESH[h.resultado] || ["Partida",""];
-  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div class="board-view"><small>Tabla final de ${esc(dueno)}</small>${mini(h,"mio")}<button class="mini sec" type="button" data-ver-tabla="1">Ver tabla final</button></div><div class="board-view"><small>Tabla final de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}<button class="mini sec" type="button" data-ver-tabla="1">Ver tabla final</button></div></div><small>Las tablas son de solo lectura. Puedes ampliarlas para ver los detalles.</small>${botonInforme(h, dueno)}</details>`;
+  const datos = encodeURIComponent(JSON.stringify(datosPuntajes(h)));
+  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="card score-card"><p>Consulta el resultado de ambos jugadores en esta partida.</p><button class="mini sec" type="button" data-ver-puntajes="${datos}">Ver tabla de puntajes</button></div>${botonInforme(h, dueno)}</details>`;
 }
 function historialOtro(d){
   return `<h2>Historial</h2><div class="card">${verHist === null ? `<p class="mut">No se pudo cargar el historial.</p>` : verHist.length
