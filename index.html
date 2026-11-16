@@ -1242,6 +1242,14 @@ document.addEventListener("change", e => {
   if (e.target.id === "selInsignia" && U) updateDoc(doc(db,"users",U.uid), {insignia:e.target.value}).catch(() => {});
 });
 
+// Botón explícito para abrir la tabla final desde el historial de un amigo.
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-ver-tabla]");
+  if (!b) return;
+  const sv = b.closest(".board-view")?.querySelector("svg");
+  if (sv) sv.dispatchEvent(new Event("click", {bubbles:true}));
+});
+
 // Tocar un plano del historial lo amplía; otro toque (o Esc) lo cierra.
 function cerrarZoom(){ $("zoom").hidden = true; $("zoomBody").innerHTML = ""; }
 document.addEventListener("click", e => {
@@ -1287,7 +1295,7 @@ async function verPerfil(uid){
 const RESH = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
 function filaHist(h, dueno){
   const r = RESH[h.resultado] || ["Partida",""];
-  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Plano de ${esc(dueno)}</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Toca un plano para ampliarlo.</small>${botonInforme(h, dueno)}</details>`;
+  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div class="board-view"><small>Tabla final de ${esc(dueno)}</small>${mini(h,"mio")}<button class="mini sec" type="button" data-ver-tabla="1">Ver tabla final</button></div><div class="board-view"><small>Tabla final de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}<button class="mini sec" type="button" data-ver-tabla="1">Ver tabla final</button></div></div><small>Las tablas son de solo lectura. Puedes ampliarlas para ver los detalles.</small>${botonInforme(h, dueno)}</details>`;
 }
 function historialOtro(d){
   return `<h2>Historial</h2><div class="card">${verHist === null ? `<p class="mut">No se pudo cargar el historial.</p>` : verHist.length
