@@ -100,7 +100,8 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 
 /* Decoraciones globales: cubren cabecera, tarjetas, logros, estadísticas e historial */
 .profile-decor-shell{position:relative;isolation:isolate;padding:12px;border:3px solid transparent;border-radius:20px;margin:4px -4px 14px;overflow:hidden;transition:box-shadow .3s,border-color .3s}
-.profile-decor-shell>*:not(.profile-decor-layer){position:relative;z-index:1}
+.profile-decor-shell>*:not(.profile-decor-layer):not(.profile-bg-layer){position:relative;z-index:1}
+.profile-bg-layer{position:absolute!important;z-index:0!important;inset:0;pointer-events:none;opacity:1;border-radius:inherit;background-size:cover;background-position:center}
 .profile-decor-layer{position:absolute!important;z-index:0!important;inset:0;pointer-events:none;opacity:.22;border-radius:inherit}
 .profile-decor-shell>.card{background:color-mix(in srgb,var(--card) 91%,transparent);backdrop-filter:blur(2px)}
 .profile-decor-shell.frame-bronce{border-color:#cd8b55;box-shadow:0 0 0 2px #cd8b5544,0 8px 25px #8b451333}
@@ -170,14 +171,25 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 .banner-choice .banner-art{position:absolute;inset:0}
 .banner-choice span{position:relative;z-index:1}
 
+.profile-bg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.profile-bg-choice{display:flex;flex-direction:column;gap:7px;align-items:stretch;text-align:left;padding:8px;border:1px solid var(--line);border-radius:12px;min-width:0}
+.profile-bg-choice.sel{border:2px solid var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 20%,transparent)}
+.profile-bg-thumb{display:block;width:100%;height:64px;border-radius:8px;border:1px solid #ffffff22;background-size:cover;background-position:center}
+.profile-bg-choice b{font-size:.82rem}
+@media(max-width:360px){.profile-bg-grid{grid-template-columns:1fr}}
 .cosmetic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:7px;margin:7px 0 14px}
-.cosmetic{min-height:42px;padding:7px 8px;font-size:.82rem;line-height:1.25}
+.cosmetic{min-height:48px;padding:8px;font-size:.82rem;line-height:1.25;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 .cosmetic.sel{outline:2px solid var(--acc);outline-offset:1px}
- .cosmetic:disabled{opacity:.4;filter:grayscale(1);cursor:not-allowed}
+.cosmetic small{display:block;font-size:.68rem;line-height:1.25;color:inherit;opacity:.82}
 .pers-tabs{display:flex;gap:6px;overflow-x:auto;padding:5px 2px 10px;margin:0 0 10px;scrollbar-width:thin;position:sticky;top:0;z-index:3;background:var(--card)}
+.pers-content{min-height:0}
+.pers-section{max-height:min(58vh,560px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--acc) transparent;padding:2px 7px 12px 1px}
+.pers-section::-webkit-scrollbar{width:7px}
+.pers-section::-webkit-scrollbar-thumb{background:var(--acc);border-radius:8px}
+.pers-section::-webkit-scrollbar-track{background:transparent}
 .pers-tab{white-space:nowrap;flex:0 0 auto;padding:8px 11px;font-size:.8rem;border-radius:999px;background:transparent;color:var(--mut);border:1px solid var(--line)}
 .pers-tab.active{background:var(--acc);color:var(--on);border-color:var(--acc)}
-.pers-section{min-height:190px}.palette-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;margin:9px 0 14px}
+.palette-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;margin:9px 0 14px}
 .palette-swatch{width:100%;aspect-ratio:1;border-radius:50%;padding:0;border:2px solid #ffffff88;box-shadow:0 1px 4px #0004;min-width:0}
 .palette-swatch.sel{outline:3px solid var(--acc);outline-offset:2px}
 .gradient-swatch{min-height:66px;border:2px solid #ffffff66;border-radius:10px;padding:5px;color:white;text-shadow:0 1px 3px #000;font-size:.76rem;box-shadow:inset 0 0 0 1px #0002}
@@ -225,9 +237,6 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 #previewCosmetic .preview-box{width:min(96vw,560px);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 18px 60px #0009}
 .preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
 .preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-.cosmetic-line{display:flex;align-items:stretch;gap:6px;margin:6px 0}
-.cosmetic-line>.cosmetic{flex:1;min-width:0}
-.cosmetic-preview{flex:0 0 auto;padding:6px 10px}
 </style>
 </head>
 <body>
@@ -482,7 +491,7 @@ function pintarPerfil(){
   const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
   const decoMarco = Object.hasOwn(MARCOS,P.marco) && desbloqueado(MARCOS[P.marco],P) ? P.marco : "ninguno";
   const decoEfecto = Object.hasOwn(EFECTOS,P.efecto) && desbloqueado(EFECTOS[P.efecto],P) ? P.efecto : "ninguno";
-  $("v-perfil").innerHTML = `<div class="profile-decor-shell frame-${decoMarco} effect-${decoEfecto}"><div class="profile-decor-layer"></div><h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio())}
+  $("v-perfil").innerHTML = `<div class="profile-decor-shell frame-${decoMarco} effect-${decoEfecto}"><div class="profile-bg-layer" style="${fondoPerfilStyle(P)}"></div><div class="profile-decor-layer"></div><h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio())}
     <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
       <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
       <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
@@ -916,7 +925,7 @@ function sincRank(){                 // publica estadísticas y personalización
   if (!U) return;
   const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
   // Se envían también los campos vacíos para poder quitar una decoración sin dejar la anterior pegada.
-  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia","estiloAvatar","avatarUrl","bannerUrl"]) d[c] = typeof P[c] === "string" ? P[c] : "";
+  for (const c of ["avatar","avatarColor","bio","fondo","fondoPerfil","titulo","marco","efecto","insignia","estiloAvatar","avatarUrl","bannerUrl"]) d[c] = typeof P[c] === "string" ? P[c] : "";
   const k = JSON.stringify(d); if (k === kR) return; kR = k;
   setDoc(doc(db,"ranking",U.uid), d).catch(e => { console.error("No se pudo sincronizar el perfil público:", e); kR = ""; });
 }
@@ -986,6 +995,35 @@ const fondoDe = d => {
   }
   return FONDOS[d.fondo] || FONDOS.oceano;
 };
+// Fondos independientes para TODO el perfil (no modifican el degradado de la cabecera).
+const FONDOS_PERFIL = {
+  clasico:{n:"Niebla elegante",bg:"linear-gradient(145deg,#263449,#111827 55%,#263449)"},
+  oceano:{n:"Abismo oceánico",bg:"radial-gradient(ellipse at 15% 10%,#0e7490aa,transparent 45%),linear-gradient(145deg,#082f49,#071a2c 65%,#164e63)"},
+  aurora:{n:"Aurora boreal",bg:"radial-gradient(ellipse at 10% 0%,#22d3ee88,transparent 42%),radial-gradient(ellipse at 90% 20%,#a855f788,transparent 42%),linear-gradient(145deg,#102a43,#071526)"},
+  galaxia:{n:"Galaxia",bg:"radial-gradient(circle at 20% 18%,#f0abfc88 1px,transparent 3px),radial-gradient(circle at 78% 36%,#93c5fd99 1px,transparent 3px),radial-gradient(ellipse at 50% 0%,#6d28d988,transparent 55%),linear-gradient(145deg,#160b2e,#090d20)"},
+  nebulosa:{n:"Nebulosa",bg:"radial-gradient(ellipse at 15% 30%,#ec489988,transparent 45%),radial-gradient(ellipse at 85% 70%,#6366f188,transparent 48%),linear-gradient(145deg,#240046,#100b24)"},
+  cyber:{n:"Cyberpunk",bg:"linear-gradient(135deg,#21102e,#101c36 55%,#062d35)"},
+  matrix:{n:"Código Matrix",bg:"repeating-linear-gradient(0deg,#00ff4118 0 1px,transparent 1px 18px),linear-gradient(145deg,#071b12,#020806)"},
+  neon:{n:"Neón nocturno",bg:"radial-gradient(ellipse at 0% 0%,#ec489955,transparent 45%),radial-gradient(ellipse at 100% 100%,#06b6d455,transparent 45%),linear-gradient(145deg,#18112b,#090d1b)"},
+  fuego:{n:"Llamas",bg:"radial-gradient(ellipse at 10% 100%,#f9731688,transparent 45%),radial-gradient(ellipse at 90% 100%,#dc262688,transparent 45%),linear-gradient(145deg,#32120c,#160b0b)"},
+  volcan:{n:"Volcánico",bg:"repeating-linear-gradient(125deg,#fb923c12 0 2px,transparent 2px 24px),linear-gradient(145deg,#35130e,#160b0a)"},
+  hielo:{n:"Reino de hielo",bg:"radial-gradient(ellipse at 80% 0%,#a5f3fc66,transparent 45%),linear-gradient(145deg,#16334a,#0b1c32)"},
+  glaciar:{n:"Glaciar",bg:"linear-gradient(135deg,#dbeafe22,#60a5fa22),linear-gradient(145deg,#17324d,#0b1728)"},
+  esmeralda:{n:"Esmeralda",bg:"radial-gradient(ellipse at 20% 0%,#34d39966,transparent 48%),linear-gradient(145deg,#123b32,#081d1b)"},
+  bosque:{n:"Bosque profundo",bg:"radial-gradient(ellipse at 80% 10%,#4ade8055,transparent 45%),linear-gradient(145deg,#183b2b,#0b1d18)"},
+  sakura:{n:"Jardín sakura",bg:"radial-gradient(circle at 15% 20%,#f9a8d455 0 2px,transparent 4px),radial-gradient(circle at 80% 60%,#fbcfe855 0 2px,transparent 4px),linear-gradient(145deg,#512b49,#24152e)"},
+  rosa:{n:"Rosa pastel",bg:"radial-gradient(ellipse at 0% 0%,#f9a8d466,transparent 48%),linear-gradient(145deg,#49304c,#21172d)"},
+  lavanda:{n:"Lavanda",bg:"radial-gradient(ellipse at 100% 0%,#c4b5fd66,transparent 48%),linear-gradient(145deg,#352b55,#17152e)"},
+  atardecer:{n:"Atardecer",bg:"radial-gradient(ellipse at 50% 0%,#fb923c66,transparent 52%),linear-gradient(145deg,#542a43,#20152d)"},
+  dorado:{n:"Oro imperial",bg:"radial-gradient(ellipse at 50% 0%,#fbbf2466,transparent 48%),linear-gradient(145deg,#49351b,#1c1720)"},
+  rubi:{n:"Rubí",bg:"radial-gradient(ellipse at 15% 15%,#fb718566,transparent 48%),linear-gradient(145deg,#4b1728,#1d101d)"},
+  zafiro:{n:"Zafiro",bg:"radial-gradient(ellipse at 85% 15%,#60a5fa66,transparent 48%),linear-gradient(145deg,#172e57,#0c1428)"},
+  carbon:{n:"Carbono",bg:"repeating-linear-gradient(135deg,#ffffff08 0 2px,transparent 2px 12px),linear-gradient(145deg,#30343b,#101216)"},
+  marmol:{n:"Mármol",bg:"repeating-linear-gradient(125deg,transparent 0 35px,#ffffff0c 36px 38px,transparent 39px 72px),linear-gradient(145deg,#394454,#171d29)"},
+  arcade:{n:"Arcade retro",bg:"repeating-linear-gradient(0deg,#38bdf812 0 2px,transparent 2px 5px),linear-gradient(145deg,#24134a,#10152d)"},
+  desierto:{n:"Desierto",bg:"radial-gradient(ellipse at 50% 0%,#fbbf2455,transparent 50%),linear-gradient(145deg,#59432c,#241d1a)"}
+};
+function fondoPerfilStyle(d){ const x=FONDOS_PERFIL[d.fondoPerfil]||FONDOS_PERFIL.clasico; return `background:${x.bg};`; }
 
 const MARCOS = {
   ninguno:{n:"Sin marco",victorias:0},bronce:{n:"Bronce",victorias:1},plata:{n:"Plata",victorias:5},oro:{n:"Oro",victorias:15},
@@ -1052,22 +1090,24 @@ function personalizarHTML(){
 }
 function personalizarPanel(){
   const m=perfilMio(), lg=logrosDe(m).filter(x=>x.ok), f=fondoDe(m);
-  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
+  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Cabecera"],["fondoPerfil","🖼️ Fondo de perfil"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
   const botones=(items,actual,attr)=>Object.entries(items).map(([k,x])=>{
     const ok=desbloqueado(x,m),sel=(actual||"ninguno")===k;
     const req=[x.victorias?x.victorias+" victorias":null,x.mejor?x.mejor+" puntos en una partida":null,x.puntos?x.puntos+" puntos acumulados":null,x.req?x.req+" partidas":null].filter(Boolean).join(" · ") || "Disponible";
-    return `<div class="cosmetic-line"><button class="cosmetic ${sel?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${esc(req)}</small>`}</button>${ok?"":`<button class="mini sec cosmetic-preview" data-preview-type="${attr}" data-preview-key="${k}" aria-label="Previsualizar ${esc(x.n)}">👁 Ver</button>`}</div>`;
+    const accion=ok?`data-${attr}="${k}"`:`data-preview-type="${attr}" data-preview-key="${k}"`;
+    return `<button class="cosmetic ${sel?"sel":"sec"}" ${accion} aria-label="${ok?"Equipar":"Previsualizar"} ${esc(x.n)}">${ok?"": "👁 "}${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${esc(req)} · Toca para previsualizar</small>`}</button>`;
   }).join("");
   const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
   let contenido="";
   if(persTab==="avatar") contenido=`<div class="pers-section"><b>Elige tu avatar</b><div class="opts">${AV_EMOJIS.map(e=>`<button class="emo ${m.avatar===e?"":"sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div><p class="mut">Elige un símbolo que te represente. Puedes cambiarlo cuando quieras.</p></div>`;
   if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual del avatar y los detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">⚓</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
   if(persTab==="colores") contenido=`<div class="pers-section"><b>Crea tu propio color</b><p class="mut">Elige cualquier tono para personalizar tu avatar. Puedes cambiarlo cuando quieras.</p><label for="colorAvatarLibre">Color del avatar</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:58px;padding:4px;max-width:180px"><p class="mut">Color actual: <b>${esc(hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a")}</b></p></div>`;
-  if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondos y combinaciones · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
+  if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondo de la cabecera · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
+  if(persTab==="fondoPerfil") contenido=`<div class="pers-section"><b>Fondo de todo el perfil</b><p class="mut">Este fondo cubre la cabecera, estadísticas, insignias e historial. Es independiente del fondo de la cabecera y puedes cambiarlo cuando quieras.</p><div class="profile-bg-grid">${Object.entries(FONDOS_PERFIL).map(([k,x])=>`<button class="profile-bg-choice ${((m.fondoPerfil||"clasico")===k)?"sel":"sec"}" data-fondo-perfil="${k}" aria-pressed="${(m.fondoPerfil||"clasico")===k}"><span class="profile-bg-thumb" style="background:${x.bg}"></span><b>${x.n}</b>${(m.fondoPerfil||"clasico")===k?" ✓":""}</button>`).join("")}</div></div>`;
   if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Los marcos rodean todo tu perfil, no solamente el avatar o la cabecera.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
   if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Los efectos decoran todo tu perfil: cabecera, logros, estadísticas e historial.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
   if(persTab==="identidad") contenido=`<div class="pers-section"><label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select><label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio||"")}"><button id="bBio">Guardar</button></div><label for="selTitulo">Título</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x=>`<option value="${x.id}" ${P.titulo===x.id?"selected":""}>${esc(x.n)}</option>`).join("")}</select><small class="mut">Los títulos e insignias se consiguen completando logros.</small></div>`;
-  return `<h2>Personalizar perfil</h2><div class="card"><div class="pers-tabs" role="tablist" aria-label="Categorías de personalización">${tabs.map(([k,n])=>`<button class="pers-tab ${persTab===k?"active":""}" data-perstab="${k}" role="tab" aria-selected="${persTab===k}">${n}</button>`).join("")}</div>${contenido}</div>`;
+  return `<h2>Personalizar perfil</h2><div class="card"><div class="pers-tabs" role="tablist" aria-label="Categorías de personalización">${tabs.map(([k,n])=>`<button class="pers-tab ${persTab===k?"active":""}" data-perstab="${k}" role="tab" aria-selected="${persTab===k}">${n}</button>`).join("")}</div><div class="pers-content">${contenido}</div></div>`;
 }
 
 document.addEventListener("change", e => {
@@ -1153,7 +1193,7 @@ function pintarUsuario(){
   const [s, j] = estad(d), wr = j ? Math.round(s.victorias / j * 100) : 0;
   const marcoPub = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
   const efectoPub = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
-  $("v-usuario").innerHTML = volver + `<div class="profile-decor-shell frame-${marcoPub} effect-${efectoPub}"><div class="profile-decor-layer"></div><div style="margin-top:10px">${cabeceraPerfil(d)}</div>${bloqueAmistad()}
+  $("v-usuario").innerHTML = volver + `<div class="profile-decor-shell frame-${marcoPub} effect-${efectoPub}"><div class="profile-bg-layer" style="${fondoPerfilStyle(d)}"></div><div class="profile-decor-layer"></div><div style="margin-top:10px">${cabeceraPerfil(d)}</div>${bloqueAmistad()}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${s.victorias}</b><span>Victorias</span></div><div><b>${s.derrotas}</b><span>Derrotas</span></div>
       <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d) + historialOtro(d) + `</div>`;
 }
@@ -1235,7 +1275,7 @@ function previsualizarCosmetico(tipo, clave){
   else return;
   const item=tipo==="marco"?MARCOS[clave]:EFECTOS[clave];
   const req=[item.victorias?item.victorias+" victorias":null,item.mejor?item.mejor+" puntos en una partida":null,item.puntos?item.puntos+" puntos acumulados":null,item.req?item.req+" partidas":null].filter(Boolean).join(" · ") || "Sin requisito adicional";
-  const shell=`<div class="profile-decor-shell frame-${demo.marco||"ninguno"} effect-${demo.efecto||"ninguno"}"><div class="profile-decor-layer"></div>${cabeceraPerfil(demo,true)}<div class="card"><b>Estadísticas</b><div class="stats"><div><b>${Number(demo.victorias)||0}</b><span>Victorias</span></div><div><b>${Number(demo.derrotas)||0}</b><span>Derrotas</span></div><div><b>${Number(demo.empates)||0}</b><span>Empates</span></div></div></div><div class="card"><b>Insignias y logros</b><p class="mut">La decoración también se aplica a esta sección.</p>🏆 🎖️ 💎 ⭐</div><div class="card"><b>Historial de partidas</b><p class="mut">Así se verá el resto del perfil.</p><div class="item">Victoria · 250 pts</div><div class="item">Derrota · 120 pts</div></div></div>`;
+  const shell=`<div class="profile-decor-shell frame-${demo.marco||"ninguno"} effect-${demo.efecto||"ninguno"}"><div class="profile-bg-layer" style="${fondoPerfilStyle(demo)}"></div><div class="profile-decor-layer"></div>${cabeceraPerfil(demo,true)}<div class="card"><b>Estadísticas</b><div class="stats"><div><b>${Number(demo.victorias)||0}</b><span>Victorias</span></div><div><b>${Number(demo.derrotas)||0}</b><span>Derrotas</span></div><div><b>${Number(demo.empates)||0}</b><span>Empates</span></div></div></div><div class="card"><b>Insignias y logros</b><p class="mut">La decoración también se aplica a esta sección.</p>🏆 🎖️ 💎 ⭐</div><div class="card"><b>Historial de partidas</b><p class="mut">Así se verá el resto del perfil.</p><div class="item">Victoria · 250 pts</div><div class="item">Derrota · 120 pts</div></div></div>`;
   $("previewCosmeticBody").innerHTML=`<div class="row" style="justify-content:space-between;align-items:center"><div><b>Vista previa: ${esc(item.n)}</b><div class="mut">Requisito: ${esc(req)}</div></div><button class="mini sec" data-close-preview>✕</button></div><div class="preview-sample">${shell}</div><p class="mut">Vista previa solamente: no desbloquea ni equipa el elemento.</p><div class="preview-actions"><button class="sec" data-close-preview>Cerrar</button></div>`;
   $("previewCosmetic").hidden=false;
 }
@@ -1268,6 +1308,7 @@ document.addEventListener("click", async e => {
     if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
     if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
     if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
+    if (d.fondoPerfil && Object.hasOwn(FONDOS_PERFIL,d.fondoPerfil)) return await updateDoc(doc(db,"users",U.uid), {fondoPerfil:d.fondoPerfil});
     if (d.marco && Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],perfilMio())) return await updateDoc(doc(db,"users",U.uid), {marco:d.marco});
     if (d.efecto && Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],perfilMio())) return await updateDoc(doc(db,"users",U.uid), {efecto:d.efecto});
     if (t.id === "bBio") return await updateDoc(doc(db,"users",U.uid), {bio:$("pBio").value.trim().slice(0, 80)});
