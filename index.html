@@ -1381,12 +1381,13 @@ function pintarUsuario(){
 let invRec = [], invEnv = [], invMsg = "";
 const INV_MS = 60000, INV_TXT = {pendiente:"esperando respuesta…", aceptada:"aceptó", rechazada:"rechazó la invitación", cancelada:"invitación cancelada", vencida:"invitación vencida"};
 let invKey = "";
+const invTime = i => i?.creada?.toMillis?.() ?? Number(i?.t || 0);
 function pintarInv(){
   const e = $("invBar"); if (!e) return;
-  const v = invRec.filter(i => i.estado === "pendiente" && Date.now() - Number(i.t || 0) < INV_MS), key = v.map(i => i.id).join(",") + "|" + invMsg;
+  const v = invRec.filter(i => i.estado === "pendiente" && Date.now() - invTime(i) < INV_MS), key = v.map(i => i.id).join(",") + "|" + invMsg;
   if (key !== invKey){   // solo se vuelve a dibujar si cambia algo; así los botones no se mueven mientras los tocas
     invKey = key;
-    e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button><small data-exp="${Number(i.t || 0)}"></small></div></div>`).join("")
+    e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button><small data-exp="${invTime(i)}"></small></div></div>`).join("")
       + (invMsg ? `<p class="err" style="max-width:480px;margin:6px auto;padding:0 16px">${esc(invMsg)}</p>` : "");
   }
   e.querySelectorAll("[data-exp]").forEach(x => { x.textContent = "Expira en " + Math.max(0, Math.ceil((INV_MS - (Date.now() - Number(x.dataset.exp))) / 1000)) + " s"; });
@@ -1395,7 +1396,7 @@ let ultInv = "";
 setInterval(() => { pintarInv(); if (vista === "sala" && G && !G.j2 && gid){ const t = invitesSala(gid); if (t !== ultInv){ ultInv = t; pintarSala(gid, G); } } }, 1000);
 function avisoInv(t){ invMsg = t; pintarInv(); setTimeout(() => { invMsg = ""; pintarInv(); }, 6000); }
 function invitesSala(id){
-  return invEnv.filter(i => i.partida === id).map(i => { const vencida = i.estado === "pendiente" && Date.now() - Number(i.t || 0) >= INV_MS; return `<p>Invitaste a <b>${esc(i.paraNombre)}</b>: ${vencida ? "invitación vencida" : (INV_TXT[i.estado] || esc(i.estado))} ${i.estado === "pendiente" && !vencida ? `<button class="mini sec" data-invcan="${esc(i.id)}">Cancelar</button>` : ""}</p>`; }).join("");
+  return invEnv.filter(i => i.partida === id).map(i => { const vencida = i.estado === "pendiente" && Date.now() - invTime(i) >= INV_MS; return `<p>Invitaste a <b>${esc(i.paraNombre)}</b>: ${vencida ? "invitación vencida" : (INV_TXT[i.estado] || esc(i.estado))} ${i.estado === "pendiente" && !vencida ? `<button class="mini sec" data-invcan="${esc(i.id)}">Cancelar</button>` : ""}</p>`; }).join("");
 }
 async function crearPartidaId(){
   for (let n = 0; n < 8; n++){
@@ -1410,13 +1411,26 @@ async function crearPartidaId(){
   throw new Error("No se pudo generar un código.");
 }
 async function invitar(uidAmigo, nom){
-  const id = await crearPartidaId();
-  await setDoc(doc(db,"invitaciones", id + "_" + uidAmigo), {de:U.uid, deNombre:nombre(), para:uidAmigo, paraNombre:nom || "Amigo", partida:id, estado:"pendiente", t:Date.now()});
-  abrirSala(id);
+  let id = null;
+  try {
+    id = await crearPartidaId();
+    await setDoc(doc(db,"invitaciones", id + "_" + uidAmigo), {
+      de:U.uid, deNombre:nombre(), para:uidAmigo, paraNombre:nom || "Amigo",
+      partida:id, estado:"pendiente", t:Date.now(), creada:serverTimestamp()
+    });
+    abrirSala(id);
+  } catch (e) {
+    console.error("Error al enviar invitación:", e);
+    if (id) await updateDoc(doc(db,"games",id), {estado:"cancelada"}).catch(()=>{});
+    const msg = e.code === "permission-denied"
+      ? "Firebase rechazó la invitación. Verifica que la amistad esté aceptada y que hayas publicado las reglas actualizadas."
+      : "No se pudo enviar la invitación. Inténtalo de nuevo.";
+    avisoInv(msg);
+  }
 }
 async function aceptarInv(id){
   const inv = invRec.find(i => i.id === id); if (!inv) return;
-  if (inv.estado !== "pendiente" || Date.now() - Number(inv.t || 0) >= INV_MS){ avisoInv("Esta invitación ya venció. Pide que te envíen otra."); pintarInv(); return; }
+  if (inv.estado !== "pendiente" || Date.now() - invTime(inv) >= INV_MS){ avisoInv("Esta invitación ya venció. Pide que te envíen otra."); pintarInv(); return; }
   try {
     const invRef = doc(db,"invitaciones",id), ref = doc(db,"games",inv.partida);
     await runTransaction(db, async tx => {
