@@ -769,8 +769,8 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
     const a = G.ataque, hits = []; let toca = false, suma = 0;
     var bakMis = JSON.stringify(mis), bakGast = [...gast];
     for (const s of mis){
+      if (s.hund) continue;   // un barco ya derribado cuenta como agua
       const C = CL[s.i], tocados = s.celdas.filter(c => cruza(c, a.m, a.b));
-      if (tocados.length) toca = true;
       const libres = tocados.filter(c => !gast.has(kk(c)));
       if (!libres.length) continue;
       libres.sort((u,v) => Math.hypot(u.x+.5, u.y+.5-a.b) - Math.hypot(v.x+.5, v.y+.5-a.b));   // el más cercano a (0, b)
@@ -783,6 +783,7 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
       if (!s.hund && s.dano >= C.um) s.hund = true;
       hits.push({k:s.k, n:C.n, d, t:s.dano, h:s.hund, p:ganado});
     }
+    toca = hits.length > 0;   // solo es "tocó" si la recta causó daño nuevo; si no, es agua
     const gana = mis.every(s => s.hund);
     await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[...gast]});
     await runTransaction(db, async tx => {
