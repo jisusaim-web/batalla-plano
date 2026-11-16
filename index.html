@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Batalla en el plano</title>
 <style>
-:root{--bg:#e8eef0;--card:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--on:#fff;--err:#b3261e;--ok:#2e7d32;--off:#d3dfe3;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--card:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--on:#06222a;--err:#ff8a80;--ok:#81c784;--off:#0f2227;color-scheme:dark}}
+:root{--bg:#e8eef0;--card:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--on:#fff;--err:#b3261e;--ok:#2e7d32;--off:#d3dfe3;--azul:#1f6fd1;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--card:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--on:#06222a;--err:#ff8a80;--ok:#81c784;--off:#0f2227;--azul:#5aa9ff;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Avenir Next","Segoe UI",system-ui,sans-serif}
 header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
@@ -360,7 +360,7 @@ function pintarPerfil(){
     ${personalizarHTML()}${logrosHTML(perfilMio())}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
-    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; amarillo: no tocó. Toca un plano para ampliarlo.</small></details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; azul: no tocó. Toca un plano para ampliarlo.</small></details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
@@ -380,7 +380,7 @@ function mini(h, modo){   // "mio": mi plano (mis barcos + ataques del rival) ·
   g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
   for (const l of lin){
     const m = Number(l.m), b = Number(l.b);
-    g += `<line x1="-8" y1="${m * -8 + b}" x2="8" y2="${m * 8 + b}" stroke="${l.rojo ? "var(--err)" : "#e0a800"}" stroke-width=".13" stroke-linecap="round"/>`;
+    g += `<line x1="-8" y1="${m * -8 + b}" x2="8" y2="${m * 8 + b}" stroke="${l.rojo ? "var(--err)" : "var(--azul)"}" stroke-width=".13" stroke-linecap="round"/>`;
   }
   return `<svg viewBox="-6.2 -6.2 12.4 12.4" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
 }
@@ -451,7 +451,7 @@ function radarH(modo, prev, place){
   }
   if (prev && prev.celdas) for (const c of prev.celdas) g += `<rect x="${c.x}" y="${c.y}" width="1" height="1" fill="${prev.ok ? "#2e7d32" : "#d23a2a"}" opacity=".55"/>`;
   g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
-  for (const l of G.lineas.filter(l => modo === "atk" ? l.p === yo : l.p !== yo)) g += ln(l.m, l.b, l.rojo ? "var(--err)" : "#e0a800", .1, "");
+  for (const l of G.lineas.filter(l => modo === "atk" ? l.p === yo : l.p !== yo)) g += ln(l.m, l.b, l.rojo ? "var(--err)" : "var(--azul)", .1, "");
   if (modo === "def" && G.apunta && G.apunta.p !== yo) g += ln(G.apunta.m, G.apunta.b, "var(--err)", .06, ".25 .2");
   if (prev && prev.linea) g += ln(prev.linea.m, prev.linea.b, "var(--acc)", .08, ".25 .2");
   let t = "";
@@ -459,7 +459,7 @@ function radarH(modo, prev, place){
   return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px;${place ? "touch-action:none" : ""}"><g transform="scale(1,-1)">${g}</g>${t}</svg>`;
 }
 const mTxt = l => l.md != null ? (l.md === 1 ? String(l.mn) : l.mn + "/" + l.md) : String(Math.round(l.m * 1000) / 1000);
-const ultTxt = l => `${l.p === yo ? "Tu ataque" : "Ataque rival"} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}`).join(" | ");
+const ultTxt = l => `${l.p === yo ? "Tu ataque" : "Ataque rival"} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}${h.p ? ` +${h.p} pts` : ""}`).join(" | ");
 function resumenH(){
   const m = new Map(); for (const l of G.lineas.filter(l => l.p === yo)) for (const h of l.hits || []) m.set(h.k, h);
   const v = [...m.values()], tot = {}, c = {}; v.forEach(h => tot[h.n] = (tot[h.n] || 0) + 1);
@@ -598,8 +598,12 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
       libres.sort((u,v) => Math.hypot(u.x+.5, u.y+.5-a.b) - Math.hypot(v.x+.5, v.y+.5-a.b));   // el más cercano a (0, b)
       const c = libres[0], d = C.d[s.celdas.findIndex(z => z.x === c.x && z.y === c.y)];
       gast.add(kk(c)); s.dano += d;
-      if (!s.hund && s.dano >= C.um){ s.hund = true; suma += C.pts; }
-      hits.push({k:s.k, n:C.n, d, t:s.dano, h:s.hund});
+      // los puntos se ganan en proporción al daño y completan el valor del barco al derribarlo
+      if (s.hund && s.pagado === undefined) s.pagado = C.pts;
+      const total = Math.min(C.pts, Math.round(C.pts * s.dano / C.um)), ganado = total - (s.pagado || 0);
+      s.pagado = total; suma += ganado;
+      if (!s.hund && s.dano >= C.um) s.hund = true;
+      hits.push({k:s.k, n:C.n, d, t:s.dano, h:s.hund, p:ganado});
     }
     const gana = mis.every(s => s.hund);
     await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[...gast]});
@@ -756,7 +760,7 @@ function radarEsp(g, p){                 // solo rectas: los barcos nunca se mue
   let c = "";
   for (let x = -NN; x < NN; x++) for (let y = -NN; y < NN; y++) c += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PERM[3-p].includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
   c += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
-  for (const l of g.lineas.filter(l => l.p === p)) c += ln(Number(l.m), Number(l.b), l.rojo ? "var(--err)" : "#e0a800", .1, "");
+  for (const l of g.lineas.filter(l => l.p === p)) c += ln(Number(l.m), Number(l.b), l.rojo ? "var(--err)" : "var(--azul)", .1, "");
   return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${c}</g></svg>`;
 }
 function pintarEsp(){
@@ -764,7 +768,7 @@ function pintarEsp(){
   g.lineas = g.lineas || []; g.pts = g.pts || {1:0,2:0};
   const nm = p => p === 1 ? g.n1 : g.n2, ult = g.lineas[g.lineas.length - 1];
   const est = g.estado === "fin" ? "Terminada" : g.pausa && g.pausa.estado === "pausada" ? "En pausa" : g.estado === "colocando" ? "Colocando barcos" : `Ronda ${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}`;
-  const txt = l => `${nm(l.p)} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}`).join(" | ");
+  const txt = l => `${nm(l.p)} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}${h.p ? ` +${h.p} pts` : ""}`).join(" | ");
   $("v-sala").innerHTML = `<div class="bar"><span>Espectando</span><span><b>${esc(g.n1)}</b> ${g.pts[1]} – ${g.pts[2]} <b>${esc(g.n2 || "…")}</b></span><span>${est}</span></div>
     ${g.estado === "fin" ? `<p class="msg">${g.ganador === 0 ? "Empate" : "Ganó " + esc(nm(g.ganador))}</p>` : ""}
     ${ult ? `<div class="card"><b>${esc(txt(ult))}</b></div>` : `<p class="mut">Aún no hay ataques.</p>`}
@@ -871,7 +875,7 @@ document.addEventListener("click", e => {
   for (let i = -6; i <= 6; i += 2) if (i) n += `<text x="${i}" y="-.3" font-size=".5" text-anchor="middle" fill="var(--mut)">${i}</text><text x=".2" y="${-i + .17}" font-size=".5" fill="var(--mut)">${i}</text>`;
   const cap = sv.parentElement.querySelector("small")?.textContent || "";
   $("zoomBody").innerHTML = `<p style="margin:0 0 8px"><b>${esc(cap)}</b></p>${sv.outerHTML.replace(/<\/svg>$/, n + "</svg>")}
-    <p class="mut" style="margin:8px 0 0;font-size:.8rem">Rojo: la recta tocó barcos · Amarillo: no tocó · ✕ cuadro dañado · barco apagado: derribado.<br>Toca para cerrar.</p>`;
+    <p class="mut" style="margin:8px 0 0;font-size:.8rem">Rojo: la recta tocó barcos · Azul: no tocó · ✕ cuadro dañado · barco apagado: derribado.<br>Toca para cerrar.</p>`;
   $("zoom").hidden = false;
 }, true);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("zoom").hidden) cerrarZoom(); });
