@@ -283,7 +283,7 @@ const otro = a => a.miembros.find(m => m !== U.uid);
 function pintar(){
   if (!U) return;
   const av = $("hAv");
-  av.innerHTML = P.avatarUrl ? `<img src="${esc(P.avatarUrl)}" alt="Foto de perfil">` : AV_EMOJIS.includes(P.avatar) ? P.avatar : U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
+  av.innerHTML = urlImg(P.avatarUrl) ? `<img src="${esc(urlImg(P.avatarUrl))}" alt="Foto de perfil">` : AV_EMOJIS.includes(P.avatar) ? P.avatar : U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
   av.style.background = P.avatarColor ? colorAv(P) : "";
   const n = pendientes().length; $("dotA").hidden = !n; $("dotA").textContent = n;
   if (vista === "inicio") pintarInicio();
@@ -838,18 +838,21 @@ const LOGROS = [
   {id:"m300", i:"💥", n:"Tiro maestro",     d:"Una partida de 300 pts o más",     ok:(s,j) => s.mejor >= 300},
   {id:"wr",   i:"📈", n:"Estratega",        d:"60% de victorias con 10+ partidas", ok:(s,j) => j >= 10 && s.victorias / j >= 0.6}
 ];
+// Solo se muestran imágenes de tu propio almacenamiento de Firebase: la dirección de otro jugador nunca se usa tal cual.
+const IMG_OK = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/prueba-2-df121\.firebasestorage\.app\/o\//;
+function urlImg(u){ return typeof u === "string" && u.length <= 700 && IMG_OK.test(u) ? u : ""; }
 function estad(d){ const s = {victorias:d.victorias || 0, derrotas:d.derrotas || 0, empates:d.empates || 0, puntos:d.puntos || 0, mejor:d.mejor || 0}; return [s, s.victorias + s.derrotas + s.empates]; }
 function logrosDe(d){ const [s, j] = estad(d); return LOGROS.map(l => ({...l, ok:l.ok(s, j)})); }
 function tituloDe(d){ const l = logrosDe(d).find(x => x.id === d.titulo && x.ok); return l ? l.n : "Grumete"; }
 function colorAv(d){ return AV_COLORES.includes(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
 function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
-  const e = d.avatarUrl ? `<img src="${esc(d.avatarUrl)}" alt="Foto de ${esc(d.nombre || "jugador")}">` : AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
+  const e = urlImg(d.avatarUrl) ? `<img src="${esc(urlImg(d.avatarUrl))}" alt="Foto de ${esc(d.nombre || "jugador")}">` : AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
   return `<span class="avt" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
 function cabeceraPerfil(d){
   const f = FONDOS[d.fondo] || FONDOS.oceano;
-  const fondo = d.bannerUrl ? `background-image:linear-gradient(135deg,#0007,#0005),url(&quot;${esc(d.bannerUrl)}&quot;)` : `background:linear-gradient(135deg,${f[1]},${f[2]})`;
+  const fondo = urlImg(d.bannerUrl) ? `background-image:linear-gradient(135deg,#0007,#0005),url(&quot;${esc(urlImg(d.bannerUrl))}&quot;)` : `background:linear-gradient(135deg,${f[1]},${f[2]})`;
   return `<div class="ph" style="${fondo}">${avatarHTML(d, 64)}<div><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
 }
 function logrosHTML(d){
@@ -863,8 +866,8 @@ function personalizarHTML(){
 function personalizarPanel(){
   const m = perfilMio(), lg = logrosDe(m).filter(x => x.ok);
   return `<h2>Personalizar</h2><div class="card">
-    <small>Foto de perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoAvatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${m.avatarUrl ? `<img class="avatar-preview" src="${esc(m.avatarUrl)}" alt="Foto actual">` : `<span class="mut">Sin foto personalizada</span>`}</div>
-    <small>Banner del perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoBanner" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${m.bannerUrl ? `<img class="banner-preview" src="${esc(m.bannerUrl)}" alt="Banner actual">` : `<span class="mut">Sin banner personalizado</span>`}</div>
+    <small>Foto de perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoAvatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${urlImg(m.avatarUrl) ? `<img class="avatar-preview" src="${esc(urlImg(m.avatarUrl))}" alt="Foto actual">` : `<span class="mut">Sin foto personalizada</span>`}</div>
+    <small>Banner del perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoBanner" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${urlImg(m.bannerUrl) ? `<img class="banner-preview" src="${esc(urlImg(m.bannerUrl))}" alt="Banner actual">` : `<span class="mut">Sin banner personalizado</span>`}</div>
     <small>Avatar</small><div class="opts">${AV_EMOJIS.map(e => `<button class="emo ${m.avatar === e ? "" : "sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div>
     <small>Color del avatar</small><div class="opts">${AV_COLORES.map(c => `<button class="sw" style="background:${c}" data-avc="${c}" aria-label="Color ${c}">${m.avatarColor === c ? "✓" : ""}</button>`).join("")}</div>
     <small>Fondo del perfil</small><div class="opts">${Object.entries(FONDOS).map(([k, f]) => `<button class="mini ${m.fondo === k ? "" : "sec"}" data-fondo="${k}">${f[0]}</button>`).join("")}</div>
@@ -876,11 +879,20 @@ async function subirImagenPerfil(file, tipo){
   const tipos = ["image/jpeg","image/png","image/webp","image/gif"];
   if (!tipos.includes(file.type)){ alert("Usa una imagen JPG, PNG, WEBP o GIF."); return; }
   if (file.size > 5 * 1024 * 1024){ alert("La imagen no debe superar 5 MB."); return; }
-  const ext = ({"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif"})[file.type];
-  const ruta = `profiles/${U.uid}/${tipo}_${Date.now()}.${ext}`;
   try {
+    let blob = file, mime = file.type, ext = ({"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif"})[file.type];
+    if (file.type === "image/gif"){
+      if (file.size > 1024 * 1024){ alert("Un GIF debe pesar máximo 1 MB."); return; }
+    } else {   // se reduce y se guarda como JPG: avatar hasta 256 px, banner hasta 1000 x 350
+      const bmp = await createImageBitmap(file), mw = tipo === "avatar" ? 256 : 1000, mh = tipo === "avatar" ? 256 : 350, k = Math.min(1, mw / bmp.width, mh / bmp.height);
+      const cv = document.createElement("canvas"); cv.width = Math.max(1, Math.round(bmp.width * k)); cv.height = Math.max(1, Math.round(bmp.height * k));
+      cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
+      blob = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.85)); mime = "image/jpeg"; ext = "jpg";
+      if (!blob) throw new Error("No se pudo leer la imagen");
+    }
+    const ruta = `profiles/${U.uid}/${tipo}_${Date.now()}.${ext}`;
     const ref = storageRef(storage, ruta);
-    await uploadBytes(ref, file, {contentType:file.type});
+    await uploadBytes(ref, blob, {contentType:mime});
     const url = await getDownloadURL(ref);
     await updateDoc(doc(db,"users",U.uid), {[tipo === "avatar" ? "avatarUrl" : "bannerUrl"]:url});
     pintarPerfil();
@@ -967,13 +979,19 @@ function pintarUsuario(){
 /* ================= INVITACIONES A PARTIDA ================= */
 let invRec = [], invEnv = [], invMsg = "";
 const INV_MS = 60000, INV_TXT = {pendiente:"esperando respuesta…", aceptada:"aceptó", rechazada:"rechazó la invitación", cancelada:"invitación cancelada", vencida:"invitación vencida"};
+let invKey = "";
 function pintarInv(){
   const e = $("invBar"); if (!e) return;
-  const v = invRec.filter(i => i.estado === "pendiente" && Date.now() - Number(i.t || 0) < INV_MS);
-  e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button><small>Expira en ${Math.max(0,Math.ceil((INV_MS-(Date.now()-Number(i.t||0)))/1000))} s</small></div></div>`).join("")
-    + (invMsg ? `<p class="err" style="max-width:480px;margin:6px auto;padding:0 16px">${esc(invMsg)}</p>` : "");
+  const v = invRec.filter(i => i.estado === "pendiente" && Date.now() - Number(i.t || 0) < INV_MS), key = v.map(i => i.id).join(",") + "|" + invMsg;
+  if (key !== invKey){   // solo se vuelve a dibujar si cambia algo; así los botones no se mueven mientras los tocas
+    invKey = key;
+    e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button><small data-exp="${Number(i.t || 0)}"></small></div></div>`).join("")
+      + (invMsg ? `<p class="err" style="max-width:480px;margin:6px auto;padding:0 16px">${esc(invMsg)}</p>` : "");
+  }
+  e.querySelectorAll("[data-exp]").forEach(x => { x.textContent = "Expira en " + Math.max(0, Math.ceil((INV_MS - (Date.now() - Number(x.dataset.exp))) / 1000)) + " s"; });
 }
-setInterval(() => { pintarInv(); if (vista === "sala" && G && !G.j2 && gid) pintarSala(gid, G); }, 1000);
+let ultInv = "";
+setInterval(() => { pintarInv(); if (vista === "sala" && G && !G.j2 && gid){ const t = invitesSala(gid); if (t !== ultInv){ ultInv = t; pintarSala(gid, G); } } }, 1000);
 function avisoInv(t){ invMsg = t; pintarInv(); setTimeout(() => { invMsg = ""; pintarInv(); }, 6000); }
 function invitesSala(id){
   return invEnv.filter(i => i.partida === id).map(i => { const vencida = i.estado === "pendiente" && Date.now() - Number(i.t || 0) >= INV_MS; return `<p>Invitaste a <b>${esc(i.paraNombre)}</b>: ${vencida ? "invitación vencida" : (INV_TXT[i.estado] || esc(i.estado))} ${i.estado === "pendiente" && !vencida ? `<button class="mini sec" data-invcan="${esc(i.id)}">Cancelar</button>` : ""}</p>`; }).join("");
