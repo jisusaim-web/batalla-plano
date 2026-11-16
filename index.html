@@ -558,7 +558,7 @@ const CL = [
 const FLOTA = CL.flatMap((c,i) => Array(c.q).fill(i));
 const quad = (x,y) => x>=0&&y>=0 ? 1 : x<0&&y>=0 ? 2 : x<0&&y<0 ? 3 : 4;
 const kk = c => c.x + "," + c.y;
-const cruza = (c,m,b) => { const v = [[0,0],[1,0],[0,1],[1,1]].map(([i,j]) => c.y+j - m*(c.x+i) - b); return Math.min(...v) < -1e-9 && Math.max(...v) > 1e-9; };
+const cruza = (c,m,b) => { const v = [[0,0],[1,0],[0,1],[1,1]].map(([i,j]) => c.y+j - m*(c.x+i) - b); return Math.min(...v) <= 1e-9 && Math.max(...v) >= -1e-9; };
 const fmtT = r => Math.floor(Math.max(r,0)/60) + ":" + String(Math.max(r,0)%60).padStart(2,"0");
 let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz = true, vmn = "1", vmd = "1", vb = "0",
     huella = "", resolviendo = false, pasando = false, guardado = false, publicado = false, msgP = "", aimT = null, campoTeclado = "mn";
