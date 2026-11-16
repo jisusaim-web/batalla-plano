@@ -163,6 +163,21 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 .ph.style-sketch{border-style:dashed;border-width:3px}
 .ph.style-neon{box-shadow:0 0 18px #7df8,inset 0 0 18px #fff2}
 .ph.style-glass{backdrop-filter:blur(2px);border-color:#ffffff99;box-shadow:inset 0 0 22px #fff3}
+/* Cada estilo tipográfico se aplica al texto completo de la tarjeta de perfil */
+.ph.style-clasico .profile-copy,.style-choice .sample.font-clasico{font-family:system-ui,"Segoe UI",sans-serif}
+.ph.style-pixel .profile-copy,.style-choice .sample.font-pixel{font-family:"Courier New",monospace;letter-spacing:.035em}
+.ph.style-paint .profile-copy,.style-choice .sample.font-paint{font-family:"Brush Script MT","Segoe Script",cursive;font-style:italic}
+.ph.style-neon .profile-copy,.style-choice .sample.font-neon{font-family:"Arial",sans-serif;font-weight:900;letter-spacing:.09em;text-shadow:0 0 7px currentColor}
+.ph.style-sketch .profile-copy,.style-choice .sample.font-sketch{font-family:"Comic Sans MS","Segoe Print",cursive;font-style:italic}
+.ph.style-glass .profile-copy,.style-choice .sample.font-glass{font-family:"Avenir Next","Trebuchet MS",sans-serif;font-weight:300;letter-spacing:.025em}
+.ph.style-sticker .profile-copy,.style-choice .sample.font-sticker{font-family:"Trebuchet MS","Arial Rounded MT Bold",sans-serif;font-weight:900;letter-spacing:-.025em}
+.ph.style-orbit .profile-copy,.style-choice .sample.font-orbit{font-family:"Century Gothic","Avenir Next",sans-serif;letter-spacing:.12em;font-weight:700}
+.ph.style-retro .profile-copy,.style-choice .sample.font-retro{font-family:Georgia,"Times New Roman",serif;letter-spacing:.055em}
+.ph .profile-copy .pn,.ph .profile-copy .pt,.ph .profile-copy .pb,.ph .profile-copy .featured{font-family:inherit}
+.ph.style-paint .profile-copy .pn,.ph.style-sketch .profile-copy .pn{font-size:1.18em}
+.ph.style-neon .profile-copy .pn{letter-spacing:.11em;text-transform:uppercase}
+.ph.style-retro .profile-copy .pn{letter-spacing:.08em;text-transform:uppercase}
+.style-choice .sample{font-size:18px;font-weight:800;line-height:1}
 .style-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin:10px 0}
 .style-choice{min-height:78px;padding:9px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:var(--bg);color:var(--ink);border:1px solid var(--line);font-size:.78rem}
 .style-choice .sample{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#fc00ff,#00dbde);font-size:20px}
@@ -237,44 +252,6 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 #previewCosmetic .preview-box{width:min(96vw,560px);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 18px 60px #0009}
 .preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
 .preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-
-
-/* ===== Pulido de formas, tipografía y bordes (sin alterar la paleta) ===== */
-body{font-family:ui-rounded,"Avenir Next","Segoe UI",system-ui,sans-serif;letter-spacing:.01em;line-height:1.5}
-h1,h2,h3{font-family:ui-rounded,"Avenir Next","Segoe UI",system-ui,sans-serif;letter-spacing:-.025em;font-weight:850;line-height:1.2}
-h2{font-size:1.16rem}
-.card{border-radius:18px;padding:16px;border-width:1px;box-shadow:0 5px 16px #0000000b}
-button{border-radius:13px;font-weight:750;letter-spacing:.005em;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
-button:active{transform:translateY(1px) scale(.985)}
-button.big{border-radius:17px;min-height:52px;font-size:1.02rem}
-button.mini{border-radius:11px;padding:7px 11px}
-button.link{border-radius:9px}
-input,select,textarea{border-radius:13px!important;padding:11px 12px!important;line-height:1.4}
-input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline-offset:3px}
-.item{padding:12px 10px;border-radius:13px}
-.tag{border-radius:999px;padding:3px 9px;font-size:.76rem;font-weight:750;letter-spacing:.01em}
-.ph{border-radius:20px;padding:18px;gap:15px}
-.av{border-radius:15px}
-.profile-decor-shell{border-radius:23px;padding:10px}
-.profile-decor-shell>.card{border-radius:17px}
-.profile-bg-choice,.style-choice,.cosmetic,.banner-choice{border-radius:15px;overflow:hidden}
-.profile-bg-thumb{border-radius:11px}
-.pers-tabs{border-radius:16px}
-.pers-tab{border-radius:999px}
-.pers-section{border-radius:16px}
-.history-pager{border-radius:15px;padding:9px}
-.history-scroll{border-radius:14px}
-details.h{border-radius:15px;overflow:hidden}
-.keypad{border-radius:17px;padding:12px}
-.keypad-grid button{border-radius:12px}
-.code{border-radius:16px;letter-spacing:.12em;font-weight:850}
-nav#nav{border-radius:21px}
-nav button{border-radius:14px;font-weight:750;letter-spacing:.005em}
-#auth .card{border-radius:22px;padding:20px}
-#previewCosmetic .preview-box,#zoom .zbox{border-radius:22px}
-@media(max-width:420px){.card{padding:14px;border-radius:16px}h2{font-size:1.08rem}}
-@media(prefers-reduced-motion:reduce){button{transition:none}}
-
 </style>
 </head>
 <body>
@@ -1138,7 +1115,7 @@ function personalizarPanel(){
   const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
   let contenido="";
   if(persTab==="avatar") contenido=`<div class="pers-section"><b>Elige tu avatar</b><div class="opts">${AV_EMOJIS.map(e=>`<button class="emo ${m.avatar===e?"":"sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div><p class="mut">Elige un símbolo que te represente. Puedes cambiarlo cuando quieras.</p></div>`;
-  if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual del avatar y los detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">⚓</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
+  if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual del avatar y los detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample font-${k}" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">Aa</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
   if(persTab==="colores") contenido=`<div class="pers-section"><b>Crea tu propio color</b><p class="mut">Elige cualquier tono para personalizar tu avatar. Puedes cambiarlo cuando quieras.</p><label for="colorAvatarLibre">Color del avatar</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:58px;padding:4px;max-width:180px"><p class="mut">Color actual: <b>${esc(hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a")}</b></p></div>`;
   if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondo de la cabecera · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
   if(persTab==="fondoPerfil") contenido=`<div class="pers-section"><b>Fondo de todo el perfil</b><p class="mut">Este fondo cubre la cabecera, estadísticas, insignias e historial. Es independiente del fondo de la cabecera y puedes cambiarlo cuando quieras.</p><div class="profile-bg-grid">${Object.entries(FONDOS_PERFIL).map(([k,x])=>`<button class="profile-bg-choice ${((m.fondoPerfil||"clasico")===k)?"sel":"sec"}" data-fondo-perfil="${k}" aria-pressed="${(m.fondoPerfil||"clasico")===k}"><span class="profile-bg-thumb" style="background:${x.bg}"></span><b>${x.n}</b>${(m.fondoPerfil||"clasico")===k?" ✓":""}</button>`).join("")}</div></div>`;
