@@ -30,10 +30,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .stats span,small,.mut{color:var(--mut);font-size:.85rem}
 .err{color:var(--err);min-height:1.3em;margin:8px 0 0;font-size:.9rem}
 .av{width:36px;height:36px;border-radius:50%;background:var(--acc);color:var(--on);display:grid;place-items:center;font-weight:700;overflow:hidden;padding:0;border:0}
-.av img{width:100%;height:100%;object-fit:cover}
-.avt{overflow:hidden}.avt img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avt{overflow:hidden}
 .ph{background-size:cover;background-position:center;min-height:132px}
-.media-preview{display:flex;align-items:center;gap:10px;margin:8px 0 14px}.media-preview img{object-fit:cover;border:1px solid var(--line);background:var(--bg)}.media-preview .avatar-preview{width:58px;height:58px;border-radius:50%}.media-preview .banner-preview{width:120px;height:58px;border-radius:8px}
 .code{font:700 2rem ui-monospace,Menlo,monospace;letter-spacing:.2em}
 .tag{font-size:.75rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
 nav{position:fixed;z-index:6;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -82,6 +80,28 @@ details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child
 .reacs{display:flex;gap:6px;flex-wrap:wrap;min-height:1.7rem;margin:6px 0}
 .reac{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:1.05rem}
 button.emo{font-size:1.5rem;padding:6px 12px}
+.ph{position:relative;overflow:hidden;min-height:92px;border:2px solid transparent;transition:filter .2s,box-shadow .2s}
+.ph .avt{position:relative;z-index:1}
+.ph .profile-copy{position:relative;z-index:1;min-width:0}
+.ph .pn{overflow-wrap:anywhere}
+.ph .featured{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:2px 8px;border-radius:99px;background:#ffffff26;border:1px solid #ffffff55;font-size:.76rem}
+.ph.frame-bronce{border-color:#cd8b55}.ph.frame-plata{border-color:#cbd5e1;box-shadow:0 0 0 2px #cbd5e155 inset}
+.ph.frame-oro{border-color:#ffd166;box-shadow:0 0 12px #ffd16688,inset 0 0 0 2px #ffd16655}
+.ph.frame-diamante{border-color:#7de8ff;box-shadow:0 0 16px #7de8ff99,inset 0 0 0 2px #7de8ff55}
+.ph.frame-fuego{border-color:#ff7043;box-shadow:0 0 16px #ff572288,inset 0 0 0 2px #ff704355}
+.ph.effect-brillo:after,.ph.effect-oleaje:after,.ph.effect-estrellas:after{content:"";position:absolute;inset:-60%;pointer-events:none;opacity:.22}
+.ph.effect-brillo:after{background:linear-gradient(115deg,transparent 40%,#fff 50%,transparent 60%);animation:perfilBrillo 5s linear infinite}
+.ph.effect-oleaje:after{background:radial-gradient(ellipse at 20% 120%,#fff8,transparent 55%),radial-gradient(ellipse at 80% -20%,#6ff8,transparent 55%);animation:perfilOleaje 4s ease-in-out infinite alternate}
+.ph.effect-estrellas:after{background-image:radial-gradient(#fff 1px,transparent 1.5px),radial-gradient(#fff9 1px,transparent 1.5px);background-size:28px 28px,43px 43px;background-position:0 0,13px 17px;animation:perfilEstrellas 8s linear infinite}
+@keyframes perfilBrillo{to{transform:translateX(45%)}}
+@keyframes perfilOleaje{to{transform:translateY(-8px)}}
+@keyframes perfilEstrellas{to{background-position:28px 28px,56px 60px}}
+.cosmetic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:7px;margin:7px 0 14px}
+.cosmetic{min-height:42px;padding:7px 8px;font-size:.82rem;line-height:1.25}
+.cosmetic.sel{outline:2px solid var(--acc);outline-offset:1px}
+.cosmetic:disabled{opacity:.4;filter:grayscale(1);cursor:not-allowed}
+.cosmetic small{display:block;font-size:.7rem;opacity:.8;margin-top:3px}
+@media(prefers-reduced-motion:reduce){.ph.effect-brillo:after,.ph.effect-oleaje:after,.ph.effect-estrellas:after{animation:none}}
 .avt{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;flex:none;border:2px solid #ffffff88;vertical-align:middle}
 .ph{display:flex;gap:14px;align-items:center;padding:16px;border-radius:12px;color:#fff}
 .pn{font:700 1.2rem Georgia,serif}.pt{opacity:.9;font-size:.85rem}.pb{margin-top:4px;font-size:.9rem}
@@ -160,14 +180,13 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,addDoc,increment,runTransaction,onSnapshot,orderBy,limit,getDocs,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import {getStorage,ref as storageRef,uploadBytes,getDownloadURL} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU", authDomain:"prueba-2-df121.firebaseapp.com",
   projectId:"prueba-2-df121", storageBucket:"prueba-2-df121.firebasestorage.app",
   messagingSenderId:"147257342708", appId:"1:147257342708:web:81be883437b83c7e443ca1"
 });
-const auth = getAuth(app), db = getFirestore(app), storage = getStorage(app);
+const auth = getAuth(app), db = getFirestore(app);
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR = {
@@ -283,8 +302,8 @@ const otro = a => a.miembros.find(m => m !== U.uid);
 function pintar(){
   if (!U) return;
   const av = $("hAv");
-  av.innerHTML = urlImg(P.avatarUrl) ? `<img src="${esc(urlImg(P.avatarUrl))}" alt="Foto de perfil">` : AV_EMOJIS.includes(P.avatar) ? P.avatar : U.photoURL ? `<img src="${esc(U.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc(nombre()[0].toUpperCase());
-  av.style.background = P.avatarColor ? colorAv(P) : "";
+  av.textContent = AV_EMOJIS.includes(P.avatar) ? P.avatar : nombre()[0].toUpperCase();
+  av.style.background = colorAv(P);
   const n = pendientes().length; $("dotA").hidden = !n; $("dotA").textContent = n;
   if (vista === "inicio") pintarInicio();
   if (vista === "partidas") pintarPartidas();
@@ -790,7 +809,7 @@ let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
 function sincRank(){                 // copia tus estadísticas a la lista pública (sin tu código de amigo ni tu presencia)
   if (!U) return;
   const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
-  for (const c of ["avatar","avatarColor","bio","fondo","titulo","avatarUrl","bannerUrl"]) if (P[c]) d[c] = P[c];
+  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia"]) if (P[c]) d[c] = P[c];
   const k = JSON.stringify(d); if (k === kR) return; kR = k;
   setDoc(doc(db,"ranking",U.uid), d).catch(() => { kR = ""; });
 }
@@ -823,10 +842,14 @@ function pintarRanking(){
 }
 
 /* ================= PERSONALIZACIÓN Y PERFILES ================= */
-const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","👑"];
+const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","👑","🦅","🐺","🦊","🐉","🦁","🐸","🦋","☠️","🤖","👽","🥷","🧙","🧛","🧟","🛡️","⚔️","💀","🌪️","🌙","☄️"] ;
 const AV_COLORES = ["#0f6b7a","#c4452d","#e0a800","#2e7d32","#7b5ea7","#3a6ea5","#c9772b","#5d7882"];
 const FONDOS = {oceano:["Océano","#0f6b7a","#16414d"], atardecer:["Atardecer","#e4572e","#7b2d5b"], bosque:["Bosque","#2e7d32","#12351a"],
-                noche:["Noche","#3a3f8f","#0d1033"], coral:["Coral","#e0707a","#8a2f4a"], hielo:["Hielo","#6aa8d8","#2f5f8f"]};
+                noche:["Noche","#3a3f8f","#0d1033"], coral:["Coral","#e0707a","#8a2f4a"], hielo:["Hielo","#6aa8d8","#2f5f8f"],
+                galaxia:["Galaxia","#542b85","#11102e"], neon:["Neón","#087f8c","#40145f"], lava:["Volcán","#b52b20","#35100c"],
+                oro:["Realeza","#9a6a12","#39220a"], aurora:["Aurora","#087f72","#20366f"], carbon:["Carbón","#454b55","#111318"]};
+const MARCOS = {ninguno:{n:"Sin marco",victorias:0}, bronce:{n:"Bronce",victorias:1}, plata:{n:"Plata",victorias:5}, oro:{n:"Oro",victorias:15}, diamante:{n:"Diamante",victorias:25}, fuego:{n:"Llama",victorias:10,mejor:300}};
+const EFECTOS = {ninguno:{n:"Sin efecto",req:0}, brillo:{n:"Destello",req:5}, oleaje:{n:"Oleaje",req:10}, estrellas:{n:"Estrellas",req:25,puntos:1000}};
 const LOGROS = [
   {id:"v1",   i:"🎖️", n:"Primera victoria", d:"Gana una partida",                 ok:(s,j) => s.victorias >= 1},
   {id:"v5",   i:"⚔️", n:"Marinero curtido", d:"Gana 5 partidas",                  ok:(s,j) => s.victorias >= 5},
@@ -838,22 +861,24 @@ const LOGROS = [
   {id:"m300", i:"💥", n:"Tiro maestro",     d:"Una partida de 300 pts o más",     ok:(s,j) => s.mejor >= 300},
   {id:"wr",   i:"📈", n:"Estratega",        d:"60% de victorias con 10+ partidas", ok:(s,j) => j >= 10 && s.victorias / j >= 0.6}
 ];
-// Solo se muestran imágenes de tu propio almacenamiento de Firebase: la dirección de otro jugador nunca se usa tal cual.
-const IMG_OK = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/prueba-2-df121\.firebasestorage\.app\/o\//;
-function urlImg(u){ return typeof u === "string" && u.length <= 700 && IMG_OK.test(u) ? u : ""; }
 function estad(d){ const s = {victorias:d.victorias || 0, derrotas:d.derrotas || 0, empates:d.empates || 0, puntos:d.puntos || 0, mejor:d.mejor || 0}; return [s, s.victorias + s.derrotas + s.empates]; }
 function logrosDe(d){ const [s, j] = estad(d); return LOGROS.map(l => ({...l, ok:l.ok(s, j)})); }
 function tituloDe(d){ const l = logrosDe(d).find(x => x.id === d.titulo && x.ok); return l ? l.n : "Grumete"; }
+function desbloqueado(item,d){ const [st,j]=estad(d); return j >= (item.req || 0) && st.victorias >= (item.victorias || 0) && st.mejor >= (item.mejor || 0) && st.puntos >= (item.puntos || 0); }
+function insigniaDe(d){ const l=logrosDe(d).find(x=>x.id===d.insignia && x.ok); return l || null; }
 function colorAv(d){ return AV_COLORES.includes(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
 function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
-  const e = urlImg(d.avatarUrl) ? `<img src="${esc(urlImg(d.avatarUrl))}" alt="Foto de ${esc(d.nombre || "jugador")}">` : AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
+  const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
   return `<span class="avt" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
 function cabeceraPerfil(d){
   const f = FONDOS[d.fondo] || FONDOS.oceano;
-  const fondo = urlImg(d.bannerUrl) ? `background-image:linear-gradient(135deg,#0007,#0005),url(&quot;${esc(urlImg(d.bannerUrl))}&quot;)` : `background:linear-gradient(135deg,${f[1]},${f[2]})`;
-  return `<div class="ph" style="${fondo}">${avatarHTML(d, 64)}<div><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
+  const fondo = `background:linear-gradient(135deg,${f[1]},${f[2]})`;
+  const marco = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
+  const efecto = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
+  const ins=insigniaDe(d);
+  return `<div class="ph frame-${marco} effect-${efecto}" style="${fondo}">${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
 }
 function logrosHTML(d){
   const l = logrosDe(d);
@@ -865,43 +890,25 @@ function personalizarHTML(){
 }
 function personalizarPanel(){
   const m = perfilMio(), lg = logrosDe(m).filter(x => x.ok);
-  return `<h2>Personalizar</h2><div class="card">
-    <small>Foto de perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoAvatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${urlImg(m.avatarUrl) ? `<img class="avatar-preview" src="${esc(urlImg(m.avatarUrl))}" alt="Foto actual">` : `<span class="mut">Sin foto personalizada</span>`}</div>
-    <small>Banner del perfil (JPG, PNG, WEBP o GIF; máximo 5 MB)</small><input id="archivoBanner" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><div class="media-preview">${urlImg(m.bannerUrl) ? `<img class="banner-preview" src="${esc(urlImg(m.bannerUrl))}" alt="Banner actual">` : `<span class="mut">Sin banner personalizado</span>`}</div>
-    <small>Avatar</small><div class="opts">${AV_EMOJIS.map(e => `<button class="emo ${m.avatar === e ? "" : "sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div>
-    <small>Color del avatar</small><div class="opts">${AV_COLORES.map(c => `<button class="sw" style="background:${c}" data-avc="${c}" aria-label="Color ${c}">${m.avatarColor === c ? "✓" : ""}</button>`).join("")}</div>
-    <small>Fondo del perfil</small><div class="opts">${Object.entries(FONDOS).map(([k, f]) => `<button class="mini ${m.fondo === k ? "" : "sec"}" data-fondo="${k}">${f[0]}</button>`).join("")}</div>
+  const botones=(items,actual,attr,icono="")=>Object.entries(items).map(([k,x])=>{
+    const ok=desbloqueado(x,m), seleccionado=(actual||"ninguno")===k;
+    return `<button class="cosmetic ${seleccionado?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${icono}${x.n}${seleccionado?" ✓":""}${ok?"":`<small>🔒 ${x.victorias ? x.victorias+" victorias" : (x.req||0)+" partidas"}</small>`}</button>`;
+  }).join("");
+  const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
+  return `<h2>Personalizar perfil</h2><div class="card">
+    <b>Avatar</b><div class="opts">${AV_EMOJIS.map(e => `<button class="emo ${m.avatar === e ? "" : "sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div>
+    <b>Color del avatar</b><div class="opts">${AV_COLORES.map(c => `<button class="sw" style="background:${c}" data-avc="${c}" aria-label="Color ${c}">${m.avatarColor === c ? "✓" : ""}</button>`).join("")}</div>
+    <b>Fondo del perfil</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,f])=>`<button class="cosmetic ${m.fondo===k?"sel":"sec"}" data-fondo="${k}">${f[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div>
+    <b>Marcos del perfil</b><p class="mut" style="margin:3px 0 7px">Consigue victorias para desbloquear marcos nuevos.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div>
+    <b>Efectos visuales</b><p class="mut" style="margin:3px 0 7px">Algunos efectos requieren más partidas y puntos.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div>
+    <label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select>
     <label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio || "")}"><button id="bBio">Guardar</button></div>
-    <label for="selTitulo">Título (se desbloquean con las insignias)</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x => `<option value="${x.id}" ${P.titulo === x.id ? "selected" : ""}>${esc(x.n)}</option>`).join("")}</select></div>`;
-}
-async function subirImagenPerfil(file, tipo){
-  if (!U || !file) return;
-  const tipos = ["image/jpeg","image/png","image/webp","image/gif"];
-  if (!tipos.includes(file.type)){ alert("Usa una imagen JPG, PNG, WEBP o GIF."); return; }
-  if (file.size > 5 * 1024 * 1024){ alert("La imagen no debe superar 5 MB."); return; }
-  try {
-    let blob = file, mime = file.type, ext = ({"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif"})[file.type];
-    if (file.type === "image/gif"){
-      if (file.size > 1024 * 1024){ alert("Un GIF debe pesar máximo 1 MB."); return; }
-    } else {   // se reduce y se guarda como JPG: avatar hasta 256 px, banner hasta 1000 x 350
-      const bmp = await createImageBitmap(file), mw = tipo === "avatar" ? 256 : 1000, mh = tipo === "avatar" ? 256 : 350, k = Math.min(1, mw / bmp.width, mh / bmp.height);
-      const cv = document.createElement("canvas"); cv.width = Math.max(1, Math.round(bmp.width * k)); cv.height = Math.max(1, Math.round(bmp.height * k));
-      cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
-      blob = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.85)); mime = "image/jpeg"; ext = "jpg";
-      if (!blob) throw new Error("No se pudo leer la imagen");
-    }
-    const ruta = `profiles/${U.uid}/${tipo}_${Date.now()}.${ext}`;
-    const ref = storageRef(storage, ruta);
-    await uploadBytes(ref, blob, {contentType:mime});
-    const url = await getDownloadURL(ref);
-    await updateDoc(doc(db,"users",U.uid), {[tipo === "avatar" ? "avatarUrl" : "bannerUrl"]:url});
-    pintarPerfil();
-  } catch (err){ console.error("Error al subir imagen:", err); alert("No se pudo subir la imagen. Revisa que Firebase Storage esté habilitado y que sus reglas estén publicadas."); }
+    <label for="selTitulo">Título (se desbloquean con las insignias)</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x => `<option value="${x.id}" ${P.titulo === x.id ? "selected" : ""}>${esc(x.n)}</option>`).join("")}</select>
+    <small class="mut">Los marcos y efectos bloqueados se consiguen jugando; tu personalización se guarda en tu cuenta.</small></div>`;
 }
 document.addEventListener("change", e => {
   if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {});
-  if (e.target.id === "archivoAvatar" && e.target.files?.[0]) subirImagenPerfil(e.target.files[0], "avatar");
-  if (e.target.id === "archivoBanner" && e.target.files?.[0]) subirImagenPerfil(e.target.files[0], "banner");
+  if (e.target.id === "selInsignia" && U) updateDoc(doc(db,"users",U.uid), {insignia:e.target.value}).catch(() => {});
 });
 
 // Tocar un plano del historial lo amplía; otro toque (o Esc) lo cierra.
@@ -1062,9 +1069,11 @@ document.addEventListener("click", async e => {
     if (d.invacep) return await aceptarInv(d.invacep);
     if (d.invrech) return await updateDoc(doc(db,"invitaciones",d.invrech), {estado:"rechazada"});
     if (d.invcan) return await updateDoc(doc(db,"invitaciones",d.invcan), {estado:"cancelada"});
-    if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av, avatarUrl:""});
+    if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
     if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
     if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
+    if (d.marco && Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],perfilMio())) return await updateDoc(doc(db,"users",U.uid), {marco:d.marco});
+    if (d.efecto && Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],perfilMio())) return await updateDoc(doc(db,"users",U.uid), {efecto:d.efecto});
     if (t.id === "bBio") return await updateDoc(doc(db,"users",U.uid), {bio:$("pBio").value.trim().slice(0, 80)});
     if (d.rk){ if (d.rk === "actualizar") return cargarRanking(); rkTab = d.rk; return pintarRanking(); }
     if (d.histPage){ paginaHistorial = Math.max(0, paginaHistorial + Number(d.histPage)); return pintarPerfil(); }
