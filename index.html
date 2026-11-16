@@ -513,7 +513,7 @@ function pintarPerfil(){
     ${personalizarHTML()}${logrosHTML(perfilMio())}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
-    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; azul: no tocó. Toca un plano para ampliarlo.</small>${botonInforme(h, nombre())}</details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; azul: no tocó. Toca un plano para ampliarlo.</small>${botonInforme(h)}</details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
@@ -619,112 +619,22 @@ function resumenH(){
   const v = [...m.values()], tot = {}, c = {}; v.forEach(h => tot[h.n] = (tot[h.n] || 0) + 1);
   return v.length ? v.map(h => { c[h.n] = (c[h.n] || 0) + 1; return `${h.n}${tot[h.n] > 1 ? " " + c[h.n] : ""}: ${h.h ? "derribado" : h.t + "%"}`; }).join(" · ") : "ninguno todavía";
 }
-function abrirInformeAtaques(lineas, n1, n2, pts1, pts2, jugador = yo, meta = {}){
+function abrirInformeAtaques(lineas, n1, n2, pts1, pts2){
   const w = window.open("", "_blank");
   if (!w){ alert("Permite las ventanas emergentes para abrir el informe en otra pestaña."); return; }
-  const propias = (lineas || []).filter(l => Number(l.p) === Number(jugador));
-  const nombre = jugador === 1 ? (n1 || "Jugador 1") : (n2 || "Jugador 2");
-  const rival = jugador === 1 ? (n2 || "Jugador 2") : (n1 || "Jugador 1");
-  const puntaje = Number(jugador === 1 ? pts1 : pts2) || 0;
-  const resultado = meta.resultado || "Partida finalizada";
-  const fechaRaw = meta.fecha;
-  let fechaTexto = "No disponible";
-  try {
-    const d = fechaRaw?.toDate ? fechaRaw.toDate() : fechaRaw ? new Date(fechaRaw) : null;
-    if (d && !Number.isNaN(d.getTime())) fechaTexto = d.toLocaleString("es-MX");
-  } catch {}
-  const ataquesAgua = propias.filter(l => !l.rojo).length;
-  const ataquesBarco = propias.filter(l => l.rojo).length;
-  const barcos = new Set(), hundidos = new Set();
-  for (const l of propias) for (const h of l.hits || []) {
-    if (h.n) barcos.add(h.n);
-    if (h.h) hundidos.add(`${h.n || "Barco"}-${h.k ?? ""}`);
-  }
-  const filas = propias.map((l,i) => {
-    const pendiente = l.md != null ? (Number(l.md) === 1 ? String(l.mn) : `${l.mn}/${l.md}`) : String(Math.round(Number(l.m)*1000)/1000);
+  const filas = (lineas || []).map((l,i) => {
+    const jugador = l.p === 1 ? n1 : n2, pendiente = l.md != null ? `${l.mn}/${l.md}` : String(Math.round(Number(l.m)*1000)/1000);
     const eq = `y = ${pendiente}x ${Number(l.b) < 0 ? "− " + Math.abs(Number(l.b)) : "+ " + Number(l.b)}`;
-    const inicio = l.inicio || ((Number(l.ronda || i+1) <= 4) ? {x:0,y:0} : {x:0,y:Number(l.b)||0});
-    const hits = l.hits || [];
-    const detalle = hits.length ? hits.map(h => `<div class="shipline"><b>${esc(h.n || "Barco")}</b>${h.sinDano ? " · Ya estaba completamente dañado; 0% adicional" : ` · +${Number(h.d)||0}% de daño`}</div>`).join("") : (l.rojo ? "Barco tocado; sin daño nuevo registrado" : "Sin barcos afectados");
-    const acumulado = hits.length ? hits.map(h => `<div>${esc(h.n || "Barco")}: ${Number(h.t)||0}%</div>`).join("") : "—";
-    const hundido = hits.length ? hits.map(h => `<div>${h.h ? '<b class="sunk">Sí · Hundido</b>' : "No"}</div>`).join("") : "—";
-    const puntos = hits.reduce((a,h)=>a+(Number(h.p)||0),0);
-    const res = l.rojo ? "Barco(s)" : "Agua";
-    return `<tr><td>${Number(l.ronda)||i+1}</td><td><code>${esc(eq)}</code></td><td>(${Number(inicio.x)||0}, ${Number(inicio.y)||0})</td><td>${esc(pendiente)}</td><td><b class="${l.rojo?"hit":"water"}">${res}</b></td><td>${detalle}</td><td>${hits.length ? hits.map(h => `<div>${Number(h.d)||0}%</div>`).join("") : "0%"}</td><td>${acumulado}</td><td>${hundido}</td><td class="points">${puntos}</td></tr>`;
+    const afectados = (l.hits || []).map(h => `${h.n}: +${h.d}% (acumulado ${h.t}%)${h.h ? " (hundido)" : ""}`).join("<br>") || (l.rojo ? "Barco tocado; sin daño nuevo" : "—");
+    const puntos = (l.hits || []).reduce((a,h)=>a+(Number(h.p)||0),0);
+    return `<tr><td>${i+1}</td><td>${esc(jugador)}</td><td><code>${esc(eq)}</code></td><td>(0, ${Number(l.b)})</td><td>${esc(pendiente)}</td><td><b class="${l.rojo?"hit":"water"}">${l.rojo?"Tocó barco(s)":"Agua"}</b></td><td>${afectados}</td><td>${puntos}</td></tr>`;
   }).join("");
-  const nombreArchivo = `Informe_Jugador${jugador}_${new Date().toISOString().slice(0,10)}.png`;
-  const htmlInforme = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Informe de ${esc(nombre)} · Batalla en el plano</title>
-  <style>
-  *{box-sizing:border-box}body{font:14px/1.45 system-ui,Segoe UI,sans-serif;margin:0;padding:22px;background:#eaf0f2;color:#18323a}
-  .toolbar{max-width:1500px;margin:0 auto 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  button{border:0;border-radius:8px;padding:11px 16px;background:#0f6b7a;color:white;font-weight:700;cursor:pointer}
-  button.secondary{background:white;color:#0f6b7a;border:1px solid #a9bec5}
-  #report{width:100%;max-width:1500px;margin:auto;background:#fff;padding:28px;border:1px solid #cbd8dc}
-  h1{font:700 27px Georgia,serif;margin:0 0 5px;color:#10303a}.sub{color:#607982;margin:0 0 20px}
-  .identity{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
-  .box{border:1px solid #c8d6da;border-radius:9px;padding:12px;background:#f5f9fa;min-width:0}
-  .box span{display:block;color:#607982;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.box b{display:block;font-size:16px;overflow-wrap:anywhere;margin-top:3px}
-  .score{background:#e5f3f4;border-color:#82b9c1}.score b{font-size:22px;color:#075968}
-  .tablewrap{width:100%;overflow:visible;margin-top:18px}
-  table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}
-  th,td{border:1px solid #cbd8dc;padding:8px 6px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
-  th{background:#dcebed;color:#173b44;font-size:10px;text-transform:uppercase;letter-spacing:.025em}
-  tbody tr:nth-child(even){background:#f6f9fa}.hit{color:#a52822}.water{color:#237343}.sunk{color:#a52822}.points{font-weight:800;color:#075968;text-align:center}
-  .shipline{margin-bottom:4px}.shipline:last-child{margin-bottom:0}
-  .summary-title{font:700 19px Georgia,serif;margin:24px 0 10px}
-  .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-  .summary .box b{font-size:19px}
-  .foot{margin-top:20px;padding-top:12px;border-top:1px solid #cbd8dc;color:#607982;font-size:11px}
-  @media(max-width:800px){body{padding:8px}#report{padding:12px}.identity{grid-template-columns:repeat(2,minmax(0,1fr))}.tablewrap{overflow-x:auto}table{min-width:1150px}}
-  @media print{body{padding:0;background:white}.toolbar{display:none}#report{border:0;max-width:none}}
-  </style></head><body>
-  <div class="toolbar"><button id="download">DESCARGAR MI TABLA COMO IMAGEN PNG</button><button class="secondary" onclick="window.print()">Imprimir / Guardar PDF</button><span id="status" role="status"></span></div>
-  <main id="report">
-    <h1>Informe individual de batalla</h1><p class="sub">Batalla en el plano · Registro exclusivo de los ataques realizados por este jugador</p>
-    <section class="identity">
-      <div class="box"><span>Jugador</span><b>${esc(nombre)}</b></div><div class="box"><span>Contrincante</span><b>${esc(rival)}</b></div>
-      <div class="box"><span>Resultado</span><b>${esc(resultado)}</b></div><div class="box"><span>Fecha de partida</span><b>${esc(fechaTexto)}</b></div>
-      <div class="box score"><span>Puntaje total del jugador</span><b>${puntaje} puntos</b></div>
-      <div class="box"><span>Jugador</span><b>${jugador === 1 ? "Jugador 1" : "Jugador 2"}</b></div>
-    </section>
-    <h2>Registro individual de ataques</h2>
-    <div class="tablewrap"><table><thead><tr><th style="width:4%">Ronda</th><th style="width:12%">Ecuación</th><th style="width:8%">Punto de inicio</th><th style="width:7%">Pendiente</th><th style="width:8%">Resultado</th><th style="width:17%">Barco(s) afectados</th><th style="width:8%">Daño causado</th><th style="width:12%">Daño acumulado</th><th style="width:10%">¿Hundido?</th><th style="width:6%">Puntos</th></tr></thead>
-    <tbody>${filas || '<tr><td colspan="10">Este jugador no tiene ataques registrados en esta partida.</td></tr>'}</tbody></table></div>
-    <h2 class="summary-title">Resumen final</h2>
-    <section class="summary">
-      <div class="box"><span>Total de ataques realizados</span><b>${propias.length}</b></div>
-      <div class="box"><span>Ataques que tocaron agua</span><b>${ataquesAgua}</b></div>
-      <div class="box"><span>Ataques que tocaron barcos</span><b>${ataquesBarco}</b></div>
-      <div class="box"><span>Barcos diferentes afectados</span><b>${barcos.size}</b></div>
-      <div class="box"><span>Barcos hundidos</span><b>${hundidos.size}</b></div>
-      <div class="box score"><span>Total de puntos obtenidos</span><b>${puntaje} pts</b></div>
-    </section>
-    <p class="foot">Los ataques, daños y puntos de este informe corresponden únicamente a ${esc(nombre)}. Los puntos por ataque se calculan con el sistema original del juego.</p>
-  </main>
-  <script>
-  const fileName=${JSON.stringify(nombreArchivo)};
-  document.getElementById('download').addEventListener('click', async()=>{
-    const status=document.getElementById('status'), button=document.getElementById('download');
-    if(typeof window.html2canvas!=='function'){status.textContent='No se pudo cargar el generador PNG. Comprueba tu conexión e inténtalo de nuevo.';return;}
-    button.disabled=true;status.textContent='Generando imagen de alta resolución…';
-    try{
-      const canvas=await window.html2canvas(document.getElementById('report'),{scale:3,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1600});
-      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-      if(!blob)throw new Error('No se pudo crear el PNG');
-      const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fileName;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
-      status.textContent='Imagen PNG descargada.';
-    }catch(err){console.error(err);status.textContent='No se pudo generar la imagen. Puedes usar Imprimir / Guardar PDF.';}
-    finally{button.disabled=false;}
-  });
-  <\/script><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"><\/script>
-  </body></html>`;
-  w.document.open(); w.document.write(htmlInforme); w.document.close();
+  const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Informe de ataques · Batalla en el plano</title><style>body{font:15px system-ui,sans-serif;margin:24px;background:#eef3f5;color:#18323a}h1{font-family:Georgia,serif} .wrap{max-width:1200px;margin:auto}.scores{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}.score{background:white;border:1px solid #c4d2d7;border-radius:10px;padding:14px;min-width:160px}.score b{display:block;font-size:1.5rem}table{width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden}th,td{padding:10px;border-bottom:1px solid #dce5e8;text-align:left;vertical-align:top}th{background:#dfeaed;white-space:nowrap}.hit{color:#b3261e}.water{color:#237343}.foot{margin-top:18px;font-weight:700;font-size:1.15rem}@media(max-width:760px){.tablewrap{overflow-x:auto}table{min-width:900px}}</style></head><body><div class="wrap"><h1>Historial de ataques</h1><p>Registro cronológico de los ataques de ambos jugadores.</p><div class="scores"><div class="score">${esc(n1)}<b>${Number(pts1)||0} pts</b></div><div class="score">${esc(n2)}<b>${Number(pts2)||0} pts</b></div></div><div class="tablewrap"><table><thead><tr><th>#</th><th>Jugador</th><th>Ecuación</th><th>Punto de inicio</th><th>Pendiente</th><th>Resultado</th><th>Barco(s) y daño</th><th>Puntos</th></tr></thead><tbody>${filas || '<tr><td colspan="8">No hay ataques registrados.</td></tr>'}</tbody></table></div><p class="foot">Puntaje total: ${Number(pts1)||0} – ${Number(pts2)||0}</p></div></body></html>`;
+  w.document.open(); w.document.write(html); w.document.close();
 }
-function botonInforme(h, nombreDueno){
+function botonInforme(h){
   if (!Array.isArray(h.ataques)) return "";
-  const jugador = Number(h.jugadorNumero) || (h.nombreJ1 === nombreDueno ? 1 : h.nombreJ2 === nombreDueno ? 2 : 0);
-  if (!jugador) return "";
-  return `<button class="mini sec" data-report="${encodeURIComponent(JSON.stringify(h.ataques))}" data-player="${jugador}" data-n1="${esc(h.nombreJ1||"Jugador 1")}" data-n2="${esc(h.nombreJ2||h.rivalNombre||"Jugador 2")}" data-p1="${Number(h.puntajeJ1)||0}" data-p2="${Number(h.puntajeJ2)||0}" data-result="${esc(h.resultado||"Partida finalizada")}" data-date="${Number(h.fecha?.seconds ? h.fecha.seconds*1000 : 0)}">Abrir mi informe individual</button>`;
+  return `<button class="mini sec" data-report="${encodeURIComponent(JSON.stringify(h.ataques))}" data-n1="${esc(h.nombreJ1||"Jugador 1")}" data-n2="${esc(h.nombreJ2||h.rivalNombre||"Jugador 2")}" data-p1="${Number(h.puntajeJ1)||0}" data-p2="${Number(h.puntajeJ2)||0}">Abrir tabla de ataques en otra pestaña</button>`;
 }
 function pintarPartida(){
   const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
@@ -732,7 +642,7 @@ function pintarPartida(){
   let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="reacs" id="reacs"></div>`;
   if (g.estado === "fin"){
     h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
-      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div>${g.cancelada ? "" : `<button class="big" data-live-report="1">Abrir mi informe individual</button>`}<button data-go="partidas">Volver a mis partidas</button>`;
+      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div>${g.cancelada ? "" : `<button class="big" data-live-report="1">Abrir tabla de ataques en otra pestaña</button>`}<button data-go="partidas">Volver a mis partidas</button>`;
     $("v-sala").innerHTML = h; return;
   }
   if (congelada){
@@ -855,7 +765,7 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
       const C = CL[s.i], tocados = s.celdas.filter(c => cruza(c, a.m, a.b));
       if (tocados.length) toca = true;
       const libres = tocados.filter(c => !gast.has(kk(c)));
-      if (!libres.length){ hits.push({k:s.k, n:C.n, d:0, t:s.dano, h:!!s.hund, p:0, sinDano:true}); continue; }
+      if (!libres.length) continue;
       libres.sort((u,v) => Math.hypot(u.x+.5, u.y+.5-a.b) - Math.hypot(v.x+.5, v.y+.5-a.b));   // el más cercano a (0, b)
       const c = libres[0], d = C.medio && tocaEsquinaCompartida(s.celdas, a.m, a.b) ? C.medio : C.d[s.celdas.findIndex(z => z.x === c.x && z.y === c.y)];
       gast.add(kk(c)); s.dano += d;
@@ -872,8 +782,7 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
       const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
       if (!g.ataque) return;
       const pts = {...g.pts}; pts[a.p] = (pts[a.p] || 0) + suma;
-      const rondaAtaque = Number(g.ronda) || 1, inicioAtaque = rondaAtaque <= 4 ? {x:0, y:0} : {x:0, y:Number(a.b)};
-       const patch = {lineas:[...(g.lineas || []), {p:a.p, ronda:rondaAtaque, inicio:inicioAtaque, m:a.m, b:a.b, mn:a.mn ?? null, md:a.md ?? null, rojo:toca, hits}], ataque:null, apunta:null, pts, fallos:{...(g.fallos || {1:0,2:0}), [a.p]:0}, ...avanzar(g, pts)};
+      const patch = {lineas:[...(g.lineas || []), {p:a.p, m:a.m, b:a.b, mn:a.mn ?? null, md:a.md ?? null, rojo:toca, hits}], ataque:null, apunta:null, pts, fallos:{...(g.fallos || {1:0,2:0}), [a.p]:0}, ...avanzar(g, pts)};
       if (gana){ patch.estado = "fin"; patch.ganador = a.p; }
       tx.update(ref, patch);
     });
@@ -977,8 +886,7 @@ async function guardarFin(){
   try {
     const registro = {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
       mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
-      ataques:g.lineas.filter(l => l.p === yo).map(l => ({...l, inicio:l.inicio ? {...l.inicio} : ((l.ronda || 1) <= 4 ? {x:0,y:0} : {x:0,y:Number(l.b)||0}), hits:(l.hits||[]).map(h=>({...h}))})), nombreJ1:g.n1, nombreJ2:g.n2, puntajeJ1:g.pts[1], puntajeJ2:g.pts[2],
-      jugadorNumero:yo, jugadorUid:U.uid, nombreJugador:yo === 1 ? g.n1 : g.n2, informeVersion:1,
+      ataques:g.lineas.map(l => ({...l, hits:(l.hits||[]).map(h=>({...h}))})), nombreJ1:g.n1, nombreJ2:g.n2, puntajeJ1:g.pts[1], puntajeJ2:g.pts[2],
       barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, abandono:!!g.abandonoPor, fecha:serverTimestamp()};
     const perfilRef = doc(db,"users",U.uid), campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
     // Historial y estadísticas se escriben juntos: evita contar dos veces
@@ -1287,7 +1195,7 @@ async function verPerfil(uid){
 const RESH = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
 function filaHist(h, dueno){
   const r = RESH[h.resultado] || ["Partida",""];
-  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Plano de ${esc(dueno)}</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Toca un plano para ampliarlo.</small>${botonInforme(h, dueno)}</details>`;
+  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Plano de ${esc(dueno)}</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Toca un plano para ampliarlo.</small>${botonInforme(h)}</details>`;
 }
 function historialOtro(d){
   return `<h2>Historial</h2><div class="card">${verHist === null ? `<p class="mut">No se pudo cargar el historial.</p>` : verHist.length
@@ -1411,8 +1319,8 @@ document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t || !U) return;
   const d = t.dataset;
   try {
-    if (d.liveReport !== undefined){ const resultado = G?.cancelada ? "Partida cancelada" : G?.ganador === 0 ? "Empate" : G?.ganador === yo ? "Victoria" : "Derrota"; return abrirInformeAtaques(G?.lineas || [], G?.n1 || "Jugador 1", G?.n2 || "Jugador 2", G?.pts?.[1] || 0, G?.pts?.[2] || 0, yo, {resultado, fecha:G?.creada}); }
-    if (d.report){ let lineas=[]; try { lineas=JSON.parse(decodeURIComponent(d.report)); } catch {} return abrirInformeAtaques(lineas, d.n1, d.n2, d.p1, d.p2, Number(d.player), {resultado:d.result || "Partida finalizada", fecha:Number(d.date)||null}); }
+    if (d.liveReport !== undefined) return abrirInformeAtaques(G?.lineas || [], G?.n1 || "Jugador 1", G?.n2 || "Jugador 2", G?.pts?.[1] || 0, G?.pts?.[2] || 0);
+    if (d.report){ let lineas=[]; try { lineas=JSON.parse(decodeURIComponent(d.report)); } catch {} return abrirInformeAtaques(lineas, d.n1, d.n2, d.p1, d.p2); }
     if (d.closePreview !== undefined){ cerrarPreviewCosmetico(); return; }
     if (d.previewType && d.previewKey){ previsualizarCosmetico(d.previewType,d.previewKey); return; }
     if (d.go) return ir(d.go);
