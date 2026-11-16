@@ -514,7 +514,7 @@ function pintarPerfil(){
     ${personalizarHTML()}${logrosHTML(perfilMio())}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
-    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; azul: no tocó. Toca un plano para ampliarlo.</small>${botonInforme(h, nombre())}</details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"mio")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; azul: no tocó. Toca un plano para ampliarlo.</small>${botonVerPuntajes(h)}</details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
     <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
       <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
@@ -522,21 +522,29 @@ function pintarPerfil(){
 }
 
 const fecha = h => h.fecha?.seconds ? new Date(h.fecha.seconds * 1000).toLocaleDateString("es") : "";
-function mini(h, modo){   // "mio": mi plano (mis barcos + ataques del rival) · "riv": plano del rival (sus barcos + mis ataques)
-  const mio = modo === "mio", flota = (mio ? h.barcos : h.barcosRival) || [], lin = (mio ? h.rival : h.mios) || [], gs = new Set((mio ? h.gast : h.gastRival) || []);
-  let g = "";
-  for (let x = -15; x < 15; x++) for (let y = -15; y < 15; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="var(--card)" stroke="var(--line)" stroke-width=".03"/>`;
-  for (const b of flota) for (const c of b.celdas){
-    const x = Number(c.x), y = Number(c.y);
-    g += `<rect x="${x + .06}" y="${y + .06}" width=".88" height=".88" rx=".12" fill="${esc(b.c)}" opacity="${b.hund ? .45 : 1}"/>`;
-    if (gs.has(x + "," + y)) g += `<path d="M${x + .25} ${y + .25}L${x + .75} ${y + .75}M${x + .75} ${y + .25}L${x + .25} ${y + .75}" stroke="#fff" stroke-width=".1"/>`;
+function mini(h, modo){   // Miniatura ligera para que también cargue bien en móviles y equipos modestos.
+  const mio = modo === "mio", flota = Array.isArray(mio ? h.barcos : h.barcosRival) ? (mio ? h.barcos : h.barcosRival) : [],
+    lin = Array.isArray(mio ? h.rival : h.mios) ? (mio ? h.rival : h.mios) : [],
+    gs = new Set(Array.isArray(mio ? h.gast : h.gastRival) ? (mio ? h.gast : h.gastRival) : []);
+  // Una sola ruta dibuja la cuadrícula (antes eran 900 rectángulos por plano).
+  let g = '<path d="' + Array.from({length:31},(_,i)=>`M${i-15} -15V15 M-15 ${i-15}H15`).join(' ') + '" fill="none" stroke="var(--line, #d5dce2)" stroke-width=".025"/>';
+  for (const barco of flota){
+    const celdas = Array.isArray(barco?.celdas) ? barco.celdas : [];
+    for (const c of celdas){
+      const x = Number(c?.x), y = Number(c?.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      const color = /^#[0-9a-f]{3,8}$/i.test(String(barco.c || '')) ? barco.c : '#718096';
+      g += `<rect x="${x + .06}" y="${y + .06}" width=".88" height=".88" rx=".12" fill="${color}" opacity="${barco.hund ? .45 : 1}"/>`;
+      if (gs.has(x + "," + y)) g += `<path d="M${x + .25} ${y + .25}L${x + .75} ${y + .75}M${x + .75} ${y + .25}L${x + .25} ${y + .75}" stroke="#fff" stroke-width=".1"/>`;
+    }
   }
-  g += `<path d="M-15 0H15M0 -15V15" stroke="var(--ink)" stroke-width=".07"/>`;
+  g += '<path d="M-15 0H15M0 -15V15" stroke="var(--ink, #263238)" stroke-width=".07"/>';
   for (const l of lin){
-    const m = Number(l.m), b = Number(l.b);
-    g += `<line x1="-15" y1="${m * -15 + b}" x2="15" y2="${m * 15 + b}" stroke="${l.rojo ? "var(--err)" : "var(--azul)"}" stroke-width=".13" stroke-linecap="round"/>`;
+    const m = Number(l?.m), b = Number(l?.b);
+    if (!Number.isFinite(m) || !Number.isFinite(b)) continue;
+    g += `<line x1="-15" y1="${m * -15 + b}" x2="15" y2="${m * 15 + b}" stroke="${l.rojo ? 'var(--err, #d33)' : 'var(--azul, #2685bd)'}" stroke-width=".13" stroke-linecap="round"/>`;
   }
-  return `<svg viewBox="-15.2 -15.2 30.4 30.4" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
+  return `<svg viewBox="-15.2 -15.2 30.4 30.4" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Plano de la partida" style="display:block;width:100%;height:auto;aspect-ratio:1;border:1px solid var(--line, #d5dce2);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
 }
 // Partida de prueba: aparece en el historial, pero NO suma a las estadísticas.
 async function ejemplo(){
@@ -978,8 +986,10 @@ async function guardarFin(){
   try {
     const registro = {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
       mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
-      ataques:g.lineas.filter(l => l.p === yo).map(l => ({...l, inicio:l.inicio ? {...l.inicio} : ((l.ronda || 1) <= 4 ? {x:0,y:0} : {x:0,y:Number(l.b)||0}), hits:(l.hits||[]).map(h=>({...h}))})), nombreJ1:g.n1, nombreJ2:g.n2, puntajeJ1:g.pts[1], puntajeJ2:g.pts[2],
-      jugadorNumero:yo, jugadorUid:U.uid, nombreJugador:yo === 1 ? g.n1 : g.n2, informeVersion:1,
+      ataques:g.lineas.filter(l => l.p === yo).map(l => ({...l, inicio:l.inicio ? {...l.inicio} : ((l.ronda || 1) <= 4 ? {x:0,y:0} : {x:0,y:Number(l.b)||0}), hits:(l.hits||[]).map(h=>({...h}))})),
+      registroAtaques:g.lineas.map(l => ({...l, inicio:l.inicio ? {...l.inicio} : ((l.ronda || 1) <= 4 ? {x:0,y:0} : {x:0,y:Number(l.b)||0}), hits:(l.hits||[]).map(h=>({...h}))})),
+      nombreJ1:g.n1, nombreJ2:g.n2, puntajeJ1:g.pts[1], puntajeJ2:g.pts[2],
+      jugadorNumero:yo, jugadorUid:U.uid, rivalUid:yo === 1 ? g.j2 : g.j1, nombreJugador:yo === 1 ? g.n1 : g.n2, informeVersion:2,
       barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, abandono:!!g.abandonoPor, fecha:serverTimestamp()};
     const perfilRef = doc(db,"users",U.uid), campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
     // Historial y estadísticas se escriben juntos: evita contar dos veces
@@ -1252,7 +1262,15 @@ document.addEventListener("click", e => {
   const small = summary?.querySelector("small")?.textContent || "";
   try {
     const d = JSON.parse(decodeURIComponent(b.getAttribute("data-ver-puntajes")));
-    $("zoomBody").innerHTML = `<div class="score-table-wrap"><h2 style="margin:0 0 12px">Tabla final de puntajes</h2><table class="score-table"><thead><tr><th>Jugador</th><th>Puntaje final</th></tr></thead><tbody><tr><td>${esc(d.n1)}</td><td><b>${Number(d.p1)||0} pts</b></td></tr><tr><td>${esc(d.n2)}</td><td><b>${Number(d.p2)||0} pts</b></td></tr></tbody></table><p class="mut" style="margin-top:12px">${esc(small)}</p><p class="mut">Esta tabla es de solo lectura.</p></div>`;
+    const lineas = Array.isArray(d.lineas) ? d.lineas : [];
+    const reportData = encodeURIComponent(JSON.stringify(lineas));
+    const meta = `data-report="${reportData}" data-n1="${esc(d.n1)}" data-n2="${esc(d.n2)}" data-p1="${Number(d.p1)||0}" data-p2="${Number(d.p2)||0}" data-result="${esc(d.resultado || "Partida finalizada")}" data-date="${Number(d.fecha)||0}"`;
+    const botonJugador = (num, nombre) => {
+      const disponible = d.completo || Number(d.jugadorNumero) === num;
+      return disponible ? `<button class="mini sec" ${meta} data-player="${num}" style="width:100%;margin-top:8px">Jugador: ${esc(nombre)}</button>`
+        : `<button class="mini sec" disabled style="width:100%;margin-top:8px;opacity:.55">Jugador: ${esc(nombre)} · Registro no disponible</button>`;
+    };
+    $("zoomBody").innerHTML = `<div class="score-table-wrap"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0 0 12px">Tabla final de puntajes</h2><button class="mini sec" type="button" data-close-score="1" aria-label="Cerrar">✕</button></div><table class="score-table"><thead><tr><th>Jugador</th><th>Puntaje final</th></tr></thead><tbody><tr><td>${esc(d.n1)}</td><td><b>${Number(d.p1)||0} pts</b></td></tr><tr><td>${esc(d.n2)}</td><td><b>${Number(d.p2)||0} pts</b></td></tr></tbody></table><p class="mut" style="margin-top:12px">${esc(small)}</p><p class="mut">Selecciona un jugador para consultar su registro detallado de ataques.</p>${botonJugador(1,d.n1)}${botonJugador(2,d.n2)}${!d.completo ? '<p class="mut">Esta partida es anterior a la actualización del registro compartido; solo está disponible el informe guardado originalmente por el dueño del perfil.</p>' : ''}<p class="mut">Consulta de solo lectura.</p></div>`;
     $("zoom").hidden = false;
   } catch (err) { console.error("No se pudo abrir la tabla de puntajes", err); }
 });
@@ -1261,7 +1279,7 @@ document.addEventListener("click", e => { if (e.target.closest("[data-close-scor
 // Tocar un plano del historial lo amplía; otro toque (o Esc) lo cierra.
 function cerrarZoom(){ $("zoom").hidden = true; $("zoomBody").innerHTML = ""; }
 document.addEventListener("click", e => {
-  if (!$("zoom").hidden){ cerrarZoom(); return; }
+  if (!$("zoom").hidden){ if (e.target.closest("#zoomBody")) return; cerrarZoom(); return; }
   const sv = e.target.closest(".two svg"); if (!sv) return;
   let n = "";
   for (let i = -15; i <= 15; i += 5) if (i) n += `<text x="${i}" y="-.3" font-size=".5" text-anchor="middle" fill="var(--mut)">${i}</text><text x=".2" y="${-i + .17}" font-size=".5" fill="var(--mut)">${i}</text>`;
@@ -1310,14 +1328,19 @@ function datosPuntajes(h){
   }
   return {n1:h.nombreJ1 || (Number(h.jugadorNumero) === 2 ? h.rivalNombre : h.nombreJugador) || "Jugador 1", n2:h.nombreJ2 || (Number(h.jugadorNumero) === 2 ? h.nombreJugador : h.rivalNombre) || "Jugador 2", p1, p2};
 }
+function botonVerPuntajes(h){
+  const d = {...datosPuntajes(h), lineas:Array.isArray(h.registroAtaques) ? h.registroAtaques : (Array.isArray(h.ataques) ? h.ataques : []),
+    completo:Array.isArray(h.registroAtaques), jugadorNumero:Number(h.jugadorNumero)||0, resultado:h.resultado||"Partida finalizada",
+    fecha:Number(h.fecha?.seconds ? h.fecha.seconds*1000 : 0)};
+  return `<button class="mini sec" type="button" data-ver-puntajes="${encodeURIComponent(JSON.stringify(d))}">Ver tabla de puntajes</button>`;
+}
 function htmlTablaPuntajes(h){
   const d = datosPuntajes(h);
   return `<div class="score-table-wrap"><h3 style="margin:0 0 10px">Tabla final de puntajes</h3><table class="score-table"><thead><tr><th>Jugador</th><th>Puntaje final</th></tr></thead><tbody><tr><td>${esc(d.n1)}</td><td><b>${d.p1} pts</b></td></tr><tr><td>${esc(d.n2)}</td><td><b>${d.p2} pts</b></td></tr></tbody></table><p class="mut" style="margin:10px 0 0">Resultado: ${esc(RESH[h.resultado]?.[0] || "Partida finalizada")} · ${fecha(h)}</p></div>`;
 }
 function filaHist(h, dueno){
   const r = RESH[h.resultado] || ["Partida",""];
-  const datos = encodeURIComponent(JSON.stringify(datosPuntajes(h)));
-  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="card score-card"><p>Consulta el resultado de ambos jugadores en esta partida.</p><button class="mini sec" type="button" data-ver-puntajes="${datos}">Ver tabla de puntajes</button></div>${botonInforme(h, dueno)}</details>`;
+  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"mio")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Plano de ${esc(dueno || "Jugador")}</small>${mini(h,"mio")}</div><div><small>Plano del rival</small>${mini(h,"riv")}</div></div><div class="card score-card"><p>Consulta los puntajes y el registro detallado de ambos jugadores.</p>${botonVerPuntajes(h)}</div></details>`;
 }
 function historialOtro(d){
   return `<h2>Historial</h2><div class="card">${verHist === null ? `<p class="mut">No se pudo cargar el historial.</p>` : verHist.length
