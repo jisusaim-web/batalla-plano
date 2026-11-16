@@ -99,7 +99,17 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 .cosmetic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:7px;margin:7px 0 14px}
 .cosmetic{min-height:42px;padding:7px 8px;font-size:.82rem;line-height:1.25}
 .cosmetic.sel{outline:2px solid var(--acc);outline-offset:1px}
-.cosmetic:disabled{opacity:.4;filter:grayscale(1);cursor:not-allowed}
+ .cosmetic:disabled{opacity:.4;filter:grayscale(1);cursor:not-allowed}
+.pers-tabs{display:flex;gap:6px;overflow-x:auto;padding:5px 2px 10px;margin:0 0 10px;scrollbar-width:thin;position:sticky;top:0;z-index:3;background:var(--card)}
+.pers-tab{white-space:nowrap;flex:0 0 auto;padding:8px 11px;font-size:.8rem;border-radius:999px;background:transparent;color:var(--mut);border:1px solid var(--line)}
+.pers-tab.active{background:var(--acc);color:var(--on);border-color:var(--acc)}
+.pers-section{min-height:190px}.palette-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;margin:9px 0 14px}
+.palette-swatch{width:100%;aspect-ratio:1;border-radius:50%;padding:0;border:2px solid #ffffff88;box-shadow:0 1px 4px #0004;min-width:0}
+.palette-swatch.sel{outline:3px solid var(--acc);outline-offset:2px}
+.gradient-swatch{min-height:66px;border:2px solid #ffffff66;border-radius:10px;padding:5px;color:white;text-shadow:0 1px 3px #000;font-size:.76rem;box-shadow:inset 0 0 0 1px #0002}
+.gradient-swatch.sel{outline:3px solid var(--acc);outline-offset:2px}
+.color-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}.color-tools input[type=color]{height:44px;padding:3px}
+@media(max-width:360px){.palette-grid{grid-template-columns:repeat(7,minmax(0,1fr))}.pers-tab{padding:7px 9px}}
 .cosmetic small{display:block;font-size:.7rem;opacity:.8;margin-top:3px}
 @media(prefers-reduced-motion:reduce){.ph.effect-brillo:after,.ph.effect-oleaje:after,.ph.effect-estrellas:after{animation:none}}
 .avt{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;flex:none;border:2px solid #ffffff88;vertical-align:middle}
@@ -843,11 +853,44 @@ function pintarRanking(){
 
 /* ================= PERSONALIZACIÓN Y PERFILES ================= */
 const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","👑","🦅","🐺","🦊","🐉","🦁","🐸","🦋","☠️","🤖","👽","🥷","🧙","🧛","🧟","🛡️","⚔️","💀","🌪️","🌙","☄️"] ;
-const AV_COLORES = ["#0f6b7a","#c4452d","#e0a800","#2e7d32","#7b5ea7","#3a6ea5","#c9772b","#5d7882"];
+// Paleta enorme: 240 tonos generados en HSL más colores especiales.
+const AV_COLORES = [...new Set([
+  ...Array.from({length:24},(_,i)=>Array.from({length:10},(_,j)=>`hsl(${i*15} ${[42,55,68,82,95][Math.floor(j/2)]}% ${[22,34,46,58,70][j%5]}%)`)).flat(),
+  "#000000","#ffffff","#ff1744","#ff4081","#e040fb","#7c4dff","#536dfe","#448aff","#40c4ff","#18ffff","#64ffda","#69f0ae","#b2ff59","#eeff41","#ffff00","#ffc400","#ff9100","#ff3d00"
+])];
 const FONDOS = {oceano:["Océano","#0f6b7a","#16414d"], atardecer:["Atardecer","#e4572e","#7b2d5b"], bosque:["Bosque","#2e7d32","#12351a"],
                 noche:["Noche","#3a3f8f","#0d1033"], coral:["Coral","#e0707a","#8a2f4a"], hielo:["Hielo","#6aa8d8","#2f5f8f"],
                 galaxia:["Galaxia","#542b85","#11102e"], neon:["Neón","#087f8c","#40145f"], lava:["Volcán","#b52b20","#35100c"],
                 oro:["Realeza","#9a6a12","#39220a"], aurora:["Aurora","#087f72","#20366f"], carbon:["Carbón","#454b55","#111318"]};
+// Combinaciones adicionales listas para usar: pastel, neón, joya, fuego, océano y tonos oscuros.
+const COMBOS_FONDO = [
+ ["Rosa chicle","#ff5fa2","#7b2ff7"],["Algodón de azúcar","#ffb6e6","#8ec5fc"],["Fresa y crema","#ff416c","#ffb199"],["Cereza","#990033","#ff1744"],
+ ["Lavanda","#c471f5","#fa71cd"],["Violeta eléctrico","#7f00ff","#e100ff"],["Uva","#5f0a87","#a4508b"],["Morado cósmico","#240046","#9d4edd"],
+ ["Azul hielo","#74ebd5","#9face6"],["Glaciar","#83a4d4","#b6fbff"],["Azul eléctrico","#004e92","#000428"],["Cielo","#56ccf2","#2f80ed"],
+ ["Turquesa","#136a8a","#267871"],["Menta","#00b09b","#96c93d"],["Verde ácido","#a8ff78","#78ffd6"],["Esmeralda","#348f50","#56b4d3"],
+ ["Lima","#dce35b","#45b649"],["Jungla","#134e5e","#71b280"],["Bosque encantado","#0f2027","#2c7744"],["Veneno","#7fff00","#4b0082"],
+ ["Sol","#fceabb","#f8b500"],["Dorado rosa","#f4c4f3","#fc67fa"],["Oro líquido","#f7971e","#ffd200"],["Ámbar","#ff8008","#ffc837"],
+ ["Mango","#fce38a","#f38181"],["Melocotón","#ffecd2","#fcb69f"],["Naranja neón","#ff4e00","#ec9f05"],["Fuego azul","#00c6ff","#0072ff"],
+ ["Llama","#f12711","#f5af19"],["Inferno","#870000","#190a05"],["Sangre","#8e0e00","#1f1c18"],["Dragón","#cb2d3e","#ef473a"],
+ ["Arcoíris oscuro","#833ab4","#fd1d1d"],["Cyberpunk","#fc00ff","#00dbde"],["Synthwave","#23074d","#cc5333"],["Matrix","#000000","#00ff41"],
+ ["Neón nocturno","#0f0c29","#302b63"],["Medianoche","#141e30","#243b55"],["Púrpura profundo","#20002c","#cbb4d4"],["Obsidiana","#434343","#000000"],
+ ["Plata","#bdc3c7","#2c3e50"],["Cromo","#e6dada","#274046"],["Humo","#757f9a","#d7dde8"],["Café","#603813","#b29f94"],
+ ["Cobre","#b79891","#94716b"],["Arena","#d7c49e","#8b6f47"],["Tierra","#3e2723","#a1887f"],["Vino","#200122","#6f0000"],
+ ["Océano profundo","#021b79","#0575e6"],["Sirena","#00d2ff","#3a7bd5"],["Coral tropical","#ff9966","#ff5e62"],["Paraíso","#1d976c","#93f9b9"],
+ ["Aurora boreal","#00f5a0","#00d9f5"],["Nebulosa","#654ea3","#eaafc8"],["Galaxia rosa","#41295a","#2f0743"],["Polvo estelar","#fbc2eb","#a6c1ee"],
+ ["Pastel arcoíris","#a1c4fd","#c2e9fb"],["Unicornio","#fbc2eb","#a6c1ee"],["Caramelo","#f6d365","#fda085"],["Chicle ácido","#ee9ca7","#ffdde1"],
+ ["Místico","#42275a","#734b6d"],["Hechicería","#360033","#0b8793"],["Fantasma","#c9d6ff","#e2e2e2"],["Rey dorado","#614385","#516395"]
+];
+for (let i=0;i<COMBOS_FONDO.length;i++){ const [n,a,b]=COMBOS_FONDO[i]; FONDOS[`combo${i}`]=[n,a,b]; }
+const hexValido = c => typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c);
+const fondoDe = d => {
+  if (typeof d.fondo === "string" && d.fondo.startsWith("custom:")) {
+    const [,a,b] = d.fondo.split(":");
+    if (hexValido(a) && hexValido(b)) return ["Personalizado",a,b];
+  }
+  return FONDOS[d.fondo] || FONDOS.oceano;
+};
+
 const MARCOS = {ninguno:{n:"Sin marco",victorias:0}, bronce:{n:"Bronce",victorias:1}, plata:{n:"Plata",victorias:5}, oro:{n:"Oro",victorias:15}, diamante:{n:"Diamante",victorias:25}, fuego:{n:"Llama",victorias:10,mejor:300}};
 const EFECTOS = {ninguno:{n:"Sin efecto",req:0}, brillo:{n:"Destello",req:5}, oleaje:{n:"Oleaje",req:10}, estrellas:{n:"Estrellas",req:25,puntos:1000}};
 const LOGROS = [
@@ -866,14 +909,14 @@ function logrosDe(d){ const [s, j] = estad(d); return LOGROS.map(l => ({...l, ok
 function tituloDe(d){ const l = logrosDe(d).find(x => x.id === d.titulo && x.ok); return l ? l.n : "Grumete"; }
 function desbloqueado(item,d){ const [st,j]=estad(d); return j >= (item.req || 0) && st.victorias >= (item.victorias || 0) && st.mejor >= (item.mejor || 0) && st.puntos >= (item.puntos || 0); }
 function insigniaDe(d){ const l=logrosDe(d).find(x=>x.id===d.insignia && x.ok); return l || null; }
-function colorAv(d){ return AV_COLORES.includes(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
+function colorAv(d){ return AV_COLORES.includes(d.avatarColor) || hexValido(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
 function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
   const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
   return `<span class="avt" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
 function cabeceraPerfil(d){
-  const f = FONDOS[d.fondo] || FONDOS.oceano;
+  const f = fondoDe(d);
   const fondo = `background:linear-gradient(135deg,${f[1]},${f[2]})`;
   const marco = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
   const efecto = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
@@ -884,29 +927,30 @@ function logrosHTML(d){
   const l = logrosDe(d);
   return `<h2>Insignias (${l.filter(x => x.ok).length}/${l.length})</h2><div class="card"><div class="ins">${l.map(x => `<button class="insb ${x.ok ? "" : "off"}" data-ins="${esc(`${x.i} ${x.n} — ${x.d}. ${x.ok ? "✓ Conseguida" : "🔒 Bloqueada"}`)}" aria-label="${esc(x.n)}">${x.i}</button>`).join("")}</div><p class="mut insTxt" style="margin:8px 0 0;min-height:1.4em">Toca una insignia para ver qué es.</p></div>`;
 }
-let persAbierto = false;   // la personalización se abre solo al tocar el botón
+let persAbierto = false, persTab = "avatar";
 function personalizarHTML(){
   return `<div class="row" style="margin:12px 0 4px"><button class="${persAbierto ? "sec" : ""}" data-pers="1" aria-expanded="${persAbierto}">${persAbierto ? "Cerrar personalización" : "✏️ Personalizar perfil"}</button></div>` + (persAbierto ? personalizarPanel() : "");
 }
 function personalizarPanel(){
-  const m = perfilMio(), lg = logrosDe(m).filter(x => x.ok);
-  const botones=(items,actual,attr,icono="")=>Object.entries(items).map(([k,x])=>{
-    const ok=desbloqueado(x,m), seleccionado=(actual||"ninguno")===k;
-    return `<button class="cosmetic ${seleccionado?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${icono}${x.n}${seleccionado?" ✓":""}${ok?"":`<small>🔒 ${x.victorias ? x.victorias+" victorias" : (x.req||0)+" partidas"}</small>`}</button>`;
+  const m=perfilMio(), lg=logrosDe(m).filter(x=>x.ok), f=fondoDe(m);
+  const tabs=[["avatar","😀 Avatares"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["marcos","🖼️ Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
+  const botones=(items,actual,attr)=>Object.entries(items).map(([k,x])=>{
+    const ok=desbloqueado(x,m),sel=(actual||"ninguno")===k;
+    return `<button class="cosmetic ${sel?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${x.victorias?x.victorias+" victorias":(x.req||0)+" partidas"}</small>`}</button>`;
   }).join("");
   const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
-  return `<h2>Personalizar perfil</h2><div class="card">
-    <b>Avatar</b><div class="opts">${AV_EMOJIS.map(e => `<button class="emo ${m.avatar === e ? "" : "sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div>
-    <b>Color del avatar</b><div class="opts">${AV_COLORES.map(c => `<button class="sw" style="background:${c}" data-avc="${c}" aria-label="Color ${c}">${m.avatarColor === c ? "✓" : ""}</button>`).join("")}</div>
-    <b>Fondo del perfil</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,f])=>`<button class="cosmetic ${m.fondo===k?"sel":"sec"}" data-fondo="${k}">${f[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div>
-    <b>Marcos del perfil</b><p class="mut" style="margin:3px 0 7px">Consigue victorias para desbloquear marcos nuevos.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div>
-    <b>Efectos visuales</b><p class="mut" style="margin:3px 0 7px">Algunos efectos requieren más partidas y puntos.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div>
-    <label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select>
-    <label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio || "")}"><button id="bBio">Guardar</button></div>
-    <label for="selTitulo">Título (se desbloquean con las insignias)</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x => `<option value="${x.id}" ${P.titulo === x.id ? "selected" : ""}>${esc(x.n)}</option>`).join("")}</select>
-    <small class="mut">Los marcos y efectos bloqueados se consiguen jugando; tu personalización se guarda en tu cuenta.</small></div>`;
+  let contenido="";
+  if(persTab==="avatar") contenido=`<div class="pers-section"><b>Elige tu avatar</b><div class="opts">${AV_EMOJIS.map(e=>`<button class="emo ${m.avatar===e?"":"sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div><p class="mut">Elige un símbolo que te represente. Puedes cambiarlo cuando quieras.</p></div>`;
+  if(persTab==="colores") contenido=`<div class="pers-section"><b>Color del avatar · ${AV_COLORES.length} tonos</b><div class="palette-grid">${AV_COLORES.map(c=>`<button class="palette-swatch ${m.avatarColor===c?"sel":""}" style="background:${c}" data-avc="${c}" title="${c}" aria-label="Color ${c}">${m.avatarColor===c?"✓":""}</button>`).join("")}</div><label for="colorAvatarLibre">O crea tu propio color</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:48px;padding:3px"></div>`;
+  if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondos y combinaciones · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
+  if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Desbloquea diseños especiales jugando partidas.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
+  if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Dale movimiento y brillo a tu tarjeta de jugador.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
+  if(persTab==="identidad") contenido=`<div class="pers-section"><label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select><label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio||"")}"><button id="bBio">Guardar</button></div><label for="selTitulo">Título</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x=>`<option value="${x.id}" ${P.titulo===x.id?"selected":""}>${esc(x.n)}</option>`).join("")}</select><small class="mut">Los títulos e insignias se consiguen completando logros.</small></div>`;
+  return `<h2>Personalizar perfil</h2><div class="card"><div class="pers-tabs" role="tablist" aria-label="Categorías de personalización">${tabs.map(([k,n])=>`<button class="pers-tab ${persTab===k?"active":""}" data-perstab="${k}" role="tab" aria-selected="${persTab===k}">${n}</button>`).join("")}</div>${contenido}</div>`;
 }
+
 document.addEventListener("change", e => {
+  if (e.target.id === "colorAvatarLibre" && U && hexValido(e.target.value)) updateDoc(doc(db,"users",U.uid), {avatarColor:e.target.value}).catch(()=>{});
   if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {});
   if (e.target.id === "selInsignia" && U) updateDoc(doc(db,"users",U.uid), {insignia:e.target.value}).catch(() => {});
 });
@@ -1063,6 +1107,11 @@ document.addEventListener("click", async e => {
     if (d.emoji) return enviarEmoji(d.emoji);
     if (d.perfil) return verPerfil(d.perfil);
     if (d.pers){ persAbierto = !persAbierto; return pintarPerfil(); }
+    if (d.perstab){ persTab=d.perstab; return pintarPerfil(); }
+    if (t.id === "bFondoCustom"){
+      const a=$("fondoColorA")?.value, b=$("fondoColorB")?.value;
+      if(hexValido(a)&&hexValido(b)) return await updateDoc(doc(db,"users",U.uid), {fondo:`custom:${a}:${b}`});
+    }
     if (d.agregar) return await agregarAmigo(d.agregar);
     if (d.ins !== undefined){ const e = t.closest(".card")?.querySelector(".insTxt"); if (e) e.textContent = d.ins; return; }
     if (d.invitar) return await invitar(d.invitar, d.nombre);
