@@ -217,6 +217,15 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 @keyframes fundir{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#intro.go *{animation:none!important}}
 [hidden]{display:none!important}
+
+#previewCosmetic{position:fixed;inset:0;z-index:80;background:#000b;display:grid;place-items:center;padding:14px}
+#previewCosmetic[hidden]{display:none}
+#previewCosmetic .preview-box{width:min(96vw,560px);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 18px 60px #0009}
+.preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
+.preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.cosmetic-line{display:flex;align-items:stretch;gap:6px;margin:6px 0}
+.cosmetic-line>.cosmetic{flex:1;min-width:0}
+.cosmetic-preview{flex:0 0 auto;padding:6px 10px}
 </style>
 </head>
 <body>
@@ -260,6 +269,7 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 
 <div id="intro" hidden role="dialog" aria-label="Inicio de la partida"><div class="vs"><div class="vsn a" id="vsA"></div><div class="vsv">VS</div><div class="vsn b" id="vsB"></div><div class="vss" id="vsS"></div></div></div>
 <div id="zoom" role="dialog" aria-modal="true" aria-label="Plano ampliado" hidden><div class="zbox" id="zoomBody"></div></div>
+<div id="previewCosmetic" role="dialog" aria-modal="true" aria-label="Vista previa de personalización" hidden><div class="preview-box" id="previewCosmeticBody"></div></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
@@ -929,11 +939,8 @@ function pintarRanking(){
 
 /* ================= PERSONALIZACIÓN Y PERFILES ================= */
 const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🚤","🛥️","🛶","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🪼","🦭","🐠","🐡","🦞","🦐","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","🌟","✨","👑","🦅","🐺","🦊","🐉","🦁","🐸","🦋","☠️","🤖","👽","🥷","🧙","🧛","🧟","🛡️","⚔️","💀","🌪️","🌙","☄️","🪐","🌈","🌸","🌺","🌻","🍀","🍄","💎","🔮","🧿","🎭","🎨","🎮","🕹️","🏆","🥇","🥈","🥉","🎖️","🚀","🛸","⚡","❄️","☀️","🌌","🦄","🐲","🐼","🐯","🐻","🐨","🐧","🦉","🦇","🦂","🕷️","🐍","🦎","🐳","🦚","🦜","🦩","🐝","🐞","🪸","🪷","🪻","🌵","🌴","🍉","🍓","🍒","🍋","🍇","🍭","🍬","🍩","🧁","🍪","☕","🎧","🎸","🎹","🎤","🎲","🧩","🪄","🗡️","🏹","🪓","🧪","🧬","🪬","🪙","💰","📀","💿","📼","📡","🛰️","🌠","🌃","🏔️","🌋","🏝️","🏰","🗝️","🧸","🎃","👻","😈","👹","👺","🤡","🧚","🧝","🧞","🧜","🧟‍♂️","🦸","🦹"] ;
-// Paleta enorme: 240 tonos generados en HSL más colores especiales.
-const AV_COLORES = [...new Set([
-  ...Array.from({length:36},(_,i)=>[35,50,65,80,95].flatMap(sat=>[18,30,42,54,66].map(light=>`hsl(${i*10} ${sat}% ${light}%)`))).flat(),
-  "#000000","#ffffff","#ff1744","#ff4081","#e040fb","#7c4dff","#536dfe","#448aff","#40c4ff","#18ffff","#64ffda","#69f0ae","#b2ff59","#eeff41","#ffff00","#ffc400","#ff9100","#ff3d00"
-])];
+// Se eliminó la paleta predefinida: el usuario crea su propio color.
+const AV_COLORES = [];
 const FONDOS = {oceano:["Océano","#0f6b7a","#16414d"], atardecer:["Atardecer","#e4572e","#7b2d5b"], bosque:["Bosque","#2e7d32","#12351a"],
                 noche:["Noche","#3a3f8f","#0d1033"], coral:["Coral","#e0707a","#8a2f4a"], hielo:["Hielo","#6aa8d8","#2f5f8f"],
                 galaxia:["Galaxia","#542b85","#11102e"], neon:["Neón","#087f8c","#40145f"], lava:["Volcán","#b52b20","#35100c"],
@@ -1004,18 +1011,18 @@ function logrosDe(d){ const [s, j] = estad(d); return LOGROS.map(l => ({...l, ok
 function tituloDe(d){ const l = logrosDe(d).find(x => x.id === d.titulo && x.ok); return l ? l.n : "Grumete"; }
 function desbloqueado(item,d){ const [st,j]=estad(d); return j >= (item.req || 0) && st.victorias >= (item.victorias || 0) && st.mejor >= (item.mejor || 0) && st.puntos >= (item.puntos || 0); }
 function insigniaDe(d){ const l=logrosDe(d).find(x=>x.id===d.insignia && x.ok); return l || null; }
-function colorAv(d){ return AV_COLORES.includes(d.avatarColor) || hexValido(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
+function colorAv(d){ return hexValido(d.avatarColor) ? d.avatarColor : "#0f6b7a"; }
 function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
   const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
   const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
   return `<span class="avt style-${estilo}" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
-function cabeceraPerfil(d){
+function cabeceraPerfil(d, vistaPrevia=false){
   const f = fondoDe(d);
   const fondo = `background:linear-gradient(135deg,${f[1]},${f[2]})`;
-  const marco = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
-  const efecto = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
+  const marco = Object.hasOwn(MARCOS,d.marco) && (vistaPrevia || desbloqueado(MARCOS[d.marco],d)) ? d.marco : "ninguno";
+  const efecto = Object.hasOwn(EFECTOS,d.efecto) && (vistaPrevia || desbloqueado(EFECTOS[d.efecto],d)) ? d.efecto : "ninguno";
   const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
   const ins=insigniaDe(d);
   return `<div class="ph style-${estilo} frame-${marco} effect-${efecto}" style="${fondo}">${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
@@ -1033,13 +1040,14 @@ function personalizarPanel(){
   const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
   const botones=(items,actual,attr)=>Object.entries(items).map(([k,x])=>{
     const ok=desbloqueado(x,m),sel=(actual||"ninguno")===k;
-    return `<button class="cosmetic ${sel?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${x.victorias?x.victorias+" victorias":(x.req||0)+" partidas"}</small>`}</button>`;
+    const req=[x.victorias?x.victorias+" victorias":null,x.mejor?x.mejor+" puntos en una partida":null,x.puntos?x.puntos+" puntos acumulados":null,x.req?x.req+" partidas":null].filter(Boolean).join(" · ") || "Disponible";
+    return `<div class="cosmetic-line"><button class="cosmetic ${sel?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${esc(req)}</small>`}</button>${ok?"":`<button class="mini sec cosmetic-preview" data-preview-type="${attr}" data-preview-key="${k}" aria-label="Previsualizar ${esc(x.n)}">👁 Ver</button>`}</div>`;
   }).join("");
   const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
   let contenido="";
   if(persTab==="avatar") contenido=`<div class="pers-section"><b>Elige tu avatar</b><div class="opts">${AV_EMOJIS.map(e=>`<button class="emo ${m.avatar===e?"":"sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div><p class="mut">Elige un símbolo que te represente. Puedes cambiarlo cuando quieras.</p></div>`;
   if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual del avatar y los detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">⚓</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
-  if(persTab==="colores") contenido=`<div class="pers-section"><b>Color del avatar · ${AV_COLORES.length} tonos</b><div class="palette-grid">${AV_COLORES.map(c=>`<button class="palette-swatch ${m.avatarColor===c?"sel":""}" style="background:${c}" data-avc="${c}" title="${c}" aria-label="Color ${c}">${m.avatarColor===c?"✓":""}</button>`).join("")}</div><label for="colorAvatarLibre">O crea tu propio color</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:48px;padding:3px"></div>`;
+  if(persTab==="colores") contenido=`<div class="pers-section"><b>Crea tu propio color</b><p class="mut">Elige cualquier tono para personalizar tu avatar. Puedes cambiarlo cuando quieras.</p><label for="colorAvatarLibre">Color del avatar</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:58px;padding:4px;max-width:180px"><p class="mut">Color actual: <b>${esc(hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a")}</b></p></div>`;
   if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondos y combinaciones · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
   if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Los marcos rodean todo tu perfil, no solamente el avatar o la cabecera.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
   if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Los efectos decoran todo tu perfil: cabecera, logros, estadísticas e historial.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
@@ -1066,6 +1074,8 @@ document.addEventListener("click", e => {
   $("zoom").hidden = false;
 }, true);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("zoom").hidden) cerrarZoom(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("previewCosmetic").hidden) cerrarPreviewCosmetico(); });
+document.addEventListener("click", e => { if (e.target.id === "previewCosmetic") cerrarPreviewCosmetico(); });
 
 const esperaron = new Set(), introVS = new Set(), estPrev = {};
 let introT = null;
@@ -1196,11 +1206,26 @@ function abrirSala(id){
   gid = null; salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()) alCambiar(id, s.data()); });
 }
 
+function cerrarPreviewCosmetico(){ const m=$("previewCosmetic"); if(m) m.hidden=true; const b=$("previewCosmeticBody"); if(b) b.innerHTML=""; }
+function previsualizarCosmetico(tipo, clave){
+  const actual=perfilMio(), demo={...actual};
+  if(tipo==="marco" && Object.hasOwn(MARCOS,clave)) demo.marco=clave;
+  else if(tipo==="efecto" && Object.hasOwn(EFECTOS,clave)) demo.efecto=clave;
+  else return;
+  const item=tipo==="marco"?MARCOS[clave]:EFECTOS[clave];
+  const req=[item.victorias?item.victorias+" victorias":null,item.mejor?item.mejor+" puntos en una partida":null,item.puntos?item.puntos+" puntos acumulados":null,item.req?item.req+" partidas":null].filter(Boolean).join(" · ") || "Sin requisito adicional";
+  const shell=`<div class="profile-decor-shell frame-${demo.marco||"ninguno"} effect-${demo.efecto||"ninguno"}"><div class="profile-decor-layer"></div>${cabeceraPerfil(demo,true)}<div class="card"><b>Estadísticas</b><div class="stats"><div><b>${Number(demo.victorias)||0}</b><span>Victorias</span></div><div><b>${Number(demo.derrotas)||0}</b><span>Derrotas</span></div><div><b>${Number(demo.empates)||0}</b><span>Empates</span></div></div></div><div class="card"><b>Insignias y logros</b><p class="mut">La decoración también se aplica a esta sección.</p>🏆 🎖️ 💎 ⭐</div><div class="card"><b>Historial de partidas</b><p class="mut">Así se verá el resto del perfil.</p><div class="item">Victoria · 250 pts</div><div class="item">Derrota · 120 pts</div></div></div>`;
+  $("previewCosmeticBody").innerHTML=`<div class="row" style="justify-content:space-between;align-items:center"><div><b>Vista previa: ${esc(item.n)}</b><div class="mut">Requisito: ${esc(req)}</div></div><button class="mini sec" data-close-preview>✕</button></div><div class="preview-sample">${shell}</div><p class="mut">Vista previa solamente: no desbloquea ni equipa el elemento.</p><div class="preview-actions"><button class="sec" data-close-preview>Cerrar</button></div>`;
+  $("previewCosmetic").hidden=false;
+}
+
 /* ---------- Acciones (delegación de eventos) ---------- */
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t || !U) return;
   const d = t.dataset;
   try {
+    if (d.closePreview !== undefined){ cerrarPreviewCosmetico(); return; }
+    if (d.previewType && d.previewKey){ previsualizarCosmetico(d.previewType,d.previewKey); return; }
     if (d.go) return ir(d.go);
     if (d.sala) return abrirSala(d.sala);
     if (d.espectar) return espectar(d.espectar);
