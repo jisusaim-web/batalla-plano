@@ -187,6 +187,8 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 .cosmetic small{display:block;font-size:.7rem;opacity:.8;margin-top:3px}
 @media(prefers-reduced-motion:reduce){.ph.effect-brillo:after,.ph.effect-oleaje:after,.ph.effect-estrellas:after{animation:none}}
 .avt{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;flex:none;border:2px solid #ffffff88;vertical-align:middle}
+.avt.mini-frame-bronce{outline:2px solid #cd8b55;outline-offset:1px}.avt.mini-frame-plata{outline:2px solid #cbd5e1;outline-offset:1px}.avt.mini-frame-oro{outline:2px solid #ffd166;outline-offset:1px;box-shadow:0 0 9px #ffd16699}.avt.mini-frame-diamante{outline:2px solid #7de8ff;outline-offset:1px;box-shadow:0 0 10px #7de8ff}.avt.mini-frame-fuego{outline:2px solid #ff7043;outline-offset:1px;box-shadow:0 0 10px #ff5722}.avt[class*="mini-effect-"]{filter:drop-shadow(0 0 4px #8be9ff99)}
+
 .ph{display:flex;gap:14px;align-items:center;padding:16px;border-radius:12px;color:#fff}
 .pn{font:700 1.2rem Georgia,serif}.pt{opacity:.9;font-size:.85rem}.pb{margin-top:4px;font-size:.9rem}
 .opts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
@@ -293,7 +295,7 @@ const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo."
 const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
 
-let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "";
+let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "", rkSub = null, verSub = null;
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
 /* ---------- Autenticación ---------- */
@@ -331,7 +333,9 @@ const latido = () => { if (U) updateDoc(doc(db,"users",U.uid), {visto:Date.now()
 setInterval(() => { latido(); const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }, 30000);
 onAuthStateChanged(auth, async u => {
   await espera; espera = Promise.resolve();
-  subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; invRec = []; invEnv = []; pintarInv(); if (salaSub){ salaSub(); salaSub = null; }
+  subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; invRec = []; invEnv = []; pintarInv();
+  if (rkSub){ rkSub(); rkSub = null; } if (verSub){ verSub(); verSub = null; }
+  if (salaSub){ salaSub(); salaSub = null; }
   U = u;
   const spl = $("splash");
   if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
@@ -419,7 +423,11 @@ function suscribirAmigos(){
   amSubs.forEach(f => f()); amSubs = [];
   for (const a of amistades.filter(a => a.estado === "aceptada")){
     const id = otro(a);
-    amSubs.push(onSnapshot(doc(db,"users",id), s => { amDocs[id] = s.data() || {}; const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }));
+    amSubs.push(onSnapshot(doc(db,"users",id), s => {
+      amDocs[id] = s.data() || {};
+      const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos();
+      if (vista === "amigos") pintarAmigos();
+    }, e => console.error("actualización de amigo:", e)));
   }
 }
 function pintarInicio(){
@@ -451,7 +459,9 @@ function pintarPartidas(){
 function pintarAmigos(){
   const acept = amistades.filter(a => a.estado === "aceptada");
   const rec = pendientes(), env = amistades.filter(a => a.estado === "pendiente" && a.pedidoPor === U.uid);
-  const fila = (a, bot) => `<div class="item"><span><button class="link" data-perfil="${otro(a)}">${esc(a.nombres?.[otro(a)] || "Jugador")}</button></span><span>${bot}</span></div>`;
+  const fila = (a, bot) => { const id = otro(a), d = amDocs[id] || {}, nom = a.nombres?.[id] || d.nombre || "Jugador";
+    return `<div class="item"><span style="display:flex;align-items:center;gap:8px">${avatarHTML({...d,nombre:nom},26)}<button class="link" data-perfil="${id}">${esc(nom)}</button></span><span>${bot}</span></div>`;
+  };
   $("v-amigos").innerHTML = `<h2 style="margin-top:6px">Amigos</h2>
     <div class="card"><label for="cAmigo" style="margin-top:0">Agregar amigo con su código</label>
       <div class="row"><input id="cAmigo" maxlength="6" style="text-transform:uppercase" placeholder="Código de 6 letras"><button id="bAmigo">Enviar</button></div>
@@ -902,18 +912,21 @@ function pintarEsp(){
 /* ================= CLASIFICACIÓN ================= */
 const MIN_WR = 5;   // partidas mínimas para aparecer en el win rate
 let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
-function sincRank(){                 // copia tus estadísticas a la lista pública (sin tu código de amigo ni tu presencia)
+function sincRank(){                 // publica estadísticas y personalización, sin código de amigo ni presencia
   if (!U) return;
   const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
-  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia","estiloAvatar"]) if (P[c]) d[c] = P[c];
+  // Se envían también los campos vacíos para poder quitar una decoración sin dejar la anterior pegada.
+  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia","estiloAvatar","avatarUrl","bannerUrl"]) d[c] = typeof P[c] === "string" ? P[c] : "";
   const k = JSON.stringify(d); if (k === kR) return; kR = k;
-  setDoc(doc(db,"ranking",U.uid), d).catch(() => { kR = ""; });
+  setDoc(doc(db,"ranking",U.uid), d).catch(e => { console.error("No se pudo sincronizar el perfil público:", e); kR = ""; });
 }
-async function cargarRanking(){
+function cargarRanking(){
+  if (!U) return;
   rkCarga = true; rkErr = ""; pintarRanking();
-  try { const s = await getDocs(query(collection(db,"ranking"), orderBy("puntos","desc"), limit(100))); rank = s.docs.map(d => ({id:d.id, ...d.data()})); }
-  catch (e){ rkErr = e.code || "error"; }
-  rkCarga = false; pintarRanking();
+  if (rkSub) rkSub();
+  rkSub = onSnapshot(query(collection(db,"ranking"), orderBy("puntos","desc"), limit(100)), s => {
+    rank = s.docs.map(d => ({id:d.id, ...d.data()})); rkCarga = false; rkErr = ""; pintarRanking();
+  }, e => { console.error("ranking:", e); rkCarga = false; rkErr = e.code || "error"; pintarRanking(); });
 }
 const jug = r => (r.victorias || 0) + (r.derrotas || 0) + (r.empates || 0);
 const RK = {
@@ -1015,7 +1028,9 @@ function colorAv(d){ return hexValido(d.avatarColor) ? d.avatarColor : "#0f6b7a"
 function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
   const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
   const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
-  return `<span class="avt style-${estilo}" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
+  const marco = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
+  const efecto = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
+  return `<span class="avt style-${estilo} mini-frame-${marco} mini-effect-${efecto}" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
 function cabeceraPerfil(d, vistaPrevia=false){
@@ -1090,12 +1105,18 @@ $("intro").addEventListener("click", () => { $("intro").hidden = true; clearTime
 let verDoc = null, verUid = null, verCargando = false, verHist = [], vistaPrev = "inicio";
 async function verPerfil(uid){
   if (vista !== "usuario") vistaPrev = vista;
+  if (verSub){ verSub(); verSub = null; }
   verDoc = null; verUid = uid; verCargando = true; ir("usuario");
   $("v-usuario").innerHTML = `<p class="mut">Cargando perfil…</p>`;
-  try { const s = await getDoc(doc(db,"ranking",uid)); verDoc = s.exists() ? {...s.data()} : null; } catch { verDoc = null; }
   try { const h = await getDocs(query(collection(db,"users",uid,"historial"), orderBy("fecha","desc"), limit(20))); verHist = h.docs.map(x => x.data()).filter(x => !x.prueba); } catch { verHist = null; }
+  if (verUid !== uid) return;
   verCargando = false;
-  pintarUsuario();
+  // Mantiene la ficha pública abierta y sincronizada mientras se consulta.
+  verSub = onSnapshot(doc(db,"ranking",uid), s => {
+    if (verUid !== uid) return;
+    verDoc = s.exists() ? {...s.data()} : null;
+    pintarUsuario();
+  }, e => { console.error("perfil público:", e); if (verUid === uid){ verDoc = null; pintarUsuario(); } });
 }
 const RESH = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
 function filaHist(h, dueno){
