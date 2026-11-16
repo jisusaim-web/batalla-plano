@@ -96,6 +96,65 @@ button.emo{font-size:1.5rem;padding:6px 12px}
 @keyframes perfilBrillo{to{transform:translateX(45%)}}
 @keyframes perfilOleaje{to{transform:translateY(-8px)}}
 @keyframes perfilEstrellas{to{background-position:28px 28px,56px 60px}}
+
+/* Estilos artísticos del avatar */
+.avt{display:inline-grid;place-items:center;flex:0 0 auto;border-radius:50%;border:2px solid #ffffff88;box-shadow:0 3px 10px #0004;position:relative}
+.avt.style-pixel{border-radius:5px;image-rendering:pixelated;box-shadow:3px 3px 0 #0007,inset 0 0 0 2px #ffffff55;filter:saturate(1.25);font-family:monospace}
+.avt.style-paint{border-radius:42% 58% 62% 38%/45% 38% 62% 55%;border:3px dashed #fff9;box-shadow:0 0 0 3px #0002,2px 4px 8px #0005;filter:saturate(1.45) contrast(1.08)}
+.avt.style-neon{border:2px solid #fff;box-shadow:0 0 7px #fff,0 0 15px currentColor,inset 0 0 12px #fff8}
+.avt.style-sketch{border:2px dashed #fff;filter:grayscale(.3) contrast(1.3);box-shadow:3px 3px 0 #0005}
+.avt.style-glass{border:1px solid #ffffffbb;background-image:linear-gradient(135deg,#ffffff88,#ffffff08 55%,#0003)!important;backdrop-filter:blur(3px);box-shadow:inset 0 0 12px #fff8,0 4px 12px #0004}
+.avt.style-sticker{border:4px solid #fff;box-shadow:0 3px 0 #0004,0 0 0 2px #2225;transform:rotate(-4deg)}
+.avt.style-orbit{border:2px solid #d7faff;box-shadow:0 0 0 4px #ffffff22,0 0 0 7px #ffffff44,0 0 16px #8df}
+.avt.style-retro{border-radius:8px;border:3px double #ffe29a;box-shadow:inset 0 0 0 3px #0003,3px 3px 0 #0006;font-family:Georgia,serif}
+.ph{display:flex;align-items:center;gap:14px;padding:17px;border-radius:14px;background-size:cover!important;background-position:center!important;isolation:isolate}
+.ph .banner-art{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.95}
+.ph .banner-art:before,.ph .banner-art:after{content:"";position:absolute;inset:0}
+.ph.banner-aurora .banner-art:before,.banner-choice.banner-aurora .banner-art:before{background:radial-gradient(ellipse at 15% 15%,#8affd988,transparent 42%),radial-gradient(ellipse at 85% 85%,#b77aff99,transparent 48%),linear-gradient(120deg,#071d38aa,#14234aaa)}
+.ph.banner-mountains .banner-art:before,.banner-choice.banner-mountains .banner-art:before{background:linear-gradient(145deg,transparent 48%,#11182799 49% 62%,transparent 63%),linear-gradient(35deg,transparent 35%,#ffffff55 36% 47%,transparent 48%),linear-gradient(120deg,#6dd5edaa,#2193b0aa)}
+.ph.banner-sakura .banner-art:before,.banner-choice.banner-sakura .banner-art:before{background:radial-gradient(ellipse at 20% 25%,#ffd1e6 0 3%,transparent 4%),radial-gradient(ellipse at 75% 70%,#ffb4d5 0 4%,transparent 5%),radial-gradient(ellipse at 85% 15%,#fff 0 2%,transparent 3%),linear-gradient(120deg,#55234e,#d66b9b)}
+.ph.banner-cyber .banner-art:before,.banner-choice.banner-cyber .banner-art:before{background:repeating-linear-gradient(120deg,transparent 0 16px,#00f0ff33 17px 19px),linear-gradient(120deg,#09001f,#3a0ca3 55%,#f72585)}
+.ph.banner-galaxy .banner-art:before,.banner-choice.banner-galaxy .banner-art:before{background:radial-gradient(circle at 20% 25%,#fff 0 1px,transparent 2px),radial-gradient(circle at 75% 70%,#fff 0 1px,transparent 2px),radial-gradient(ellipse at 60% 40%,#a855f7aa,transparent 50%),linear-gradient(120deg,#050816,#16104a)}
+.ph.banner-ocean .banner-art:before,.banner-choice.banner-ocean .banner-art:before{background:repeating-radial-gradient(ellipse at 50% 120%,transparent 0 12px,#b5f7ff55 13px 15px),linear-gradient(120deg,#003049,#0077b6)}
+.ph.banner-flame .banner-art:before,.banner-choice.banner-flame .banner-art:before{background:radial-gradient(ellipse at 50% 120%,#ffea00aa,transparent 48%),linear-gradient(130deg,#360000,#b22222,#ff6b00)}
+.ph.banner-watercolor .banner-art:before,.banner-choice.banner-watercolor .banner-art:before{background:radial-gradient(ellipse at 15% 30%,#ffb3c6bb,transparent 40%),radial-gradient(ellipse at 80% 20%,#a0c4ffbb,transparent 45%),radial-gradient(ellipse at 60% 100%,#caffbfaa,transparent 45%),linear-gradient(120deg,#6d597a,#355070)}
+.ph.banner-pixel .banner-art:before,.banner-choice.banner-pixel .banner-art:before{background:linear-gradient(90deg,#0003 50%,transparent 50%),linear-gradient(#0003 50%,transparent 50%),linear-gradient(120deg,#ff006e,#8338ec,#3a86ff);background-size:16px 16px,16px 16px,cover;image-rendering:pixelated}
+.ph.banner-paper .banner-art:before,.banner-choice.banner-paper .banner-art:before{background:repeating-linear-gradient(135deg,#fff2 0 2px,transparent 2px 7px),linear-gradient(120deg,#6b705c,#a5a58d,#cb997e)}
+.ph.banner-gold .banner-art:before,.banner-choice.banner-gold .banner-art:before{background:radial-gradient(circle at 80% 15%,#fff9,transparent 22%),linear-gradient(120deg,#3b2500,#bd8b16,#fff0a8)}
+.ph.banner-forest .banner-art:before,.banner-choice.banner-forest .banner-art:before{background:radial-gradient(ellipse at 30% 120%,#50a45b,transparent 55%),linear-gradient(120deg,#081c15,#1b4332,#40916c)}
+.ph.banner-candy .banner-art:before,.banner-choice.banner-candy .banner-art:before{background:repeating-linear-gradient(135deg,#ff8fab55 0 12px,#ffc2d155 12px 24px),linear-gradient(120deg,#9d4edd,#f15bb5)}
+.ph.banner-space .banner-art:before,.banner-choice.banner-space .banner-art:before{background:radial-gradient(circle at 20% 20%,#fff 0 2px,transparent 3px),radial-gradient(circle at 80% 60%,#fff 0 1px,transparent 2px),linear-gradient(120deg,#03045e,#7209b7,#3a0ca3)}
+.ph.banner-geometric .banner-art:before,.banner-choice.banner-geometric .banner-art:before{background:linear-gradient(135deg,transparent 45%,#ffffff33 46% 55%,transparent 56%),linear-gradient(45deg,transparent 40%,#0003 41% 60%,transparent 61%),linear-gradient(120deg,#264653,#2a9d8f,#e9c46a)}
+.ph.banner-ink .banner-art:before,.banner-choice.banner-ink .banner-art:before{background:radial-gradient(ellipse at 15% 80%,#111 0 12%,transparent 45%),radial-gradient(ellipse at 85% 10%,#222 0 8%,transparent 40%),linear-gradient(120deg,#f4f1de,#d8d4c5)}
+.ph.banner-sunset .banner-art:before,.banner-choice.banner-sunset .banner-art:before{background:radial-gradient(ellipse at 50% 110%,#ffd166,transparent 45%),linear-gradient(120deg,#6a0572,#ab83a1,#f78c6b)}
+.ph.banner-crystal .banner-art:before,.banner-choice.banner-crystal .banner-art:before{background:linear-gradient(135deg,transparent 35%,#ffffff66 36% 42%,transparent 43%),linear-gradient(45deg,transparent 55%,#ffffff44 56% 64%,transparent 65%),linear-gradient(120deg,#0077b6,#48cae4,#caf0f8)}
+.ph.banner-comic .banner-art:before,.banner-choice.banner-comic .banner-art:before{background:radial-gradient(#fff8 1px,transparent 1.8px),linear-gradient(120deg,#ffbe0b,#fb5607,#ff006e);background-size:9px 9px,cover}
+.ph.banner-night .banner-art:before,.banner-choice.banner-night .banner-art:before{background:radial-gradient(ellipse at 70% 10%,#8ecae6aa,transparent 40%),linear-gradient(120deg,#03045e,#001219,#14213d)}
+.ph.banner-rainbow .banner-art:before,.banner-choice.banner-rainbow .banner-art:before{background:linear-gradient(110deg,#ff595e,#ffca3a,#8ac926,#1982c4,#6a4c93)}
+.ph.banner-lavender .banner-art:before,.banner-choice.banner-lavender .banner-art:before{background:radial-gradient(ellipse at 15% 80%,#fff9,transparent 35%),linear-gradient(120deg,#7b2cbf,#c77dff,#e0aaff)}
+.ph.banner-desert .banner-art:before,.banner-choice.banner-desert .banner-art:before{background:radial-gradient(ellipse at 75% 100%,#f4a261,transparent 45%),linear-gradient(120deg,#6f4e37,#bc8a5f,#e6ccb2)}
+.ph.banner-glitch .banner-art:before,.banner-choice.banner-glitch .banner-art:before{background:repeating-linear-gradient(0deg,transparent 0 9px,#00ffff33 10px 12px),linear-gradient(120deg,#090909,#5a189a,#ff0054)}
+.ph.banner-paint .banner-art:before,.banner-choice.banner-paint .banner-art:before{background:radial-gradient(ellipse at 15% 15%,#ff006eaa,transparent 42%),radial-gradient(ellipse at 90% 80%,#3a86ffaa,transparent 48%),radial-gradient(ellipse at 50% 50%,#ffbe0baa,transparent 50%),linear-gradient(120deg,#242038,#514878)}
+.ph.banner-constellation .banner-art:before,.banner-choice.banner-constellation .banner-art:before{background:radial-gradient(circle at 15% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 40% 70%,#fff 0 1px,transparent 2px),radial-gradient(circle at 78% 25%,#fff 0 1px,transparent 2px),linear-gradient(120deg,#03071e,#370617,#6a040f)}
+.ph.banner-floral .banner-art:before,.banner-choice.banner-floral .banner-art:before{background:radial-gradient(circle at 20% 30%,#ffcad4 0 8px,transparent 9px),radial-gradient(circle at 75% 70%,#f4acb7 0 10px,transparent 11px),linear-gradient(120deg,#386641,#a7c957)}
+.ph.banner-ice .banner-art:before,.banner-choice.banner-ice .banner-art:before{background:repeating-linear-gradient(130deg,#ffffff22 0 3px,transparent 3px 18px),linear-gradient(120deg,#03045e,#48cae4,#caf0f8)}
+.ph.banner-leather .banner-art:before,.banner-choice.banner-leather .banner-art:before{background:repeating-linear-gradient(45deg,#ffffff0a 0 2px,transparent 2px 5px),linear-gradient(120deg,#3d1f14,#8b5e34,#c08552)}
+.ph.banner-minimal .banner-art:before,.banner-choice.banner-minimal .banner-art:before{background:linear-gradient(110deg,#00000022 25%,transparent 25% 75%,#ffffff22 75%),linear-gradient(120deg,#343a40,#6c757d)}
+.ph.style-pixel .profile-copy{font-family:monospace;text-shadow:2px 2px #000}
+.ph.style-paint{border-radius:22px 5px 22px 5px}
+.ph.style-paint .pn{font-family:Georgia,serif;font-style:italic;letter-spacing:.04em}
+.ph.style-retro .pn{font-family:Georgia,serif;letter-spacing:.08em;text-transform:uppercase}
+.ph.style-sketch{border-style:dashed;border-width:3px}
+.ph.style-neon{box-shadow:0 0 18px #7df8,inset 0 0 18px #fff2}
+.ph.style-glass{backdrop-filter:blur(2px);border-color:#ffffff99;box-shadow:inset 0 0 22px #fff3}
+.style-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin:10px 0}
+.style-choice{min-height:78px;padding:9px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:var(--bg);color:var(--ink);border:1px solid var(--line);font-size:.78rem}
+.style-choice .sample{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#fc00ff,#00dbde);font-size:20px}
+.style-choice.sel{outline:2px solid var(--acc);border-color:var(--acc)}
+.banner-choice{min-height:78px;position:relative;overflow:hidden;border:2px solid #ffffff88;border-radius:10px;color:white;text-shadow:0 1px 3px #000;padding:0}
+.banner-choice .banner-art{position:absolute;inset:0}
+.banner-choice span{position:relative;z-index:1}
+
 .cosmetic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:7px;margin:7px 0 14px}
 .cosmetic{min-height:42px;padding:7px 8px;font-size:.82rem;line-height:1.25}
 .cosmetic.sel{outline:2px solid var(--acc);outline-offset:1px}
@@ -819,7 +878,7 @@ let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
 function sincRank(){                 // copia tus estadísticas a la lista pública (sin tu código de amigo ni tu presencia)
   if (!U) return;
   const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
-  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia"]) if (P[c]) d[c] = P[c];
+  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia","estiloAvatar","banner"]) if (P[c]) d[c] = P[c];
   const k = JSON.stringify(d); if (k === kR) return; kR = k;
   setDoc(doc(db,"ranking",U.uid), d).catch(() => { kR = ""; });
 }
@@ -852,10 +911,10 @@ function pintarRanking(){
 }
 
 /* ================= PERSONALIZACIÓN Y PERFILES ================= */
-const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","👑","🦅","🐺","🦊","🐉","🦁","🐸","🦋","☠️","🤖","👽","🥷","🧙","🧛","🧟","🛡️","⚔️","💀","🌪️","🌙","☄️"] ;
+const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🚤","🛥️","🛶","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🪼","🦭","🐠","🐡","🦞","🦐","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","🌟","✨","👑","🦅","🐺","🦊","🐉","🦁","🐸","🦋","☠️","🤖","👽","🥷","🧙","🧛","🧟","🛡️","⚔️","💀","🌪️","🌙","☄️","🪐","🌈","🌸","🌺","🌻","🍀","🍄","💎","🔮","🧿","🎭","🎨","🎮","🕹️","🏆","🥇","🥈","🥉","🎖️","🚀","🛸","⚡","❄️","☀️","🌌","🦄","🐲","🐼","🐯","🐻","🐨","🐧","🦉","🦇","🦂","🕷️","🐍","🦎","🐳","🦚","🦜","🦩","🐝","🐞","🪸","🪷","🪻","🌵","🌴","🍉","🍓","🍒","🍋","🍇","🍭","🍬","🍩","🧁","🍪","☕","🎧","🎸","🎹","🎤","🎲","🧩","🪄","🗡️","🏹","🪓","🧪","🧬","🪬","🪙","💰","📀","💿","📼","📡","🛰️","🌠","🌃","🏔️","🌋","🏝️","🏰","🗝️","🧸","🎃","👻","😈","👹","👺","🤡","🧚","🧝","🧞","🧜","🧟‍♂️","🦸","🦹"] ;
 // Paleta enorme: 240 tonos generados en HSL más colores especiales.
 const AV_COLORES = [...new Set([
-  ...Array.from({length:24},(_,i)=>Array.from({length:10},(_,j)=>`hsl(${i*15} ${[42,55,68,82,95][Math.floor(j/2)]}% ${[22,34,46,58,70][j%5]}%)`)).flat(),
+  ...Array.from({length:36},(_,i)=>[35,50,65,80,95].flatMap(sat=>[18,30,42,54,66].map(light=>`hsl(${i*10} ${sat}% ${light}%)`))).flat(),
   "#000000","#ffffff","#ff1744","#ff4081","#e040fb","#7c4dff","#536dfe","#448aff","#40c4ff","#18ffff","#64ffda","#69f0ae","#b2ff59","#eeff41","#ffff00","#ffc400","#ff9100","#ff3d00"
 ])];
 const FONDOS = {oceano:["Océano","#0f6b7a","#16414d"], atardecer:["Atardecer","#e4572e","#7b2d5b"], bosque:["Bosque","#2e7d32","#12351a"],
@@ -893,6 +952,18 @@ const fondoDe = d => {
 
 const MARCOS = {ninguno:{n:"Sin marco",victorias:0}, bronce:{n:"Bronce",victorias:1}, plata:{n:"Plata",victorias:5}, oro:{n:"Oro",victorias:15}, diamante:{n:"Diamante",victorias:25}, fuego:{n:"Llama",victorias:10,mejor:300}};
 const EFECTOS = {ninguno:{n:"Sin efecto",req:0}, brillo:{n:"Destello",req:5}, oleaje:{n:"Oleaje",req:10}, estrellas:{n:"Estrellas",req:25,puntos:1000}};
+const ESTILOS_AVATAR = {
+  clasico:{n:"Clásico",d:"Limpio y redondo"},pixel:{n:"Pixel art",d:"Bloques retro"},paint:{n:"Pintura",d:"Trazo artístico"},
+  neon:{n:"Neón",d:"Brillo eléctrico"},sketch:{n:"Boceto",d:"Dibujo a mano"},glass:{n:"Cristal",d:"Vidrio brillante"},
+  sticker:{n:"Sticker",d:"Pegatina inclinada"},orbit:{n:"Órbita",d:"Anillos luminosos"},retro:{n:"Retro",d:"Marco vintage"}
+};
+const BANNERS = {
+  aurora:"Aurora boreal",mountains:"Montañas",sakura:"Flores sakura",cyber:"Cyberpunk",galaxy:"Galaxia",ocean:"Océano",
+  flame:"Llamas",watercolor:"Acuarela",pixel:"Pixel art",paper:"Papel artesanal",gold:"Oro líquido",forest:"Bosque",
+  candy:"Dulce pastel",space:"Espacio",geometric:"Geométrico",ink:"Tinta y papel",sunset:"Atardecer",crystal:"Cristales",
+  comic:"Cómic",night:"Medianoche",rainbow:"Arcoíris",lavender:"Lavanda",desert:"Desierto",glitch:"Glitch",
+  paint:"Pintura abstracta",constellation:"Constelaciones",floral:"Jardín floral",ice:"Hielo",leather:"Cuero",minimal:"Minimalista"
+};
 const LOGROS = [
   {id:"v1",   i:"🎖️", n:"Primera victoria", d:"Gana una partida",                 ok:(s,j) => s.victorias >= 1},
   {id:"v5",   i:"⚔️", n:"Marinero curtido", d:"Gana 5 partidas",                  ok:(s,j) => s.victorias >= 5},
@@ -912,7 +983,8 @@ function insigniaDe(d){ const l=logrosDe(d).find(x=>x.id===d.insignia && x.ok); 
 function colorAv(d){ return AV_COLORES.includes(d.avatarColor) || hexValido(d.avatarColor) ? d.avatarColor : AV_COLORES[0]; }
 function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
   const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
-  return `<span class="avt" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
+  const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
+  return `<span class="avt style-${estilo}" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
 function cabeceraPerfil(d){
@@ -920,8 +992,10 @@ function cabeceraPerfil(d){
   const fondo = `background:linear-gradient(135deg,${f[1]},${f[2]})`;
   const marco = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
   const efecto = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
+  const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
+  const banner = Object.hasOwn(BANNERS,d.banner) ? d.banner : "aurora";
   const ins=insigniaDe(d);
-  return `<div class="ph frame-${marco} effect-${efecto}" style="${fondo}">${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
+  return `<div class="ph banner-${banner} style-${estilo} frame-${marco} effect-${efecto}" style="${fondo}"><div class="banner-art"></div>${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
 }
 function logrosHTML(d){
   const l = logrosDe(d);
@@ -933,7 +1007,7 @@ function personalizarHTML(){
 }
 function personalizarPanel(){
   const m=perfilMio(), lg=logrosDe(m).filter(x=>x.ok), f=fondoDe(m);
-  const tabs=[["avatar","😀 Avatares"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["marcos","🖼️ Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
+  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["banners","🖼️ Banners"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
   const botones=(items,actual,attr)=>Object.entries(items).map(([k,x])=>{
     const ok=desbloqueado(x,m),sel=(actual||"ninguno")===k;
     return `<button class="cosmetic ${sel?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${x.victorias?x.victorias+" victorias":(x.req||0)+" partidas"}</small>`}</button>`;
@@ -941,8 +1015,10 @@ function personalizarPanel(){
   const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
   let contenido="";
   if(persTab==="avatar") contenido=`<div class="pers-section"><b>Elige tu avatar</b><div class="opts">${AV_EMOJIS.map(e=>`<button class="emo ${m.avatar===e?"":"sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div><p class="mut">Elige un símbolo que te represente. Puedes cambiarlo cuando quieras.</p></div>`;
+  if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual: pixel art, pintura, neón, boceto y más. Se aplica al avatar y adapta algunos detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">⚓</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
   if(persTab==="colores") contenido=`<div class="pers-section"><b>Color del avatar · ${AV_COLORES.length} tonos</b><div class="palette-grid">${AV_COLORES.map(c=>`<button class="palette-swatch ${m.avatarColor===c?"sel":""}" style="background:${c}" data-avc="${c}" title="${c}" aria-label="Color ${c}">${m.avatarColor===c?"✓":""}</button>`).join("")}</div><label for="colorAvatarLibre">O crea tu propio color</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:48px;padding:3px"></div>`;
   if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondos y combinaciones · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
+  if(persTab==="banners") contenido=`<div class="pers-section"><b>Banners artísticos · ${Object.keys(BANNERS).length} diseños</b><p class="mut">Fondos ilustrados con formas, texturas, luces y ambientes. No necesitas subir imágenes.</p><div class="cosmetic-grid">${Object.entries(BANNERS).map(([k,n])=>`<button class="banner-choice ${((m.banner||"aurora")===k)?"sel":""}" data-banner="${k}"><i class="banner-art"></i><span>${n}${((m.banner||"aurora")===k)?" ✓":""}</span></button>`).join("")}</div></div>`;
   if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Desbloquea diseños especiales jugando partidas.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
   if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Dale movimiento y brillo a tu tarjeta de jugador.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
   if(persTab==="identidad") contenido=`<div class="pers-section"><label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select><label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio||"")}"><button id="bBio">Guardar</button></div><label for="selTitulo">Título</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x=>`<option value="${x.id}" ${P.titulo===x.id?"selected":""}>${esc(x.n)}</option>`).join("")}</select><small class="mut">Los títulos e insignias se consiguen completando logros.</small></div>`;
@@ -1118,6 +1194,8 @@ document.addEventListener("click", async e => {
     if (d.invacep) return await aceptarInv(d.invacep);
     if (d.invrech) return await updateDoc(doc(db,"invitaciones",d.invrech), {estado:"rechazada"});
     if (d.invcan) return await updateDoc(doc(db,"invitaciones",d.invcan), {estado:"cancelada"});
+    if (d.estilo && Object.hasOwn(ESTILOS_AVATAR,d.estilo)) return await updateDoc(doc(db,"users",U.uid), {estiloAvatar:d.estilo});
+    if (d.banner && Object.hasOwn(BANNERS,d.banner)) return await updateDoc(doc(db,"users",U.uid), {banner:d.banner});
     if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
     if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
     if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
