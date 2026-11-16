@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Batalla en el plano</title>
+<style>
+:root{--bg:#e8eef0;--card:#f6f9fa;--ink:#10303a;--mut:#5d7882;--line:#a9bec5;--acc:#0f6b7a;--on:#fff;--err:#b3261e;--ok:#2e7d32;--off:#d3dfe3;--azul:#1f6fd1;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1d22;--card:#14292f;--ink:#dcebef;--mut:#8fa9b1;--line:#2c474f;--acc:#4fb3c6;--on:#06222a;--err:#ff8a80;--ok:#81c784;--off:#0f2227;--azul:#5aa9ff;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Avenir Next","Segoe UI",system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+h1{font:700 1.15rem Georgia,serif;margin:0}
+h2{font:600 1.05rem Georgia,serif;margin:18px 0 8px}
+main{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:14px 16px 96px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0}
+.big{display:block;width:100%;padding:16px;font-size:1.05rem}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 3px}
+input{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button{padding:10px 14px;font:inherit;font-weight:600;border:1px solid var(--acc);border-radius:8px;background:var(--acc);color:var(--on);cursor:pointer}
+button.sec{background:transparent;color:var(--acc)}
+button.mini{padding:6px 10px;font-size:.85rem}
+button.link{border:0;background:none;color:var(--acc);text-decoration:underline;padding:6px 0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center}.row>input{flex:1}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats b{display:block;font:700 1.6rem Georgia,serif}
+.stats span,small,.mut{color:var(--mut);font-size:.85rem}
+.err{color:var(--err);min-height:1.3em;margin:8px 0 0;font-size:.9rem}
+.av{width:36px;height:36px;border-radius:50%;background:var(--acc);color:var(--on);display:grid;place-items:center;font-weight:700;overflow:hidden;padding:0;border:0}
+.avt{overflow:hidden}
+.ph{background-size:cover;background-position:center;min-height:132px}
+.code{font:700 2rem ui-monospace,Menlo,monospace;letter-spacing:.2em}
+.tag{font-size:.75rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+nav{position:fixed;z-index:6;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;border:0;color:var(--mut);padding:8px 0 6px;font-size:.72rem;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;border-radius:0}
+nav button.on{color:var(--acc)}
+nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dot{position:absolute;top:4px;left:55%;min-width:16px;height:16px;border-radius:8px;background:var(--err);color:#fff;font-size:.65rem;display:grid;place-items:center;padding:0 4px}
+summary{list-style:none;cursor:pointer}summary::-webkit-details-marker{display:none}
+details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child{border:0}
+.history-scroll{max-height:min(52vh,460px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:6px}
+.history-scroll:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.history-scroll::-webkit-scrollbar{width:8px}.history-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+.history-pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding:7px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.history-pager button{min-width:42px;padding:7px 12px}.history-pager button:disabled{opacity:.35;cursor:not-allowed}
+.history-page-label{flex:1;text-align:center;font-size:.85rem;color:var(--mut)}.history-page-label b{display:block;color:var(--ink);font-size:.9rem}
+.win{color:var(--ok)}.lose{color:var(--err)}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bar{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:.85rem;color:var(--mut)}.bar b{color:var(--ink)}
+.rad{margin:6px 0}
+#splash{position:fixed;inset:0;z-index:0;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50% 40%,#16414d,#071419 72%);color:#dcebef;transition:opacity .6s,filter .6s,transform .6s}
+#splash.dif{filter:blur(7px) brightness(.75);transform:scale(1.05)}
+#splash.fuera{opacity:0;pointer-events:none}
+.radar{width:150px;height:150px;margin:0 auto 12px}
+.sweep{animation:giro 2.4s linear infinite}
+@keyframes giro{to{transform:rotate(360deg)}}
+.load{width:160px;height:4px;border-radius:2px;background:#ffffff26;margin:16px auto 0;overflow:hidden}
+.load i{display:block;height:100%;width:40%;background:#4fb3c6;animation:barra 1.2s ease-in-out infinite}
+@keyframes barra{0%{margin-left:-40%}100%{margin-left:100%}}
+@media (prefers-reduced-motion:reduce){.sweep,.load i{animation:none}}
+#auth{padding-top:10vh}
+.glass{background:color-mix(in srgb,var(--card) 82%,transparent)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.centro{display:flex;flex-direction:column;gap:12px;text-align:center;padding:26px 0 18px}
+.o{color:var(--mut);font-size:.85rem}
+.dot2{width:10px;height:10px;border-radius:50%;background:var(--mut);display:inline-block;margin-right:8px}.on2{background:var(--ok)}
+.frac{display:flex;flex-direction:column;font-size:.8rem;color:var(--mut);gap:2px}
+.fr{display:flex;flex-direction:column;align-items:center;width:92px}
+.fr input{text-align:center}
+/* Teclado numérico del juego */
+.keypad{margin:10px 0 14px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.keypad-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:.85rem;color:var(--mut)}
+.keypad-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.keypad-grid button{min-height:46px;font-size:1.1rem;padding:8px}
+.keypad-grid button.kwide{font-size:.9rem}
+.keypad-grid button.kclear{background:transparent;color:var(--acc)}
+.keypad-grid button:active{filter:brightness(.88);transform:scale(.98)}
+.fr hr{width:100%;border:0;border-top:3px solid var(--ink);margin:5px 0}
+.reacs{display:flex;gap:6px;flex-wrap:wrap;min-height:1.7rem;margin:6px 0}
+.reac{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:1.05rem}
+button.emo{font-size:1.5rem;padding:6px 12px}
+.ph{position:relative;overflow:hidden;min-height:92px;border:2px solid transparent;transition:filter .2s,box-shadow .2s}
+.ph .avt{position:relative;z-index:1}
+.ph .profile-copy{position:relative;z-index:1;min-width:0}
+.ph .pn{overflow-wrap:anywhere}
+.ph .featured{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:2px 8px;border-radius:99px;background:#ffffff26;border:1px solid #ffffff55;font-size:.76rem}
+.ph.frame-bronce{border-color:#cd8b55}.ph.frame-plata{border-color:#cbd5e1;box-shadow:0 0 0 2px #cbd5e155 inset}
+.ph.frame-oro{border-color:#ffd166;box-shadow:0 0 12px #ffd16688,inset 0 0 0 2px #ffd16655}
+.ph.frame-diamante{border-color:#7de8ff;box-shadow:0 0 16px #7de8ff99,inset 0 0 0 2px #7de8ff55}
+.ph.frame-fuego{border-color:#ff7043;box-shadow:0 0 16px #ff572288,inset 0 0 0 2px #ff704355}
+.ph.effect-brillo:after,.ph.effect-oleaje:after,.ph.effect-estrellas:after{content:"";position:absolute;inset:-60%;pointer-events:none;opacity:.22}
+.ph.effect-brillo:after{background:linear-gradient(115deg,transparent 40%,#fff 50%,transparent 60%);animation:perfilBrillo 5s linear infinite}
+.ph.effect-oleaje:after{background:radial-gradient(ellipse at 20% 120%,#fff8,transparent 55%),radial-gradient(ellipse at 80% -20%,#6ff8,transparent 55%);animation:perfilOleaje 4s ease-in-out infinite alternate}
+.ph.effect-estrellas:after{background-image:radial-gradient(#fff 1px,transparent 1.5px),radial-gradient(#fff9 1px,transparent 1.5px);background-size:28px 28px,43px 43px;background-position:0 0,13px 17px;animation:perfilEstrellas 8s linear infinite}
+@keyframes perfilBrillo{to{transform:translateX(45%)}}
+@keyframes perfilOleaje{to{transform:translateY(-8px)}}
+@keyframes perfilEstrellas{to{background-position:28px 28px,56px 60px}}
+
+
+/* Decoraciones globales: cubren cabecera, tarjetas, logros, estadísticas e historial */
+.profile-decor-shell{position:relative;isolation:isolate;padding:12px;border:3px solid transparent;border-radius:20px;margin:4px -4px 14px;overflow:hidden;transition:box-shadow .3s,border-color .3s}
+.profile-decor-shell>*:not(.profile-decor-layer){position:relative;z-index:1}
+.profile-decor-layer{position:absolute!important;z-index:0!important;inset:0;pointer-events:none;opacity:.22;border-radius:inherit}
+.profile-decor-shell>.card{background:color-mix(in srgb,var(--card) 91%,transparent);backdrop-filter:blur(2px)}
+.profile-decor-shell.frame-bronce{border-color:#cd8b55;box-shadow:0 0 0 2px #cd8b5544,0 8px 25px #8b451333}
+.profile-decor-shell.frame-plata{border-color:#cbd5e1;box-shadow:0 0 0 3px #cbd5e155,0 8px 25px #94a3b833}
+.profile-decor-shell.frame-oro{border-color:#ffd166;box-shadow:0 0 0 3px #ffd16666,0 0 25px #ffd16666}
+.profile-decor-shell.frame-diamante{border-color:#7de8ff;box-shadow:0 0 0 3px #7de8ff77,0 0 30px #7de8ff66}
+.profile-decor-shell.frame-fuego{border-color:#ff7043;box-shadow:0 0 0 3px #ff704355,0 0 28px #ff572266}
+.profile-decor-shell.frame-obsidiana{border-color:#8270a8;box-shadow:inset 0 0 0 2px #c4b5fd55,0 0 25px #5b21b655}
+.profile-decor-shell.frame-esmeralda{border-color:#34d399;box-shadow:inset 0 0 0 2px #a7f3d055,0 0 24px #05966966}
+.profile-decor-shell.frame-rubi{border-color:#fb7185;box-shadow:inset 0 0 0 2px #fecdd355,0 0 25px #e11d4866}
+.profile-decor-shell.frame-zafiro{border-color:#60a5fa;box-shadow:inset 0 0 0 2px #bfdbfe55,0 0 25px #2563eb66}
+.profile-decor-shell.frame-arcoiris{border:4px solid transparent;background:linear-gradient(var(--bg),var(--bg)) padding-box,linear-gradient(120deg,red,#ff0,#0f0,#0ff,#00f,#f0f,red) border-box}
+.profile-decor-shell.frame-cosmico{border-color:#c084fc;box-shadow:0 0 0 3px #c084fc55,0 0 35px #7e22ce77}
+.profile-decor-shell.frame-electrico{border-color:#facc15;box-shadow:0 0 0 2px #facc1566,0 0 28px #eab30877}
+.profile-decor-shell.frame-hielo{border-color:#a5f3fc;box-shadow:inset 0 0 20px #67e8f955,0 0 25px #22d3ee66}
+.profile-decor-shell.frame-corona{border:4px double #fcd34d;box-shadow:0 0 0 2px #92400e55,0 0 30px #f59e0b66}
+.profile-decor-shell.frame-glitch{border-color:#f0abfc;box-shadow:5px 0 #22d3ee55,-5px 0 #f43f5e55,0 0 25px #d946ef66}
+.profile-decor-shell.frame-dragon{border-color:#f97316;box-shadow:inset 0 0 24px #dc262644,0 0 30px #ea580c77}
+.profile-decor-shell.effect-brillo .profile-decor-layer{background:linear-gradient(115deg,transparent 35%,#fff 50%,transparent 65%);background-size:220% 100%;animation:globalShine 5s linear infinite}
+.profile-decor-shell.effect-oleaje .profile-decor-layer{background:radial-gradient(ellipse at 15% 100%,#38bdf866,transparent 45%),radial-gradient(ellipse at 90% 0%,#a78bfa66,transparent 48%);animation:globalFloat 5s ease-in-out infinite alternate}
+.profile-decor-shell.effect-estrellas .profile-decor-layer{background-image:radial-gradient(#fff 1px,transparent 1.8px),radial-gradient(#fff9 1px,transparent 1.8px);background-size:25px 25px,43px 43px;animation:globalStars 10s linear infinite}
+.profile-decor-shell.effect-particulas .profile-decor-layer{background-image:radial-gradient(circle,#fff 1px,transparent 2px),radial-gradient(circle,#7dd3fc 2px,transparent 3px);background-size:37px 41px,61px 67px;animation:globalStars 12s linear infinite}
+.profile-decor-shell.effect-pulso{animation:globalPulse 3s ease-in-out infinite}
+.profile-decor-shell.effect-aurora .profile-decor-layer{background:linear-gradient(120deg,#22d3ee55,#a78bfa66,#4ade8055,#f0abfc55);background-size:250% 250%;animation:globalAurora 8s ease infinite}
+.profile-decor-shell.effect-lluvia .profile-decor-layer{background:repeating-linear-gradient(110deg,transparent 0 18px,#7dd3fc66 19px 20px,transparent 21px 35px);animation:globalRain 1.5s linear infinite}
+.profile-decor-shell.effect-ondas .profile-decor-layer{background:repeating-radial-gradient(ellipse at 50% 50%,transparent 0 18px,#fff4 19px 20px,transparent 21px 35px);animation:globalWave 8s linear infinite}
+.profile-decor-shell.effect-fuego .profile-decor-layer{background:radial-gradient(ellipse at 10% 100%,#fb923c88,transparent 35%),radial-gradient(ellipse at 90% 100%,#ef444488,transparent 35%);animation:globalFire 2s ease-in-out infinite alternate}
+.profile-decor-shell.effect-holograma .profile-decor-layer{background:repeating-linear-gradient(0deg,#22d3ee22 0 2px,transparent 3px 7px),linear-gradient(120deg,#a78bfa33,#22d3ee33,#f0abfc33)}
+.profile-decor-shell.effect-confeti .profile-decor-layer{background-image:radial-gradient(#f472b6 2px,transparent 3px),radial-gradient(#facc15 2px,transparent 3px),radial-gradient(#38bdf8 2px,transparent 3px);background-size:43px 51px,61px 57px,73px 67px;animation:globalStars 9s linear infinite}
+.profile-decor-shell.effect-electricidad .profile-decor-layer{background:repeating-linear-gradient(125deg,transparent 0 32px,#fde04777 33px 35px,transparent 36px 57px);animation:globalRain 2s linear infinite}
+.profile-decor-shell.effect-nebulosa .profile-decor-layer{background:radial-gradient(ellipse at 20% 20%,#c084fc77,transparent 40%),radial-gradient(ellipse at 80% 70%,#60a5fa77,transparent 45%),radial-gradient(ellipse at 40% 90%,#f472b677,transparent 40%);animation:globalAurora 10s ease infinite}
+.profile-decor-shell.effect-matrix .profile-decor-layer{background:repeating-linear-gradient(0deg,transparent 0 12px,#4ade8033 13px 14px);animation:globalRain 1s linear infinite}
+.profile-decor-shell.effect-cometa .profile-decor-layer{background:linear-gradient(120deg,transparent 20%,#fff8 48%,transparent 52%);background-size:250% 100%;animation:globalShine 3s linear infinite}
+.profile-decor-shell.effect-prisma .profile-decor-layer{background:linear-gradient(120deg,#f472b633,#60a5fa33,#4ade8033,#facc1533);background-size:300% 300%;animation:globalAurora 6s ease infinite}
+@keyframes globalShine{to{background-position:-220% 0}}
+@keyframes globalFloat{to{transform:translateY(-10px) scale(1.02)}}
+@keyframes globalStars{to{background-position:70px 90px,100px 120px}}
+@keyframes globalPulse{50%{box-shadow:0 0 28px #a78bfa55}}
+@keyframes globalAurora{50%{background-position:100% 100%}}
+@keyframes globalRain{to{background-position:0 90px}}
+@keyframes globalWave{to{background-position:100px 70px}}
+@keyframes globalFire{to{opacity:.42;filter:hue-rotate(18deg)}}
+
+/* Estilos artísticos del avatar */
+.avt{display:inline-grid;place-items:center;flex:0 0 auto;border-radius:50%;border:2px solid #ffffff88;box-shadow:0 3px 10px #0004;position:relative}
+.avt.style-pixel{border-radius:5px;image-rendering:pixelated;box-shadow:3px 3px 0 #0007,inset 0 0 0 2px #ffffff55;filter:saturate(1.25);font-family:monospace}
+.avt.style-paint{border-radius:42% 58% 62% 38%/45% 38% 62% 55%;border:3px dashed #fff9;box-shadow:0 0 0 3px #0002,2px 4px 8px #0005;filter:saturate(1.45) contrast(1.08)}
+.avt.style-neon{border:2px solid #fff;box-shadow:0 0 7px #fff,0 0 15px currentColor,inset 0 0 12px #fff8}
+.avt.style-sketch{border:2px dashed #fff;filter:grayscale(.3) contrast(1.3);box-shadow:3px 3px 0 #0005}
+.avt.style-glass{border:1px solid #ffffffbb;background-image:linear-gradient(135deg,#ffffff88,#ffffff08 55%,#0003)!important;backdrop-filter:blur(3px);box-shadow:inset 0 0 12px #fff8,0 4px 12px #0004}
+.avt.style-sticker{border:4px solid #fff;box-shadow:0 3px 0 #0004,0 0 0 2px #2225;transform:rotate(-4deg)}
+.avt.style-orbit{border:2px solid #d7faff;box-shadow:0 0 0 4px #ffffff22,0 0 0 7px #ffffff44,0 0 16px #8df}
+.avt.style-retro{border-radius:8px;border:3px double #ffe29a;box-shadow:inset 0 0 0 3px #0003,3px 3px 0 #0006;font-family:Georgia,serif}
+.ph{display:flex;align-items:center;gap:14px;padding:17px;border-radius:14px;background-size:cover!important;background-position:center!important;isolation:isolate}
+.ph.style-pixel .profile-copy{font-family:monospace;text-shadow:2px 2px #000}
+.ph.style-paint{border-radius:22px 5px 22px 5px}
+.ph.style-paint .pn{font-family:Georgia,serif;font-style:italic;letter-spacing:.04em}
+.ph.style-retro .pn{font-family:Georgia,serif;letter-spacing:.08em;text-transform:uppercase}
+.ph.style-sketch{border-style:dashed;border-width:3px}
+.ph.style-neon{box-shadow:0 0 18px #7df8,inset 0 0 18px #fff2}
+.ph.style-glass{backdrop-filter:blur(2px);border-color:#ffffff99;box-shadow:inset 0 0 22px #fff3}
+.style-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin:10px 0}
+.style-choice{min-height:78px;padding:9px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:var(--bg);color:var(--ink);border:1px solid var(--line);font-size:.78rem}
+.style-choice .sample{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#fc00ff,#00dbde);font-size:20px}
+.style-choice.sel{outline:2px solid var(--acc);border-color:var(--acc)}
+.banner-choice{min-height:78px;position:relative;overflow:hidden;border:2px solid #ffffff88;border-radius:10px;color:white;text-shadow:0 1px 3px #000;padding:0}
+.banner-choice .banner-art{position:absolute;inset:0}
+.banner-choice span{position:relative;z-index:1}
+
+.cosmetic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:7px;margin:7px 0 14px}
+.cosmetic{min-height:42px;padding:7px 8px;font-size:.82rem;line-height:1.25}
+.cosmetic.sel{outline:2px solid var(--acc);outline-offset:1px}
+ .cosmetic:disabled{opacity:.4;filter:grayscale(1);cursor:not-allowed}
+.pers-tabs{display:flex;gap:6px;overflow-x:auto;padding:5px 2px 10px;margin:0 0 10px;scrollbar-width:thin;position:sticky;top:0;z-index:3;background:var(--card)}
+.pers-tab{white-space:nowrap;flex:0 0 auto;padding:8px 11px;font-size:.8rem;border-radius:999px;background:transparent;color:var(--mut);border:1px solid var(--line)}
+.pers-tab.active{background:var(--acc);color:var(--on);border-color:var(--acc)}
+.pers-section{min-height:190px}.palette-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;margin:9px 0 14px}
+.palette-swatch{width:100%;aspect-ratio:1;border-radius:50%;padding:0;border:2px solid #ffffff88;box-shadow:0 1px 4px #0004;min-width:0}
+.palette-swatch.sel{outline:3px solid var(--acc);outline-offset:2px}
+.gradient-swatch{min-height:66px;border:2px solid #ffffff66;border-radius:10px;padding:5px;color:white;text-shadow:0 1px 3px #000;font-size:.76rem;box-shadow:inset 0 0 0 1px #0002}
+.gradient-swatch.sel{outline:3px solid var(--acc);outline-offset:2px}
+.color-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}.color-tools input[type=color]{height:44px;padding:3px}
+@media(max-width:360px){.palette-grid{grid-template-columns:repeat(7,minmax(0,1fr))}.pers-tab{padding:7px 9px}}
+.cosmetic small{display:block;font-size:.7rem;opacity:.8;margin-top:3px}
+@media(prefers-reduced-motion:reduce){.ph.effect-brillo:after,.ph.effect-oleaje:after,.ph.effect-estrellas:after{animation:none}}
+.avt{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;flex:none;border:2px solid #ffffff88;vertical-align:middle}
+.avt.mini-frame-bronce{outline:2px solid #cd8b55;outline-offset:1px}.avt.mini-frame-plata{outline:2px solid #cbd5e1;outline-offset:1px}.avt.mini-frame-oro{outline:2px solid #ffd166;outline-offset:1px;box-shadow:0 0 9px #ffd16699}.avt.mini-frame-diamante{outline:2px solid #7de8ff;outline-offset:1px;box-shadow:0 0 10px #7de8ff}.avt.mini-frame-fuego{outline:2px solid #ff7043;outline-offset:1px;box-shadow:0 0 10px #ff5722}.avt[class*="mini-effect-"]{filter:drop-shadow(0 0 4px #8be9ff99)}
+
+.ph{display:flex;gap:14px;align-items:center;padding:16px;border-radius:12px;color:#fff}
+.pn{font:700 1.2rem Georgia,serif}.pt{opacity:.9;font-size:.85rem}.pb{margin-top:4px;font-size:.9rem}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);padding:0;color:#fff;font-weight:700}
+.logros{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.logro{border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;font-size:.78rem;line-height:1.2}
+.logro b{display:block;font-size:1.6rem}.logro.off{opacity:.35;filter:grayscale(1)}
+select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.ins{display:flex;flex-wrap:wrap;gap:6px}
+.insb{background:var(--bg);color:inherit;border:1px solid var(--line);font-size:1.5rem;padding:6px 10px;border-radius:10px;line-height:1}
+.insb.off{opacity:.35;filter:grayscale(1)}
+#zoom{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.78);display:grid;place-items:center;padding:12px}
+#zoom .zbox{background:var(--card);color:var(--ink);border-radius:12px;padding:12px;width:min(96vw,80vh);max-height:96vh;overflow:auto}
+#zoom svg{width:100%!important;height:auto}
+.two svg{cursor:zoom-in}
+#intro{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,#16414d,#050f13 75%);color:#dcebef;text-align:center;padding:16px}
+#intro .vs{display:grid;gap:12px;justify-items:center;width:100%}
+.vsn{font:700 clamp(1.6rem,8vw,2.6rem) Georgia,serif;max-width:92vw;overflow-wrap:anywhere}
+.vsv{font:700 1.2rem Georgia,serif;color:#e0a800;letter-spacing:.35em}
+.vss{color:#8fa9b1;margin-top:6px}
+#intro.go .vsn.a{animation:desdeIzq .7s ease-out both}
+#intro.go .vsn.b{animation:desdeDer .7s .35s ease-out both}
+#intro.go .vsv{animation:pop .5s .2s ease-out both}
+#intro.go .vss{animation:fundir .6s 1.1s both}
+@keyframes desdeIzq{from{opacity:0;transform:translateX(-60vw)}to{opacity:1;transform:none}}
+@keyframes desdeDer{from{opacity:0;transform:translateX(60vw)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:none}}
+@keyframes fundir{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#intro.go *{animation:none!important}}
+[hidden]{display:none!important}
+
+#previewCosmetic{position:fixed;inset:0;z-index:80;background:#000b;display:grid;place-items:center;padding:14px}
+#previewCosmetic[hidden]{display:none}
+#previewCosmetic .preview-box{width:min(96vw,560px);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 18px 60px #0009}
+.preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
+.preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.cosmetic-line{display:flex;align-items:stretch;gap:6px;margin:6px 0}
+.cosmetic-line>.cosmetic{flex:1;min-width:0}
+.cosmetic-preview{flex:0 0 auto;padding:6px 10px}
+</style>
+</head>
+<body>
+<div id="splash"><div>
+  <svg class="radar" viewBox="-50 -50 100 100" aria-hidden="true"><circle r="46" fill="none" stroke="#4fb3c6" stroke-opacity=".55"/><circle r="30" fill="none" stroke="#4fb3c6" stroke-opacity=".4"/><circle r="14" fill="none" stroke="#4fb3c6" stroke-opacity=".3"/><path d="M-50 0H50M0 -50V50" stroke="#4fb3c6" stroke-opacity=".35"/><g class="sweep"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="#4fb3c6" fill-opacity=".38"/></g><circle cx="18" cy="-12" r="2.5" fill="#ff6b57"/><circle cx="-22" cy="16" r="2.5" fill="#e0a800"/></svg>
+  <div style="font:700 1.9rem Georgia,serif">Batalla en el plano</div><small style="color:#8fa9b1">Cargando…</small><div class="load"><i></i></div>
+</div></div>
+<header id="hdr" hidden><button class="av" id="hAv" aria-label="Mi perfil"></button><h1>Batalla en el plano</h1><span style="width:36px"></span></header>
+<main>
+<section id="auth" hidden>
+  <div class="card glass">
+    <h2 id="tAuth" style="margin-top:0">Iniciar sesión</h2>
+    <div id="fNombre" hidden><label for="nombre">Nombre de jugador</label><input id="nombre" maxlength="20"></div>
+    <label for="email">Correo</label><input id="email" type="email" autocomplete="email">
+    <label for="pass">Contraseña (mínimo 6 caracteres)</label><input id="pass" type="password">
+    <p class="err" id="eAuth"></p>
+    <div class="row"><button id="bEnviar">Entrar</button><button class="sec" id="bGoogle">Continuar con Google</button></div>
+    <button class="link" id="bModo">Crear cuenta nueva</button><br>
+    <button class="link" id="bReset">Olvidé mi contraseña</button>
+  </div>
+</section>
+
+<div id="invBar"></div>
+<div id="app" hidden>
+  <section id="v-inicio"></section>
+  <section id="v-partidas" hidden></section>
+  <section id="v-amigos" hidden></section>
+  <section id="v-ranking" hidden></section>
+  <section id="v-perfil" hidden></section>
+  <section id="v-usuario" hidden></section>
+  <section id="v-sala" hidden></section>
+</div>
+</main>
+<nav id="nav" hidden>
+  <button data-v="inicio"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Inicio</button>
+  <button data-v="partidas"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>Partidas</button>
+  <button data-v="amigos"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-4 3-6 6.500-6s6.500 2 6.500 6M17 5a3.500 3.500 0 010 6.500M21.500 20c0-3-1.500-5-4-5.800"/></svg>Amigos<i class="dot" id="dotA" hidden>0</i></button>
+  <button data-v="ranking"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg>Ranking</button>
+  <button data-v="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.500 3.500-7 8-7s8 2.500 8 7"/></svg>Perfil</button>
+</nav>
+
+<div id="intro" hidden role="dialog" aria-label="Inicio de la partida"><div class="vs"><div class="vsn a" id="vsA"></div><div class="vsv">VS</div><div class="vsn b" id="vsB"></div><div class="vss" id="vsS"></div></div></div>
+<div id="zoom" role="dialog" aria-modal="true" aria-label="Plano ampliado" hidden><div class="zbox" id="zoomBody"></div></div>
+<div id="previewCosmetic" role="dialog" aria-modal="true" aria-label="Vista previa de personalización" hidden><div class="preview-box" id="previewCosmeticBody"></div></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,GoogleAuthProvider,updateProfile,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import {getFirestore,doc,collection,query,where,setDoc,getDoc,updateDoc,deleteDoc,addDoc,increment,runTransaction,onSnapshot,orderBy,limit,getDocs,arrayUnion,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyCUnK2WJZurAZXTkZEW_MPzIykH4mMByjU", authDomain:"prueba-2-df121.firebaseapp.com",
+  projectId:"prueba-2-df121", storageBucket:"prueba-2-df121.firebasestorage.app",
+  messagingSenderId:"147257342708", appId:"1:147257342708:web:81be883437b83c7e443ca1"
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ERR = {
+  "auth/invalid-credential":"Correo o contraseña incorrectos.","auth/invalid-email":"El correo no es válido.",
+  "auth/email-already-in-use":"Ese correo ya tiene una cuenta. Inicia sesión.","auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
+  "auth/popup-closed-by-user":"Cerraste la ventana de Google antes de terminar.","auth/too-many-requests":"Demasiados intentos. Espera un momento.",
+  "permission-denied":"No se pudo completar. Puede que ya exista esa solicitud o amistad.","nombre":"El nombre debe tener al menos 3 caracteres."
+};
+const texto = e => e.m || ERR[e.code] || "Algo salió mal. Inténtalo de nuevo.";
+const LET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.length)]).join("");
+
+let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "", rkSub = null, verSub = null;
+const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
+
+/* ---------- Autenticación ---------- */
+function pintarModo(){
+  const c = modo === "crear";
+  $("tAuth").textContent = c ? "Crear cuenta" : "Iniciar sesión";
+  $("bEnviar").textContent = c ? "Crear cuenta" : "Entrar";
+  $("bModo").textContent = c ? "Ya tengo cuenta" : "Crear cuenta nueva";
+  $("fNombre").hidden = !c; $("eAuth").textContent = "";
+}
+$("bModo").onclick = () => { modo = modo === "crear" ? "entrar" : "crear"; pintarModo(); };
+$("bEnviar").onclick = async () => {
+  const email = $("email").value.trim(), pass = $("pass").value;
+  try {
+    if (modo === "crear"){
+      const n = $("nombre").value.trim(); if (n.length < 3) throw {code:"nombre"};
+      let fin; espera = new Promise(r => fin = r);
+      try {
+        const c = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(c.user, {displayName:n});
+      } finally { fin(); }
+    } else await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e){ $("eAuth").textContent = texto(e); }
+};
+$("bGoogle").onclick = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e){ $("eAuth").textContent = texto(e); } };
+$("bReset").onclick = async () => {
+  const email = $("email").value.trim();
+  if (!email){ $("eAuth").textContent = "Escribe tu correo y vuelve a tocar el enlace."; return; }
+  try { await sendPasswordResetEmail(auth, email); $("eAuth").textContent = "Te enviamos un correo para restablecerla."; } catch (e){ $("eAuth").textContent = texto(e); }
+};
+
+let espera = Promise.resolve();
+const pausa = () => new Promise(r => setTimeout(r, Math.max(0, 1600 - performance.now())));   // deja ver la pantalla de carga
+const latido = () => { if (U) updateDoc(doc(db,"users",U.uid), {visto:Date.now()}).catch(() => {}); };   // "estoy en línea"
+setInterval(() => { latido(); const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos(); }, 30000);
+onAuthStateChanged(auth, async u => {
+  await espera; espera = Promise.resolve();
+  subs.forEach(f => f()); subs = []; amSubs.forEach(f => f()); amSubs = []; amDocs = {}; kP = ""; kR = ""; invRec = []; invEnv = []; pintarInv();
+  if (rkSub){ rkSub(); rkSub = null; } if (verSub){ verSub(); verSub = null; }
+  if (salaSub){ salaSub(); salaSub = null; }
+  U = u;
+  const spl = $("splash");
+  if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
+  await prepararPerfil(u);
+  await pausa(); spl.classList.add("fuera"); latido();
+  $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hdr").hidden = false;
+  subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; sincRank(); if (k !== kP){ kP = k; pintar(); } }));
+  subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); suscribirAmigos(); pintar(); if (vista === "usuario") pintarUsuario(); }));
+  subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); errPartidas = ""; pintar(); },
+    e => { console.error("partidas:", e); errPartidas = e.code || "error"; pintar(); }));
+  subs.push(onSnapshot(collection(db,"users",u.uid,"historial"), s => { historial = s.docs.map(d => ({id:d.id, ...d.data()})); pintar(); }));
+  subs.push(onSnapshot(query(collection(db,"invitaciones"), where("para","==",u.uid), where("estado","==","pendiente")),
+    s => { invRec = s.docs.map(d => ({id:d.id, ...d.data()})); pintarInv(); }, () => {}));
+  subs.push(onSnapshot(query(collection(db,"invitaciones"), where("de","==",u.uid)),
+    s => { invEnv = s.docs.map(d => ({id:d.id, ...d.data()})); if (vista === "sala" && G && !G.j2 && gid) pintarSala(gid, G); }, () => {}));
+  ir("inicio");
+});
+
+async function prepararPerfil(u){
+  const ref = doc(db,"users",u.uid);
+  try {
+    const actual = await getDoc(ref), d = actual.exists() ? actual.data() : {};
+    if (d.codigo) return;
+    // La transacción evita que dos sesiones creen códigos distintos para la misma cuenta
+    // y comprueba que el código no esté ocupado antes de reservarlo.
+    for (let intento = 0; intento < 8; intento++){
+      const codigo = cod(6), codigoRef = doc(db,"codigos",codigo);
+      try {
+        await runTransaction(db, async tx => {
+          const [perfil, ocupado] = await Promise.all([tx.get(ref), tx.get(codigoRef)]);
+          if (perfil.exists() && perfil.data().codigo) return;
+          if (ocupado.exists()) throw new Error("Código ocupado");
+          tx.set(codigoRef, {uid:u.uid, nombre:nombreDe(u)});
+          tx.set(ref, {nombre:d.nombre || nombreDe(u), codigo, victorias:d.victorias || 0, derrotas:d.derrotas || 0, empates:d.empates || 0, creado:d.creado || serverTimestamp()}, {merge:true});
+        });
+        return;
+      } catch (e){ if (e.message !== "Código ocupado" || intento === 7) throw e; }
+    }
+  } catch (e){ console.error("No se pudo preparar el perfil:", e); }
+}
+
+/* ---------- Navegación ---------- */
+const VISTAS = ["inicio","partidas","amigos","ranking","perfil","usuario","sala"];
+function ir(v){
+  vista = v;
+  if (v === "ranking") cargarRanking();
+  if (v !== "sala" && espSub){ espSub(); espSub = null; E = null; eid = null; }
+  VISTAS.forEach(x => $("v-"+x).hidden = x !== v);
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === (v === "sala" ? "partidas" : v)));
+  pintar(); window.scrollTo(0,0);
+}
+$("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); };
+$("hAv").onclick = () => ir("perfil");
+
+/* ---------- Pintar vistas ---------- */
+const nombre = () => P.nombre || (U && nombreDe(U)) || "Jugador";
+const rival = g => g.j1 === U.uid ? g.n2 : g.n1;
+const estadoTxt = g => g.estado === "fin" ? "Terminada" : g.j2 ? "En curso" : "Esperando rival";
+const pendientes = () => amistades.filter(a => a.estado === "pendiente" && a.pedidoPor !== U.uid);
+const otro = a => a.miembros.find(m => m !== U.uid);
+
+function pintar(){
+  if (!U) return;
+  const av = $("hAv");
+  av.textContent = AV_EMOJIS.includes(P.avatar) ? P.avatar : nombre()[0].toUpperCase();
+  av.style.background = colorAv(P);
+  const n = pendientes().length; $("dotA").hidden = !n; $("dotA").textContent = n;
+  if (vista === "inicio") pintarInicio();
+  if (vista === "partidas") pintarPartidas();
+  if (vista === "amigos") pintarAmigos();
+  if (vista === "perfil") pintarPerfil();
+  if (vista === "ranking") pintarRanking();
+}
+
+function htmlAmigos(){
+  const ac = amistades.filter(a => a.estado === "aceptada"), ahora = Date.now();
+  if (!ac.length) return `<p class="mut">Aún no tienes amigos. Agrégalos con su código.</p>`;
+  return ac.map(a => { const id = otro(a), d = amDocs[id] || {}, on = ahora - (d.visto || 0) < 75000;
+    // Si tú también perteneces a esa partida, ya eres jugador: no debes verla como espectador.
+    const yaSoyJugador = !!d.partidaActual && partidas.some(g => g.id === d.partidaActual && g.estado !== "fin");
+    const der = on && d.partidaActual ? (yaSoyJugador ? `<span class="tag">En partida contigo</span>` : `<span class="tag">En partida</span> <button class="mini" data-espectar="${esc(d.partidaActual)}">Espectear</button>`) : on ? `<small>En línea</small> <button class="mini" data-invitar="${id}" data-nombre="${esc(a.nombres?.[id] || "Jugador")}">Invitar</button>` : `<small>Desconectado</small>`;
+    return `<div class="item"><span><i class="dot2 ${on ? "on2" : ""}"></i>${avatarHTML({...d, nombre:a.nombres?.[id]}, 26)} <button class="link" data-perfil="${id}">${esc(a.nombres?.[id] || "Jugador")}</button></span><span>${der}</span></div>`; }).join("");
+}
+function suscribirAmigos(){
+  amSubs.forEach(f => f()); amSubs = [];
+  for (const a of amistades.filter(a => a.estado === "aceptada")){
+    const id = otro(a);
+    amSubs.push(onSnapshot(doc(db,"users",id), s => {
+      amDocs[id] = s.data() || {};
+      const e = $("listaAm"); if (vista === "inicio" && e) e.innerHTML = htmlAmigos();
+      if (vista === "amigos") pintarAmigos();
+    }, e => console.error("actualización de amigo:", e)));
+  }
+}
+function pintarInicio(){
+  const cv = $("codigo")?.value || "";
+  $("v-inicio").innerHTML = `<div class="centro"><h2 style="margin:0">Hola, ${esc(nombre())}</h2>
+    <button class="big" id="bCrear">Crear partida</button><div class="o">o</div>
+    <div class="row"><input id="codigo" maxlength="5" style="text-transform:uppercase;text-align:center" placeholder="Código de la partida" value="${esc(cv)}"><button id="bUnir">Unirse</button></div>
+    <p class="err" id="eInicio"></p></div>
+    <h2 style="display:flex;justify-content:space-between;align-items:center">Amigos <button class="mini sec" data-go="amigos">Agregar</button></h2>
+    <div class="card" id="listaAm">${htmlAmigos()}</div>`;
+}
+const PAUSA_TXT = {solicitada:"Pausa solicitada", pausada:"Pausada", reanudar:"Esperando reanudación"};
+const enPausa = g => g.estado !== "fin" && !!(g.pausa && PAUSA_TXT[g.pausa.estado]);
+function filaPartida(g){
+  const pa = enPausa(g);
+  return `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${pa ? PAUSA_TXT[g.pausa.estado] : estadoTxt(g)}</span><br><small>Rival: ${esc(rival(g) || "esperando…")}</small></div><button class="mini" data-sala="${esc(g.id)}">${pa ? "Continuar" : "Abrir"}</button></div>`;
+}
+function pintarPartidas(){
+  const l = [...partidas].sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
+  const pausadas = l.filter(enPausa), otras = l.filter(g => !enPausa(g));
+  let h = `<h2 style="margin-top:6px">Mis partidas</h2>`;
+  if (errPartidas) h += `<div class="card"><p class="err">No se pudieron cargar tus partidas (${esc(errPartidas)}). Revisa que las reglas de Firestore estén publicadas y recarga la página.</p></div>`;
+  if (!l.length && !errPartidas) h += `<div class="card"><p class="mut">Aún no tienes partidas. Crea una desde Inicio.</p></div>`;
+  if (pausadas.length) h += `<h2>Partidas pausadas</h2><div class="card">${pausadas.map(filaPartida).join("")}</div>`;
+  if (otras.length) h += `<h2>Otras partidas</h2><div class="card">${otras.map(filaPartida).join("")}</div>`;
+  $("v-partidas").innerHTML = h;
+}
+
+function pintarAmigos(){
+  const acept = amistades.filter(a => a.estado === "aceptada");
+  const rec = pendientes(), env = amistades.filter(a => a.estado === "pendiente" && a.pedidoPor === U.uid);
+  const fila = (a, bot) => { const id = otro(a), d = amDocs[id] || {}, nom = a.nombres?.[id] || d.nombre || "Jugador";
+    return `<div class="item"><span style="display:flex;align-items:center;gap:8px">${avatarHTML({...d,nombre:nom},26)}<button class="link" data-perfil="${id}">${esc(nom)}</button></span><span>${bot}</span></div>`;
+  };
+  $("v-amigos").innerHTML = `<h2 style="margin-top:6px">Amigos</h2>
+    <div class="card"><label for="cAmigo" style="margin-top:0">Agregar amigo con su código</label>
+      <div class="row"><input id="cAmigo" maxlength="6" style="text-transform:uppercase" placeholder="Código de 6 letras"><button id="bAmigo">Enviar</button></div>
+      <p class="${msgAmigo.startsWith("✓") ? "mut" : "err"}">${esc(msgAmigo)}</p></div>
+    ${rec.length ? `<h2>Solicitudes</h2><div class="card">${rec.map(a => fila(a, `<button class="mini" data-acep="${a.id}">Aceptar</button> <button class="mini sec" data-del="${a.id}">Rechazar</button>`)).join("")}</div>` : ""}
+    <h2>Mis amigos</h2><div class="card">${acept.length ? acept.map(a => fila(a, `<button class="mini sec" data-del="${a.id}">Quitar</button>`)).join("") : `<p class="mut">Todavía no tienes amigos agregados.</p>`}</div>
+    ${env.length ? `<h2>Enviadas</h2><div class="card">${env.map(a => fila(a, `<span class="tag">Pendiente</span> <button class="mini sec" data-del="${a.id}">Cancelar</button>`)).join("")}</div>` : ""}`;
+}
+
+function pintarPerfil(){
+  const v = P.victorias || 0, d = P.derrotas || 0, e = P.empates || 0, j = v + d + e;
+  const wr = j ? Math.round(v / j * 100) : 0;
+  const lista = [...historial].sort((a,b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+  const porPagina = 10, totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
+  paginaHistorial = Math.min(paginaHistorial, totalPaginas - 1);
+  const inicioHistorial = paginaHistorial * porPagina;
+  const paginaLista = lista.slice(inicioHistorial, inicioHistorial + porPagina);
+  const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
+  const decoMarco = Object.hasOwn(MARCOS,P.marco) && desbloqueado(MARCOS[P.marco],P) ? P.marco : "ninguno";
+  const decoEfecto = Object.hasOwn(EFECTOS,P.efecto) && desbloqueado(EFECTOS[P.efecto],P) ? P.efecto : "ninguno";
+  $("v-perfil").innerHTML = `<div class="profile-decor-shell frame-${decoMarco} effect-${decoEfecto}"><div class="profile-decor-layer"></div><h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio())}
+    <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
+      <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
+      <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
+    ${personalizarHTML()}${logrosHTML(perfilMio())}
+    <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
+      <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
+    <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; azul: no tocó. Toca un plano para ampliarlo.</small></details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
+      <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
+    <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
+      <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
+    <button class="sec big" id="bSalir">Cerrar sesión</button></div>`;
+}
+
+const fecha = h => h.fecha?.seconds ? new Date(h.fecha.seconds * 1000).toLocaleDateString("es") : "";
+function mini(h, modo){   // "mio": mi plano (mis barcos + ataques del rival) · "riv": plano del rival (sus barcos + mis ataques)
+  const mio = modo === "mio", flota = (mio ? h.barcos : h.barcosRival) || [], lin = (mio ? h.rival : h.mios) || [], gs = new Set((mio ? h.gast : h.gastRival) || []);
+  let g = "";
+  for (let x = -6; x < 6; x++) for (let y = -6; y < 6; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="var(--card)" stroke="var(--line)" stroke-width=".03"/>`;
+  for (const b of flota) for (const c of b.celdas){
+    const x = Number(c.x), y = Number(c.y);
+    g += `<rect x="${x + .06}" y="${y + .06}" width=".88" height=".88" rx=".12" fill="${esc(b.c)}" opacity="${b.hund ? .45 : 1}"/>`;
+    if (gs.has(x + "," + y)) g += `<path d="M${x + .25} ${y + .25}L${x + .75} ${y + .75}M${x + .75} ${y + .25}L${x + .25} ${y + .75}" stroke="#fff" stroke-width=".1"/>`;
+  }
+  g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of lin){
+    const m = Number(l.m), b = Number(l.b);
+    g += `<line x1="-8" y1="${m * -8 + b}" x2="8" y2="${m * 8 + b}" stroke="${l.rojo ? "var(--err)" : "var(--azul)"}" stroke-width=".13" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="-6.2 -6.2 12.4 12.4" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${g}</g></svg>`;
+}
+// Partida de prueba: aparece en el historial, pero NO suma a las estadísticas.
+async function ejemplo(){
+  const lin = n => Array.from({length:n}, () => ({m:Math.round((Math.random() * 4 - 2) * 2) / 2, b:Math.round(Math.random() * 8 - 4), rojo:Math.random() < .5}));
+  const a = Math.floor(Math.random() * 300), z = Math.floor(Math.random() * 300);
+  await addDoc(collection(db,"users",U.uid,"historial"), {prueba:true, resultado:a > z ? "victoria" : a < z ? "derrota" : "empate", rivalNombre:"Rival de prueba", miPuntaje:a, puntajeRival:z, mios:lin(10), rival:lin(10),
+    barcos:[{c:"#3a6ea5", celdas:[0,1,2,3].map(i => ({x:i, y:2})), hund:true}, {c:"#4a9a5a", celdas:[{x:-3, y:-2}, {x:-3, y:-1}], hund:false}], gast:["0,2","1,2","-3,-2"],
+    barcosRival:[{c:"#c9772b", celdas:[{x:-4, y:3}, {x:-3, y:3}, {x:-2, y:3}], hund:false}, {c:"#7b5ea7", celdas:[{x:2, y:-3}, {x:2, y:-4}], hund:true}], gastRival:["2,-3","2,-4","-3,3"],
+    fecha:serverTimestamp()});
+}
+
+/* ================= PARTIDA ONLINE ================= */
+const PERM = {1:[1,2,4], 2:[2,3,4]}, RONDAS = 10, SEG = 90, NN = 6;
+const CL = [
+  {n:"Portaaviones", L:4, pts:100, um:70, d:[20,50,50,20], c:"#3a6ea5", q:2},
+  {n:"Acorazado",    L:3, pts:90,  um:65, d:[25,45,25],    c:"#c9772b", q:2},
+  {n:"Destructor",   L:2, pts:60,  um:50, d:[30,30],       c:"#4a9a5a", q:3},
+  {n:"Submarino",    L:2, pts:30,  um:50, d:[50,50],       c:"#7b5ea7", q:2}
+];
+const FLOTA = CL.flatMap((c,i) => Array(c.q).fill(i));
+const quad = (x,y) => x>=0&&y>=0 ? 1 : x<0&&y>=0 ? 2 : x<0&&y<0 ? 3 : 4;
+const kk = c => c.x + "," + c.y;
+const cruza = (c,m,b) => { const v = [[0,0],[1,0],[0,1],[1,1]].map(([i,j]) => c.y+j - m*(c.x+i) - b); return Math.min(...v) < -1e-9 && Math.max(...v) > 1e-9; };
+const fmtT = r => Math.floor(Math.max(r,0)/60) + ":" + String(Math.max(r,0)%60).padStart(2,"0");
+let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz = true, vmn = "1", vmd = "1", vb = "0",
+    huella = "", resolviendo = false, pasando = false, guardado = false, publicado = false, msgP = "", aimT = null, campoTeclado = "mn";
+
+async function alCambiar(id, g){
+  g.lineas = g.lineas || []; g.listo = g.listo || {}; g.pts = g.pts || {1:0,2:0};
+  if (id !== gid){
+    escucharReacs(id);
+    gid = id; mis = []; gast = new Set(); guardado = false; publicado = false; msgP = ""; huella = ""; G = g; yo = g.j1 === U.uid ? 1 : 2;
+    try { const s = await getDoc(doc(db,"games",id,"privado",U.uid)); if (s.exists()){ mis = s.data().ships; gast = new Set(s.data().gast); } } catch {}
+  }
+  G = g; yo = g.j1 === U.uid ? 1 : 2;
+  if (!g.j2){ esperaron.add(id); huella = ""; return pintarSala(id, g); }
+  // transición con los nombres: al formarse la partida y al empezar la batalla
+  if (g.estado === "colocando" && !introVS.has(id) && (esperaron.has(id) || Date.now() - (g.inicio || 0) < 20000)){ introVS.add(id); mostrarIntro(g.n1, g.n2, "Preparen sus flotas"); }
+  if (g.estado === "batalla" && estPrev[id] === "colocando") mostrarIntro(g.n1, g.n2, "¡Comienza la batalla!");
+  estPrev[id] = g.estado;
+  // los amigos ven que estás en partida (para poder espectarla)
+  if (g.estado !== "fin" && P.partidaActual !== id) updateDoc(doc(db,"users",U.uid), {partidaActual:id}).catch(() => {});
+  if (g.estado === "fin" && P.partidaActual === id) updateDoc(doc(db,"users",U.uid), {partidaActual:null}).catch(() => {});
+  const pausaActiva = g.pausa && (g.pausa.estado === "pausada" || g.pausa.estado === "reanudar");
+  if (g.ataque && g.ataque.p !== yo && !resolviendo && !pausaActiva) resolver();
+  if (g.estado === "fin"){
+    const f = g.finales || {};
+    if (!f[U.uid] && !publicado){ publicado = true; updateDoc(doc(db,"games",gid), {[`finales.${U.uid}`]:{ships:mis, gast:[...gast]}}).catch(() => {}); }
+    if (g.cancelada) guardado = true;
+    if (!guardado && f[U.uid] && (f[yo === 1 ? g.j2 : g.j1] || g.abandonoPor)){ guardado = true; guardarFin(); }
+  }
+  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null]);
+  if (h !== huella){ huella = h; pintarPartida(); }
+  else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
+}
+
+/* --- dibujo --- */
+const ln = (m,b,c,w,d) => `<line x1="-8" y1="${m*-8+b}" x2="8" y2="${m*8+b}" stroke="${c}" stroke-width="${w}" ${d ? `stroke-dasharray="${d}"` : ""} stroke-linecap="round"/>`;
+function radarH(modo, prev, place){
+  const p = modo === "def" ? yo : 3 - yo, zona = PERM[p];
+  let g = "";
+  for (let x=-NN; x<NN; x++) for (let y=-NN; y<NN; y++) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="${zona.includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
+  if (modo === "def") for (const s of mis) for (const c of s.celdas){
+    g += `<rect x="${c.x+.06}" y="${c.y+.06}" width=".88" height=".88" rx=".12" fill="${CL[s.i].c}" opacity="${s.hund ? .45 : 1}"/>`;
+    if (gast.has(kk(c))) g += `<path d="M${c.x+.25} ${c.y+.25}L${c.x+.75} ${c.y+.75}M${c.x+.75} ${c.y+.25}L${c.x+.25} ${c.y+.75}" stroke="#fff" stroke-width=".1"/>`;
+  }
+  if (prev && prev.celdas) for (const c of prev.celdas) g += `<rect x="${c.x}" y="${c.y}" width="1" height="1" fill="${prev.ok ? "#2e7d32" : "#d23a2a"}" opacity=".55"/>`;
+  g += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of G.lineas.filter(l => modo === "atk" ? l.p === yo : l.p !== yo)) g += ln(l.m, l.b, l.rojo ? "var(--err)" : "var(--azul)", .1, "");
+  if (modo === "def" && G.apunta && G.apunta.p !== yo) g += ln(G.apunta.m, G.apunta.b, "var(--err)", .06, ".25 .2");
+  if (prev && prev.linea) g += ln(prev.linea.m, prev.linea.b, "var(--acc)", .08, ".25 .2");
+  let t = "";
+  for (let i=-6; i<=6; i+=2) if (i) t += `<text x="${i}" y="-.3" font-size=".5" text-anchor="middle" fill="var(--mut)">${i}</text><text x=".2" y="${-i+.17}" font-size=".5" fill="var(--mut)">${i}</text>`;
+  return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px;${place ? "touch-action:none" : ""}"><g transform="scale(1,-1)">${g}</g>${t}</svg>`;
+}
+const mTxt = l => l.md != null ? (l.md === 1 ? String(l.mn) : l.mn + "/" + l.md) : String(Math.round(l.m * 1000) / 1000);
+const ultTxt = l => `${l.p === yo ? "Tu ataque" : "Ataque rival"} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}${h.p ? ` +${h.p} pts` : ""}`).join(" | ");
+function resumenH(){
+  const m = new Map(); for (const l of G.lineas.filter(l => l.p === yo)) for (const h of l.hits || []) m.set(h.k, h);
+  const v = [...m.values()], tot = {}, c = {}; v.forEach(h => tot[h.n] = (tot[h.n] || 0) + 1);
+  return v.length ? v.map(h => { c[h.n] = (c[h.n] || 0) + 1; return `${h.n}${tot[h.n] > 1 ? " " + c[h.n] : ""}: ${h.h ? "derribado" : h.t + "%"}`; }).join(" · ") : "ninguno todavía";
+}
+function pintarPartida(){
+  const g = G, p = yo, riv = p === 1 ? g.n2 : g.n1, bat = g.estado === "batalla", ult = g.lineas[g.lineas.length - 1];
+  const pa = g.pausa || null, congelada = !!(pa && (pa.estado === "pausada" || pa.estado === "reanudar"));
+  let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="reacs" id="reacs"></div>`;
+  if (g.estado === "fin"){
+    h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
+      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div><button data-go="partidas">Volver a mis partidas</button>`;
+    $("v-sala").innerHTML = h; return;
+  }
+  if (congelada){
+    const yaPidioReanudar = pa.confirmacionesReanudar && pa.confirmacionesReanudar[U.uid];
+    h += `<div class="card"><h2 style="margin-top:0">Partida pausada</h2><p>${pa.estado === "reanudar" && yaPidioReanudar ? "Confirmaste reanudar. Esperando a que tu rival también pulse Reanudar partida." : "Los dos jugadores deben pulsar Reanudar partida para continuar."}</p><button id="reanudarPartida" ${yaPidioReanudar ? "disabled" : ""}>Reanudar partida</button></div>`;
+  } else if (!bat){
+    const n = mis.length, cls = CL[FLOTA[n]], yaListo = g.listo[U.uid];
+    h += yaListo ? `<p class="msg">Flota lista. Esperando a que ${esc(riv)} termine de colocar…</p><div class="rad" id="def">${radarH("def")}</div>`
+      : `<p class="msg">${cls ? `Arrastra sobre el plano para colocar tu ${cls.n} (${cls.L} cuadros). ${n}/9` : "Flota completa: toca Listo."}</p>${msgP ? `<p class="msg">${msgP}</p>` : ""}
+      <div class="rad" id="def">${radarH("def", null, true)}</div>
+      <div class="row"><button class="sec" id="ori">${horiz ? "Horizontal" : "Vertical"} (al tocar)</button><button class="sec" id="undo" ${n ? "" : "disabled"}>Deshacer</button><button id="listo" ${n === 9 ? "" : "disabled"}>Listo</button></div>
+      <p><small>Tus cuadrantes: ${PERM[p].join(", ")}. Los apagados no se pueden usar.</small></p>`;
+  } else {
+    const miT = g.turno === p && !g.ataque;
+    h += `<p class="msg">${g.ataque ? "Resolviendo el ataque…" : miT ? (g.ronda <= 4 ? "Tu turno: ataque desde el origen, elige la pendiente m." : "Tu turno: elige m y b.") : "Turno de " + esc(riv) + "…"}</p>
+      ${ult ? `<div class="card"><b>${esc(ultTxt(ult))}</b></div>` : ""}${msgP ? `<p class="msg">${msgP}</p>` : ""}
+      <p><small>Barcos rivales tocados: ${esc(resumenH())}</small></p>
+      <h2>Radar de ataque</h2><div class="rad" id="atk">${radarH("atk", {linea:miT ? leerRecta() : null})}</div>
+      ${miT ? `<div class="row"><div class="frac">m (pendiente)<div class="fr"><input id="mn" type="text" inputmode="none" autocomplete="off" aria-label="Numerador de m" value="${esc(vmn)}"><hr><input id="md" type="text" inputmode="none" autocomplete="off" aria-label="Denominador de m" value="${esc(vmd)}"></div></div>
+        <label>b (eje Y)<input id="b" type="text" inputmode="none" autocomplete="off" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div><div class="keypad" aria-label="Teclado numérico"><div class="keypad-head"><span>Teclado numérico</span><span id="keyTarget">Editando: numerador</span></div><div class="keypad-grid">${["7","8","9","4","5","6","1","2","3","−","0","."].map(k => `<button type="button" class="sec" data-key="${k}">${k}</button>`).join("")}<button type="button" class="sec kwide" data-key="back">⌫ Borrar</button><button type="button" class="sec kwide kclear" data-key="clear">Limpiar</button><button type="button" class="sec kwide" data-key="sign">+/−</button></div></div>` : ""}
+      <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
+  }
+  if (pa && pa.estado === "solicitada"){
+    const yoSolicite = pa.solicitadaPor === U.uid;
+    h += `<div class="card"><b>Solicitud de pausa</b><p>${yoSolicite ? "Esperando a que tu rival confirme la pausa." : esc(riv) + " quiere pausar la partida. ¿Aceptas?"}</p>${yoSolicite ? "" : `<button id="confirmarPausa">Confirmar pausa</button>`}</div>`;
+  } else if (!congelada){
+    h += `<div class="row" style="margin-top:16px"><button class="sec" id="solicitarPausa">Pausa</button></div>`;
+  }
+  h += `<div class="row" style="margin-top:10px"><button class="sec" id="abandonar">Abandonar partida</button></div>`;
+  $("v-sala").innerHTML = h; $("abandonar").onclick = abandonar; pintarReacs();
+  if (congelada) return;
+  if (!bat && !g.listo[U.uid]){
+    enlazarDrag();
+    $("ori").onclick = () => { horiz = !horiz; pintarPartida(); };
+    $("undo").onclick = () => { mis.pop(); msgP = ""; pintarPartida(); };
+    $("listo").onclick = listo;
+  }
+  if (bat && g.turno === p && !g.ataque){
+    const redib = () => { vmn = $("mn").value; vmd = $("md").value; vb = $("b").value; $("atk").innerHTML = radarH("atk", {linea:leerRecta()}); apuntar(); };
+    for (const id of ["mn","md","b"]) {
+      const el = $(id);
+      el.onfocus = el.onclick = () => { campoTeclado = id; $("keyTarget").textContent = "Editando: " + ({mn:"numerador",md:"denominador",b:"b (eje Y)"}[id]); };
+      el.oninput = redib;
+    }
+    document.querySelectorAll("[data-key]").forEach(btn => btn.onclick = () => {
+      const el = $(campoTeclado); if (!el || el.disabled) return;
+      let v = el.value, k = btn.dataset.key;
+      if (k === "clear") v = "";
+      else if (k === "back") v = v.slice(0,-1);
+      else if (k === "sign" || k === "−") v = v.startsWith("-") ? v.slice(1) : "-" + v;
+      else if (k === ".") { if (!v.includes(".")) v = (v || "0") + "."; }
+      else if (/^\d$/.test(k)) v += k;
+      el.value = v; el.focus(); el.dispatchEvent(new Event("input", {bubbles:true}));
+    });
+    $("fire").onclick = fuego;
+  }
+}
+function leerRecta(){
+  const mn = parseFloat($("mn")?.value ?? vmn), md = parseFloat($("md")?.value ?? vmd), m = mn / md;
+  const b = G.ronda <= 4 ? 0 : parseFloat($("b")?.value ?? vb);
+  return isNaN(m) || !isFinite(m) || isNaN(b) ? null : {m, b, mn, md};
+}
+function apuntar(){
+  clearTimeout(aimT);
+  aimT = setTimeout(() => { const r = leerRecta(); if (r) updateDoc(doc(db,"games",gid), {apunta:{p:yo, m:r.m, b:r.b}}).catch(() => {}); }, 500);
+}
+
+/* --- colocar barcos arrastrando --- */
+function celdasDrag(cls){
+  const dx = drag.c.x - drag.a.x, dy = drag.c.y - drag.a.y, h = dx || dy ? Math.abs(dx) >= Math.abs(dy) : horiz, s = (h ? dx : dy) < 0 ? -1 : 1;
+  return Array.from({length:cls.L}, (_,i) => h ? {x:drag.a.x + i*s, y:drag.a.y} : {x:drag.a.x, y:drag.a.y + i*s});
+}
+const validas = cs => { const oc = new Set(mis.flatMap(s => s.celdas.map(kk))); return cs.every(c => c.x >= -NN && c.x < NN && c.y >= -NN && c.y < NN && PERM[yo].includes(quad(c.x,c.y)) && !oc.has(kk(c))); };
+function enlazarDrag(){
+  const el = $("def"), cls = CL[FLOTA[mis.length]]; if (!cls) return;
+  const celda = e => { const s = el.querySelector("svg"), pt = s.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(s.getScreenCTM().inverse()); return {x:Math.floor(q.x), y:Math.floor(-q.y)}; };
+  const dib = () => { const cs = celdasDrag(cls); el.innerHTML = radarH("def", {celdas:cs, ok:validas(cs)}, true); };
+  el.onpointerdown = e => { drag = {a:celda(e), c:celda(e)}; el.setPointerCapture?.(e.pointerId); dib(); };
+  el.onpointermove = e => { if (drag){ drag.c = celda(e); dib(); } };
+  el.onpointerup = e => {
+    if (!drag) return; drag.c = celda(e);
+    const cs = celdasDrag(cls);
+    if (validas(cs)){ mis.push({i:FLOTA[mis.length], k:mis.length, celdas:cs, dano:0, hund:false}); msgP = ""; }
+    else msgP = "No cabe ahí: debe quedar en tus cuadrantes y sin tocar otro barco.";
+    drag = null; pintarPartida();
+  };
+}
+async function listo(){
+  try {
+    await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[]});
+    await runTransaction(db, async tx => {
+      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data(), l = {...(g.listo || {}), [U.uid]:true}, patch = {listo:l};
+      if (l[g.j1] && l[g.j2]) Object.assign(patch, {estado:"batalla", turno:1, ronda:1, tiempoFin:Date.now() + SEG*1000});
+      tx.update(ref, patch);
+    });
+  } catch (e){ msgP = "No se pudo guardar tu flota. Inténtalo otra vez."; pintarPartida(); }
+}
+
+/* --- ataque, resolución y turnos --- */
+async function fuego(){
+  const r = leerRecta();
+  if (!r || !Number.isFinite(r.m) || !Number.isFinite(r.b) || Math.abs(r.m) > 20 || Math.abs(r.b) > 20){
+    msgP = "Escribe números válidos: el denominador no puede ser 0 y la pendiente y b deben quedar entre -20 y 20."; return pintarPartida();
+  }
+  msgP = "";
+  try { await updateDoc(doc(db,"games",gid), {ataque:{p:yo, m:r.m, b:r.b, mn:r.mn, md:r.md}, apunta:null}); } catch { msgP = "No se envió el ataque."; pintarPartida(); }
+}
+function avanzar(g, pts){
+  let turno = g.turno, ronda = g.ronda;
+  if (turno === 1) turno = 2; else { turno = 1; ronda++; }
+  const r = {turno, ronda, tiempoFin:Date.now() + SEG*1000};
+  if (ronda > RONDAS){ r.estado = "fin"; r.ganador = pts[1] > pts[2] ? 1 : pts[2] > pts[1] ? 2 : 0; }
+  return r;
+}
+async function resolver(){          // lo hace el defensor: solo él conoce sus barcos
+  resolviendo = true;
+  try {
+    const a = G.ataque, hits = []; let toca = false, suma = 0;
+    for (const s of mis){
+      const C = CL[s.i], tocados = s.celdas.filter(c => cruza(c, a.m, a.b));
+      if (tocados.length) toca = true;
+      const libres = tocados.filter(c => !gast.has(kk(c)));
+      if (!libres.length) continue;
+      libres.sort((u,v) => Math.hypot(u.x+.5, u.y+.5-a.b) - Math.hypot(v.x+.5, v.y+.5-a.b));   // el más cercano a (0, b)
+      const c = libres[0], d = C.d[s.celdas.findIndex(z => z.x === c.x && z.y === c.y)];
+      gast.add(kk(c)); s.dano += d;
+      // los puntos se ganan en proporción al daño y completan el valor del barco al derribarlo
+      if (s.hund && s.pagado === undefined) s.pagado = C.pts;
+      const total = Math.min(C.pts, Math.round(C.pts * s.dano / C.um)), ganado = total - (s.pagado || 0);
+      s.pagado = total; suma += ganado;
+      if (!s.hund && s.dano >= C.um) s.hund = true;
+      hits.push({k:s.k, n:C.n, d, t:s.dano, h:s.hund, p:ganado});
+    }
+    const gana = mis.every(s => s.hund);
+    await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[...gast]});
+    await runTransaction(db, async tx => {
+      const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+      if (!g.ataque) return;
+      const pts = {...g.pts}; pts[a.p] = (pts[a.p] || 0) + suma;
+      const patch = {lineas:[...(g.lineas || []), {p:a.p, m:a.m, b:a.b, mn:a.mn ?? null, md:a.md ?? null, rojo:toca, hits}], ataque:null, apunta:null, pts, fallos:{...(g.fallos || {1:0,2:0}), [a.p]:0}, ...avanzar(g, pts)};
+      if (gana){ patch.estado = "fin"; patch.ganador = a.p; }
+      tx.update(ref, patch);
+    });
+  } catch (e){ console.error(e); }
+  resolviendo = false;
+}
+async function pasar(){             // se acabó el tiempo: se pierde el ataque
+  if (pasando || (G && G.pausa && ["pausada","reanudar"].includes(G.pausa.estado))) return; pasando = true;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado !== "batalla" || g.pausa && ["pausada","reanudar"].includes(g.pausa.estado) || g.ataque || Date.now() < g.tiempoFin) return;
+    const f = {...(g.fallos || {1:0,2:0})}; f[g.turno] = (f[g.turno] || 0) + 1;
+    const patch = {...avanzar(g, g.pts), apunta:null, fallos:f};
+    if (f[g.turno] >= 3){ patch.estado = "fin"; patch.ganador = 3 - g.turno; patch.abandonoPor = g.turno; }   // 3 turnos seguidos sin atacar
+    tx.update(ref, patch);
+  }); } catch {}
+  pasando = false;
+}
+const COLOCAR_MS = 300000;   // 5 minutos para colocar la flota
+async function cancelarColocacion(){
+  if (pasando) return; pasando = true;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado !== "colocando" || g.pausa && ["pausada","reanudar"].includes(g.pausa.estado) || !g.inicio || Date.now() - g.inicio <= COLOCAR_MS) return;
+    const l = g.listo || {}, a = !!l[g.j1], b = !!l[g.j2];
+    if (a === b) tx.update(ref, {estado:"fin", cancelada:true, ganador:0});                    // nadie terminó: se cancela
+    else tx.update(ref, {estado:"fin", ganador:a ? 1 : 2, abandonoPor:a ? 2 : 1});            // gana quien sí terminó
+  }); } catch {}
+  pasando = false;
+}
+async function abandonar(){
+  if (!confirm("¿Seguro que quieres abandonar? Perderás la partida.")) return;
+  try { await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
+    if (g.estado === "fin") return;
+    tx.update(ref, {estado:"fin", ganador:3 - yo, abandonoPor:yo, ataque:null, apunta:null, [`finales.${U.uid}`]:{ships:mis, gast:[...gast]}});
+  }); publicado = true; } catch {}
+}
+setInterval(() => {
+  if (!G || !G.j2) return;
+  const e = $("tm");
+  if (G.pausa && ["pausada","reanudar"].includes(G.pausa.estado)) return;
+  if (G.estado === "colocando" && G.inicio){
+    const r = Math.ceil((G.inicio + COLOCAR_MS - Date.now()) / 1000);
+    if (e) e.textContent = fmtT(r);
+    if (r <= 0) cancelarColocacion();
+    return;
+  }
+  if (G.estado !== "batalla") return;
+  const r = Math.ceil((G.tiempoFin - Date.now()) / 1000);
+  if (e) e.textContent = fmtT(r);
+  if (!G.ataque && ((G.turno === yo && r <= 0) || r <= -4)) pasar();
+}, 1000);
+
+async function solicitarPausa(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data();
+    if (!g.jugadores || !g.jugadores.includes(U.uid) || !g.j2) throw new Error("No puedes pausar esta partida.");
+    if (!["colocando","batalla"].includes(g.estado) || g.pausa) return;
+    tx.update(ref, {pausa:{estado:"solicitada", solicitadaPor:U.uid, confirmaciones:{[U.uid]:true}, creada:Date.now()}});
+  });
+}
+async function confirmarPausa(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data(), pa = g.pausa || {};
+    if (!["colocando","batalla"].includes(g.estado) || pa.estado !== "solicitada" || pa.solicitadaPor === U.uid) return;
+    const ahora = Date.now(), restante = g.estado === "batalla"
+      ? Math.max(0, (g.tiempoFin || ahora) - ahora)
+      : Math.max(0, (g.inicio || ahora) + COLOCAR_MS - ahora);
+    tx.update(ref, {pausa:{estado:"pausada", solicitadaPor:pa.solicitadaPor,
+      confirmaciones:{...(pa.confirmaciones || {}), [U.uid]:true}, restante,
+      tipo:g.estado, pausadaEn:ahora}});
+  });
+}
+async function reanudarPartida(){
+  await runTransaction(db, async tx => {
+    const ref = doc(db,"games",gid), s = await tx.get(ref);
+    if (!s.exists()) throw new Error("La partida ya no existe.");
+    const g = s.data(), pa = g.pausa || {};
+    if (!["pausada","reanudar"].includes(pa.estado)) return;
+    const confirmaciones = {...(pa.confirmacionesReanudar || {}), [U.uid]:true};
+    if (!confirmaciones[g.j1] || !confirmaciones[g.j2]){
+      tx.update(ref, {pausa:{...pa, estado:"reanudar", confirmacionesReanudar:confirmaciones}});
+      return;
+    }
+    const restante = Math.max(0, Number(pa.restante) || 0), ahora = Date.now(), patch = {pausa:null};
+    if (pa.tipo === "batalla") patch.tiempoFin = ahora + restante;
+    if (pa.tipo === "colocando") patch.inicio = ahora + restante - COLOCAR_MS;
+    tx.update(ref, {...patch});
+  });
+}
+
+async function guardarFin(){
+  const g = G, f = g.finales, mio = f[U.uid], rv = f[yo === 1 ? g.j2 : g.j1] || {ships:[], gast:[]};
+  const res = g.ganador === 0 ? "empate" : g.ganador === yo ? "victoria" : "derrota", ref = doc(db,"users",U.uid,"historial",gid);
+  const flota = F => F.ships.map(s => ({c:CL[s.i].c, celdas:s.celdas, hund:!!s.hund})), sol = l => ({m:l.m, b:l.b, rojo:l.rojo});
+  try {
+    const registro = {resultado:res, rivalNombre:yo === 1 ? g.n2 : g.n1, miPuntaje:g.pts[yo], puntajeRival:g.pts[3-yo],
+      mios:g.lineas.filter(l => l.p === yo).map(sol), rival:g.lineas.filter(l => l.p !== yo).map(sol),
+      barcos:flota(mio), gast:mio.gast, barcosRival:flota(rv), gastRival:rv.gast, abandono:!!g.abandonoPor, fecha:serverTimestamp()};
+    const perfilRef = doc(db,"users",U.uid), campo = {victoria:"victorias", derrota:"derrotas", empate:"empates"}[res];
+    // Historial y estadísticas se escriben juntos: evita contar dos veces
+    // una partida si llegan varias actualizaciones o se recarga la página.
+    await runTransaction(db, async tx => {
+      const [anterior, perfil] = await Promise.all([tx.get(ref), tx.get(perfilRef)]);
+      if (anterior.exists()) return;
+      const datos = perfil.data() || {};
+      tx.set(ref, registro);
+      tx.set(perfilRef, { [campo]: (datos[campo] || 0) + 1, puntos:(datos.puntos || 0) + g.pts[yo], mejor:Math.max(datos.mejor || 0, g.pts[yo]) }, {merge:true});
+    });
+  } catch (e){ console.error(e); }
+}
+
+/* ================= ESPECTAR Y EMOJIS ================= */
+const EMOJIS = ["👏","🔥","😮","😂","💥","🎯"];
+let E = null, eid = null, espSub = null, reacSub = null, reacs = [], ultEmoji = 0;
+function escucharReacs(id){          // reacciones recientes: las ven jugadores y espectadores
+  if (reacSub){ reacSub(); reacSub = null; } reacs = [];
+  reacSub = onSnapshot(query(collection(db,"games",id,"reacciones"), orderBy("t","desc"), limit(6)),
+    s => { reacs = s.docs.map(d => d.data()); pintarReacs(); }, () => {});
+}
+function pintarReacs(){
+  const e = $("reacs"); if (!e) return;
+  e.innerHTML = reacs.filter(r => Date.now() - r.t < 60000).map(r => `<span class="reac">${esc(r.emoji)} <small>${esc(r.nombre)}</small></span>`).join("");
+}
+setInterval(pintarReacs, 5000);
+async function enviarEmoji(em){
+  if (!eid || !EMOJIS.includes(em) || Date.now() - ultEmoji < 2000) return;
+  ultEmoji = Date.now();
+  try { await addDoc(collection(db,"games",eid,"reacciones"), {uid:U.uid, nombre:nombre(), emoji:em, t:Date.now()}); } catch {}
+}
+function espectar(id){
+  if (salaSub){ salaSub(); salaSub = null; } if (espSub){ espSub(); espSub = null; }
+  eid = id; E = null; ir("sala"); escucharReacs(id);
+  $("v-sala").innerHTML = `<p class="mut">Conectando con la partida…</p>`;
+  espSub = onSnapshot(doc(db,"games",id),
+    s => { if (!s.exists()){ $("v-sala").innerHTML = `<p class="msg">Esa partida ya no existe.</p><button data-go="inicio">Volver</button>`; return; } E = s.data(); pintarEsp(); },
+    () => { $("v-sala").innerHTML = `<p class="err">No puedes ver esta partida. Solo la ven los amigos de los jugadores.</p><button data-go="inicio">Volver</button>`; });
+}
+function dejarEsp(){ if (espSub){ espSub(); espSub = null; } E = null; eid = null; ir("inicio"); }
+function radarEsp(g, p){                 // solo rectas: los barcos nunca se muestran
+  let c = "";
+  for (let x = -NN; x < NN; x++) for (let y = -NN; y < NN; y++) c += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PERM[3-p].includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
+  c += `<path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width=".07"/>`;
+  for (const l of g.lineas.filter(l => l.p === p)) c += ln(Number(l.m), Number(l.b), l.rojo ? "var(--err)" : "var(--azul)", .1, "");
+  return `<svg viewBox="-6.4 -6.4 12.8 12.8" style="display:block;width:100%;border:1px solid var(--line);border-radius:6px"><g transform="scale(1,-1)">${c}</g></svg>`;
+}
+function pintarEsp(){
+  const g = E; if (!g) return;
+  g.lineas = g.lineas || []; g.pts = g.pts || {1:0,2:0};
+  const nm = p => p === 1 ? g.n1 : g.n2, ult = g.lineas[g.lineas.length - 1];
+  const est = g.estado === "fin" ? "Terminada" : g.pausa && g.pausa.estado === "pausada" ? "En pausa" : g.estado === "colocando" ? "Colocando barcos" : `Ronda ${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}`;
+  const txt = l => `${nm(l.p)} (y = ${mTxt(l)}x + ${l.b}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}${h.p ? ` +${h.p} pts` : ""}`).join(" | ");
+  $("v-sala").innerHTML = `<div class="bar"><span>Espectando</span><span><b>${esc(g.n1)}</b> ${g.pts[1]} – ${g.pts[2]} <b>${esc(g.n2 || "…")}</b></span><span>${est}</span></div>
+    ${g.estado === "fin" ? `<p class="msg">${g.ganador === 0 ? "Empate" : "Ganó " + esc(nm(g.ganador))}</p>` : ""}
+    ${ult ? `<div class="card"><b>${esc(txt(ult))}</b></div>` : `<p class="mut">Aún no hay ataques.</p>`}
+    <div class="reacs" id="reacs"></div>
+    <div class="row">${EMOJIS.map(e => `<button class="sec emo" data-emoji="${e}" aria-label="Reaccionar ${e}">${e}</button>`).join("")}</div>
+    <h2>Ataques de ${esc(g.n1)}</h2>${radarEsp(g, 1)}
+    <h2>Ataques de ${esc(g.n2 || "…")}</h2>${radarEsp(g, 2)}
+    <div class="row" style="margin-top:14px"><button class="sec" id="dejarEsp">Dejar de espectar</button></div>`;
+  pintarReacs(); $("dejarEsp").onclick = dejarEsp;
+}
+
+/* ================= CLASIFICACIÓN ================= */
+const MIN_WR = 5;   // partidas mínimas para aparecer en el win rate
+let rank = [], rkTab = "puntos", rkCarga = false, rkErr = "", kR = "";
+function sincRank(){                 // publica estadísticas y personalización, sin código de amigo ni presencia
+  if (!U) return;
+  const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
+  // Se envían también los campos vacíos para poder quitar una decoración sin dejar la anterior pegada.
+  for (const c of ["avatar","avatarColor","bio","fondo","titulo","marco","efecto","insignia","estiloAvatar","avatarUrl","bannerUrl"]) d[c] = typeof P[c] === "string" ? P[c] : "";
+  const k = JSON.stringify(d); if (k === kR) return; kR = k;
+  setDoc(doc(db,"ranking",U.uid), d).catch(e => { console.error("No se pudo sincronizar el perfil público:", e); kR = ""; });
+}
+function cargarRanking(){
+  if (!U) return;
+  rkCarga = true; rkErr = ""; pintarRanking();
+  if (rkSub) rkSub();
+  rkSub = onSnapshot(query(collection(db,"ranking"), orderBy("puntos","desc"), limit(100)), s => {
+    rank = s.docs.map(d => ({id:d.id, ...d.data()})); rkCarga = false; rkErr = ""; pintarRanking();
+  }, e => { console.error("ranking:", e); rkCarga = false; rkErr = e.code || "error"; pintarRanking(); });
+}
+const jug = r => (r.victorias || 0) + (r.derrotas || 0) + (r.empates || 0);
+const RK = {
+  puntos:    {t:"Puntos",        v:r => r.puntos || 0,    f:r => (r.puntos || 0) + " pts"},
+  victorias: {t:"Victorias",     v:r => r.victorias || 0, f:r => (r.victorias || 0) + " victorias"},
+  winrate:   {t:"Win rate",      v:r => jug(r) >= MIN_WR ? (r.victorias || 0) / jug(r) : -1, f:r => Math.round((r.victorias || 0) / jug(r) * 100) + "%"},
+  mejor:     {t:"Mejor partida", v:r => r.mejor || 0,     f:r => (r.mejor || 0) + " pts"}
+};
+function pintarRanking(){
+  if (!U) return;
+  const c = RK[rkTab], medalla = ["🥇","🥈","🥉"];
+  const lista = rank.filter(r => jug(r) > 0 && (rkTab !== "winrate" || jug(r) >= MIN_WR)).sort((a,b) => c.v(b) - c.v(a) || (b.puntos || 0) - (a.puntos || 0));
+  const mi = lista.findIndex(r => r.id === U.uid);
+  $("v-ranking").innerHTML = `<h2 style="margin-top:6px">Clasificación</h2>
+    <div class="row" style="margin:0 0 8px;flex-wrap:wrap">${Object.entries(RK).map(([k,x]) => `<button class="mini ${k === rkTab ? "" : "sec"}" data-rk="${k}">${x.t}</button>`).join("")}<button class="mini sec" data-rk="actualizar">Actualizar</button></div>
+    ${rkErr ? `<p class="err">No se pudo cargar la clasificación (${esc(rkErr)}).</p>` : ""}
+    <div class="card">${rkCarga ? `<p class="mut">Cargando…</p>` : lista.length
+      ? lista.slice(0, 20).map((r,i) => `<div class="item"${r.id === U.uid ? ' style="font-weight:700"' : ""}><span>${medalla[i] || (i + 1) + "."} ${avatarHTML(r, 26)} <button class="link" data-perfil="${r.id}">${esc(r.nombre || "Jugador")}</button><br><small>${r.victorias || 0}V ${r.derrotas || 0}D ${r.empates || 0}E · ${r.puntos || 0} pts</small></span><b>${c.f(r)}</b></div>`).join("")
+      : `<p class="mut">Todavía no hay partidas${rkTab === "winrate" ? " con al menos " + MIN_WR + " jugadas" : ""}.</p>`}</div>
+    ${mi >= 20 ? `<p class="mut">Tu posición: #${mi + 1}</p>` : ""}
+    <small>${rkTab === "winrate" ? `Win rate: solo cuentan jugadores con ${MIN_WR} o más partidas. ` : ""}Se muestran los 100 jugadores con más puntos.</small>`;
+}
+
+/* ================= PERSONALIZACIÓN Y PERFILES ================= */
+const AV_EMOJIS = ["⚓","🚢","🛳️","⛵","🚤","🛥️","🛶","🐙","🦈","🐋","🐬","🦑","🦀","🐢","🪼","🦭","🐠","🐡","🦞","🦐","🏴‍☠️","🎯","💥","🔥","🌊","🧭","🔱","⭐","🌟","✨","👑","🦅","🐺","🦊","🐉","🦁","🐸","🦋","☠️","🤖","👽","🥷","🧙","🧛","🧟","🛡️","⚔️","💀","🌪️","🌙","☄️","🪐","🌈","🌸","🌺","🌻","🍀","🍄","💎","🔮","🧿","🎭","🎨","🎮","🕹️","🏆","🥇","🥈","🥉","🎖️","🚀","🛸","⚡","❄️","☀️","🌌","🦄","🐲","🐼","🐯","🐻","🐨","🐧","🦉","🦇","🦂","🕷️","🐍","🦎","🐳","🦚","🦜","🦩","🐝","🐞","🪸","🪷","🪻","🌵","🌴","🍉","🍓","🍒","🍋","🍇","🍭","🍬","🍩","🧁","🍪","☕","🎧","🎸","🎹","🎤","🎲","🧩","🪄","🗡️","🏹","🪓","🧪","🧬","🪬","🪙","💰","📀","💿","📼","📡","🛰️","🌠","🌃","🏔️","🌋","🏝️","🏰","🗝️","🧸","🎃","👻","😈","👹","👺","🤡","🧚","🧝","🧞","🧜","🧟‍♂️","🦸","🦹"] ;
+// Se eliminó la paleta predefinida: el usuario crea su propio color.
+const AV_COLORES = [];
+const FONDOS = {oceano:["Océano","#0f6b7a","#16414d"], atardecer:["Atardecer","#e4572e","#7b2d5b"], bosque:["Bosque","#2e7d32","#12351a"],
+                noche:["Noche","#3a3f8f","#0d1033"], coral:["Coral","#e0707a","#8a2f4a"], hielo:["Hielo","#6aa8d8","#2f5f8f"],
+                galaxia:["Galaxia","#542b85","#11102e"], neon:["Neón","#087f8c","#40145f"], lava:["Volcán","#b52b20","#35100c"],
+                oro:["Realeza","#9a6a12","#39220a"], aurora:["Aurora","#087f72","#20366f"], carbon:["Carbón","#454b55","#111318"]};
+// Combinaciones adicionales listas para usar: pastel, neón, joya, fuego, océano y tonos oscuros.
+const COMBOS_FONDO = [
+ ["Rosa chicle","#ff5fa2","#7b2ff7"],["Algodón de azúcar","#ffb6e6","#8ec5fc"],["Fresa y crema","#ff416c","#ffb199"],["Cereza","#990033","#ff1744"],
+ ["Lavanda","#c471f5","#fa71cd"],["Violeta eléctrico","#7f00ff","#e100ff"],["Uva","#5f0a87","#a4508b"],["Morado cósmico","#240046","#9d4edd"],
+ ["Azul hielo","#74ebd5","#9face6"],["Glaciar","#83a4d4","#b6fbff"],["Azul eléctrico","#004e92","#000428"],["Cielo","#56ccf2","#2f80ed"],
+ ["Turquesa","#136a8a","#267871"],["Menta","#00b09b","#96c93d"],["Verde ácido","#a8ff78","#78ffd6"],["Esmeralda","#348f50","#56b4d3"],
+ ["Lima","#dce35b","#45b649"],["Jungla","#134e5e","#71b280"],["Bosque encantado","#0f2027","#2c7744"],["Veneno","#7fff00","#4b0082"],
+ ["Sol","#fceabb","#f8b500"],["Dorado rosa","#f4c4f3","#fc67fa"],["Oro líquido","#f7971e","#ffd200"],["Ámbar","#ff8008","#ffc837"],
+ ["Mango","#fce38a","#f38181"],["Melocotón","#ffecd2","#fcb69f"],["Naranja neón","#ff4e00","#ec9f05"],["Fuego azul","#00c6ff","#0072ff"],
+ ["Llama","#f12711","#f5af19"],["Inferno","#870000","#190a05"],["Sangre","#8e0e00","#1f1c18"],["Dragón","#cb2d3e","#ef473a"],
+ ["Arcoíris oscuro","#833ab4","#fd1d1d"],["Cyberpunk","#fc00ff","#00dbde"],["Synthwave","#23074d","#cc5333"],["Matrix","#000000","#00ff41"],
+ ["Neón nocturno","#0f0c29","#302b63"],["Medianoche","#141e30","#243b55"],["Púrpura profundo","#20002c","#cbb4d4"],["Obsidiana","#434343","#000000"],
+ ["Plata","#bdc3c7","#2c3e50"],["Cromo","#e6dada","#274046"],["Humo","#757f9a","#d7dde8"],["Café","#603813","#b29f94"],
+ ["Cobre","#b79891","#94716b"],["Arena","#d7c49e","#8b6f47"],["Tierra","#3e2723","#a1887f"],["Vino","#200122","#6f0000"],
+ ["Océano profundo","#021b79","#0575e6"],["Sirena","#00d2ff","#3a7bd5"],["Coral tropical","#ff9966","#ff5e62"],["Paraíso","#1d976c","#93f9b9"],
+ ["Aurora boreal","#00f5a0","#00d9f5"],["Nebulosa","#654ea3","#eaafc8"],["Galaxia rosa","#41295a","#2f0743"],["Polvo estelar","#fbc2eb","#a6c1ee"],
+ ["Pastel arcoíris","#a1c4fd","#c2e9fb"],["Unicornio","#fbc2eb","#a6c1ee"],["Caramelo","#f6d365","#fda085"],["Chicle ácido","#ee9ca7","#ffdde1"],
+ ["Místico","#42275a","#734b6d"],["Hechicería","#360033","#0b8793"],["Fantasma","#c9d6ff","#e2e2e2"],["Rey dorado","#614385","#516395"]
+];
+for (let i=0;i<COMBOS_FONDO.length;i++){ const [n,a,b]=COMBOS_FONDO[i]; FONDOS[`combo${i}`]=[n,a,b]; }
+const hexValido = c => typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c);
+const fondoDe = d => {
+  if (typeof d.fondo === "string" && d.fondo.startsWith("custom:")) {
+    const [,a,b] = d.fondo.split(":");
+    if (hexValido(a) && hexValido(b)) return ["Personalizado",a,b];
+  }
+  return FONDOS[d.fondo] || FONDOS.oceano;
+};
+
+const MARCOS = {
+  ninguno:{n:"Sin marco",victorias:0},bronce:{n:"Bronce",victorias:1},plata:{n:"Plata",victorias:5},oro:{n:"Oro",victorias:15},
+  diamante:{n:"Diamante",victorias:25},fuego:{n:"Llama",victorias:10,mejor:300},
+  obsidiana:{n:"Obsidiana",victorias:35},esmeralda:{n:"Esmeralda",victorias:40},rubi:{n:"Rubí",victorias:50},
+  zafiro:{n:"Zafiro",victorias:60},arcoiris:{n:"Arcoíris",victorias:75},cosmico:{n:"Cósmico",victorias:90},
+  electrico:{n:"Eléctrico",victorias:100},hielo:{n:"Hielo",victorias:120},corona:{n:"Corona real",victorias:150},
+  glitch:{n:"Glitch",victorias:175},dragon:{n:"Dragón",victorias:200}
+};
+const EFECTOS = {
+  ninguno:{n:"Sin efecto",req:0},brillo:{n:"Destello",req:5},oleaje:{n:"Oleaje",req:10},estrellas:{n:"Estrellas",req:25,puntos:1000},
+  particulas:{n:"Partículas",req:30},pulso:{n:"Pulso",req:35},aurora:{n:"Aurora",req:45},lluvia:{n:"Lluvia digital",req:50},
+  ondas:{n:"Ondas",req:60},fuego:{n:"Fuego vivo",req:70},holograma:{n:"Holograma",req:80},confeti:{n:"Confeti",req:90},
+  electricidad:{n:"Electricidad",req:100},nebulosa:{n:"Nebulosa",req:125},matrix:{n:"Código Matrix",req:150},cometa:{n:"Cometa",req:175},
+  prisma:{n:"Prisma",req:200}
+};
+const ESTILOS_AVATAR = {
+  clasico:{n:"Clásico",d:"Limpio y redondo"},pixel:{n:"Pixel art",d:"Bloques retro"},paint:{n:"Pintura",d:"Trazo artístico"},
+  neon:{n:"Neón",d:"Brillo eléctrico"},sketch:{n:"Boceto",d:"Dibujo a mano"},glass:{n:"Cristal",d:"Vidrio brillante"},
+  sticker:{n:"Sticker",d:"Pegatina inclinada"},orbit:{n:"Órbita",d:"Anillos luminosos"},retro:{n:"Retro",d:"Marco vintage"}
+};
+
+const LOGROS = [
+  {id:"v1",   i:"🎖️", n:"Primera victoria", d:"Gana una partida",                 ok:(s,j) => s.victorias >= 1},
+  {id:"v5",   i:"⚔️", n:"Marinero curtido", d:"Gana 5 partidas",                  ok:(s,j) => s.victorias >= 5},
+  {id:"v25",  i:"🏆", n:"Lobo de mar",      d:"Gana 25 partidas",                 ok:(s,j) => s.victorias >= 25},
+  {id:"j10",  i:"🧭", n:"Veterano",         d:"Juega 10 partidas",                ok:(s,j) => j >= 10},
+  {id:"p500", i:"💰", n:"Tesoro",           d:"Suma 500 puntos",                  ok:(s,j) => s.puntos >= 500},
+  {id:"p2000",i:"💎", n:"Gran tesoro",      d:"Suma 2000 puntos",                 ok:(s,j) => s.puntos >= 2000},
+  {id:"m150", i:"🎯", n:"Puntería",         d:"Una partida de 150 pts o más",     ok:(s,j) => s.mejor >= 150},
+  {id:"m300", i:"💥", n:"Tiro maestro",     d:"Una partida de 300 pts o más",     ok:(s,j) => s.mejor >= 300},
+  {id:"wr",   i:"📈", n:"Estratega",        d:"60% de victorias con 10+ partidas", ok:(s,j) => j >= 10 && s.victorias / j >= 0.6}
+];
+function estad(d){ const s = {victorias:d.victorias || 0, derrotas:d.derrotas || 0, empates:d.empates || 0, puntos:d.puntos || 0, mejor:d.mejor || 0}; return [s, s.victorias + s.derrotas + s.empates]; }
+function logrosDe(d){ const [s, j] = estad(d); return LOGROS.map(l => ({...l, ok:l.ok(s, j)})); }
+function tituloDe(d){ const l = logrosDe(d).find(x => x.id === d.titulo && x.ok); return l ? l.n : "Grumete"; }
+function desbloqueado(item,d){ const [st,j]=estad(d); return j >= (item.req || 0) && st.victorias >= (item.victorias || 0) && st.mejor >= (item.mejor || 0) && st.puntos >= (item.puntos || 0); }
+function insigniaDe(d){ const l=logrosDe(d).find(x=>x.id===d.insignia && x.ok); return l || null; }
+function colorAv(d){ return hexValido(d.avatarColor) ? d.avatarColor : "#0f6b7a"; }
+function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros nunca se usa como código
+  const e = AV_EMOJIS.includes(d.avatar) ? d.avatar : esc((d.nombre || "?")[0].toUpperCase());
+  const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
+  const marco = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
+  const efecto = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
+  return `<span class="avt style-${estilo} mini-frame-${marco} mini-effect-${efecto}" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
+}
+const perfilMio = () => ({...P, nombre:nombre()});
+function cabeceraPerfil(d, vistaPrevia=false){
+  const f = fondoDe(d);
+  const fondo = `background:linear-gradient(135deg,${f[1]},${f[2]})`;
+  const marco = Object.hasOwn(MARCOS,d.marco) && (vistaPrevia || desbloqueado(MARCOS[d.marco],d)) ? d.marco : "ninguno";
+  const efecto = Object.hasOwn(EFECTOS,d.efecto) && (vistaPrevia || desbloqueado(EFECTOS[d.efecto],d)) ? d.efecto : "ninguno";
+  const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
+  const ins=insigniaDe(d);
+  return `<div class="ph style-${estilo} frame-${marco} effect-${efecto}" style="${fondo}">${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
+}
+function logrosHTML(d){
+  const l = logrosDe(d);
+  return `<h2>Insignias (${l.filter(x => x.ok).length}/${l.length})</h2><div class="card"><div class="ins">${l.map(x => `<button class="insb ${x.ok ? "" : "off"}" data-ins="${esc(`${x.i} ${x.n} — ${x.d}. ${x.ok ? "✓ Conseguida" : "🔒 Bloqueada"}`)}" aria-label="${esc(x.n)}">${x.i}</button>`).join("")}</div><p class="mut insTxt" style="margin:8px 0 0;min-height:1.4em">Toca una insignia para ver qué es.</p></div>`;
+}
+let persAbierto = false, persTab = "avatar";
+function personalizarHTML(){
+  return `<div class="row" style="margin:12px 0 4px"><button class="${persAbierto ? "sec" : ""}" data-pers="1" aria-expanded="${persAbierto}">${persAbierto ? "Cerrar personalización" : "✏️ Personalizar perfil"}</button></div>` + (persAbierto ? personalizarPanel() : "");
+}
+function personalizarPanel(){
+  const m=perfilMio(), lg=logrosDe(m).filter(x=>x.ok), f=fondoDe(m);
+  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Fondos"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
+  const botones=(items,actual,attr)=>Object.entries(items).map(([k,x])=>{
+    const ok=desbloqueado(x,m),sel=(actual||"ninguno")===k;
+    const req=[x.victorias?x.victorias+" victorias":null,x.mejor?x.mejor+" puntos en una partida":null,x.puntos?x.puntos+" puntos acumulados":null,x.req?x.req+" partidas":null].filter(Boolean).join(" · ") || "Disponible";
+    return `<div class="cosmetic-line"><button class="cosmetic ${sel?"sel":"sec"}" data-${attr}="${k}" ${ok?"":"disabled"}>${x.n}${sel?" ✓":""}${ok?"":`<small>🔒 ${esc(req)}</small>`}</button>${ok?"":`<button class="mini sec cosmetic-preview" data-preview-type="${attr}" data-preview-key="${k}" aria-label="Previsualizar ${esc(x.n)}">👁 Ver</button>`}</div>`;
+  }).join("");
+  const insigniaOpts=[`<option value="">Sin insignia</option>`,...lg.map(x=>`<option value="${x.id}" ${P.insignia===x.id?"selected":""}>${x.i} ${esc(x.n)}</option>`)].join("");
+  let contenido="";
+  if(persTab==="avatar") contenido=`<div class="pers-section"><b>Elige tu avatar</b><div class="opts">${AV_EMOJIS.map(e=>`<button class="emo ${m.avatar===e?"":"sec"}" data-av="${e}" aria-label="Avatar ${e}">${e}</button>`).join("")}<button class="mini sec" data-av="-">Usar mi inicial</button></div><p class="mut">Elige un símbolo que te represente. Puedes cambiarlo cuando quieras.</p></div>`;
+  if(persTab==="estilos") contenido=`<div class="pers-section"><b>Estilo visual del avatar y la tarjeta</b><p class="mut">Cambia la técnica visual del avatar y los detalles de la tarjeta.</p><div class="style-grid">${Object.entries(ESTILOS_AVATAR).map(([k,x])=>`<button class="style-choice ${((m.estiloAvatar||"clasico")===k)?"sel":""}" data-estilo="${k}"><span class="sample" style="${k==="pixel"?"border-radius:3px;box-shadow:3px 3px 0 #222":k==="paint"?"border-radius:40% 60% 55% 45%":k==="neon"?"box-shadow:0 0 10px #0ff":""}">⚓</span><b>${x.n}</b><small>${x.d}</small></button>`).join("")}</div></div>`;
+  if(persTab==="colores") contenido=`<div class="pers-section"><b>Crea tu propio color</b><p class="mut">Elige cualquier tono para personalizar tu avatar. Puedes cambiarlo cuando quieras.</p><label for="colorAvatarLibre">Color del avatar</label><input type="color" id="colorAvatarLibre" value="${hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a"}" style="height:58px;padding:4px;max-width:180px"><p class="mut">Color actual: <b>${esc(hexValido(m.avatarColor)?m.avatarColor:"#0f6b7a")}</b></p></div>`;
+  if(persTab==="fondos") contenido=`<div class="pers-section"><b>Fondos y combinaciones · ${Object.keys(FONDOS).length} estilos</b><div class="cosmetic-grid">${Object.entries(FONDOS).map(([k,x])=>`<button class="gradient-swatch ${m.fondo===k?"sel":""}" style="background:linear-gradient(135deg,${x[1]},${x[2]})" data-fondo="${k}">${x[0]}${m.fondo===k?" ✓":""}</button>`).join("")}</div><div class="card"><b>Diseña tu propio degradado</b><div class="color-tools"><div><label for="fondoColorA">Color inicial</label><input type="color" id="fondoColorA" value="${f[1]}"></div><div><label for="fondoColorB">Color final</label><input type="color" id="fondoColorB" value="${f[2]}"></div></div><button id="bFondoCustom" class="big" style="margin-top:10px">Aplicar mi combinación</button></div></div>`;
+  if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Los marcos rodean todo tu perfil, no solamente el avatar o la cabecera.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
+  if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Los efectos decoran todo tu perfil: cabecera, logros, estadísticas e historial.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
+  if(persTab==="identidad") contenido=`<div class="pers-section"><label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select><label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio||"")}"><button id="bBio">Guardar</button></div><label for="selTitulo">Título</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x=>`<option value="${x.id}" ${P.titulo===x.id?"selected":""}>${esc(x.n)}</option>`).join("")}</select><small class="mut">Los títulos e insignias se consiguen completando logros.</small></div>`;
+  return `<h2>Personalizar perfil</h2><div class="card"><div class="pers-tabs" role="tablist" aria-label="Categorías de personalización">${tabs.map(([k,n])=>`<button class="pers-tab ${persTab===k?"active":""}" data-perstab="${k}" role="tab" aria-selected="${persTab===k}">${n}</button>`).join("")}</div>${contenido}</div>`;
+}
+
+document.addEventListener("change", e => {
+  if (e.target.id === "colorAvatarLibre" && U && hexValido(e.target.value)) updateDoc(doc(db,"users",U.uid), {avatarColor:e.target.value}).catch(()=>{});
+  if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {});
+  if (e.target.id === "selInsignia" && U) updateDoc(doc(db,"users",U.uid), {insignia:e.target.value}).catch(() => {});
+});
+
+// Tocar un plano del historial lo amplía; otro toque (o Esc) lo cierra.
+function cerrarZoom(){ $("zoom").hidden = true; $("zoomBody").innerHTML = ""; }
+document.addEventListener("click", e => {
+  if (!$("zoom").hidden){ cerrarZoom(); return; }
+  const sv = e.target.closest(".two svg"); if (!sv) return;
+  let n = "";
+  for (let i = -6; i <= 6; i += 2) if (i) n += `<text x="${i}" y="-.3" font-size=".5" text-anchor="middle" fill="var(--mut)">${i}</text><text x=".2" y="${-i + .17}" font-size=".5" fill="var(--mut)">${i}</text>`;
+  const cap = sv.parentElement.querySelector("small")?.textContent || "";
+  $("zoomBody").innerHTML = `<p style="margin:0 0 8px"><b>${esc(cap)}</b></p>${sv.outerHTML.replace(/<\/svg>$/, n + "</svg>")}
+    <p class="mut" style="margin:8px 0 0;font-size:.8rem">Rojo: la recta tocó barcos · Azul: no tocó · ✕ cuadro dañado · barco apagado: derribado.<br>Toca para cerrar.</p>`;
+  $("zoom").hidden = false;
+}, true);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("zoom").hidden) cerrarZoom(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("previewCosmetic").hidden) cerrarPreviewCosmetico(); });
+document.addEventListener("click", e => { if (e.target.id === "previewCosmetic") cerrarPreviewCosmetico(); });
+
+const esperaron = new Set(), introVS = new Set(), estPrev = {};
+let introT = null;
+function mostrarIntro(a, b, sub){
+  const e = $("intro");
+  $("vsA").textContent = a || "Jugador 1"; $("vsB").textContent = b || "Jugador 2"; $("vsS").textContent = sub || "";
+  e.hidden = false; e.classList.remove("go"); void e.offsetWidth; e.classList.add("go");
+  clearTimeout(introT); introT = setTimeout(() => { e.hidden = true; }, 3200);
+}
+$("intro").addEventListener("click", () => { $("intro").hidden = true; clearTimeout(introT); });
+
+let verDoc = null, verUid = null, verCargando = false, verHist = [], vistaPrev = "inicio";
+async function verPerfil(uid){
+  if (vista !== "usuario") vistaPrev = vista;
+  if (verSub){ verSub(); verSub = null; }
+  verDoc = null; verUid = uid; verCargando = true; ir("usuario");
+  $("v-usuario").innerHTML = `<p class="mut">Cargando perfil…</p>`;
+  try { const h = await getDocs(query(collection(db,"users",uid,"historial"), orderBy("fecha","desc"), limit(20))); verHist = h.docs.map(x => x.data()).filter(x => !x.prueba); } catch { verHist = null; }
+  if (verUid !== uid) return;
+  verCargando = false;
+  // Mantiene la ficha pública abierta y sincronizada mientras se consulta.
+  verSub = onSnapshot(doc(db,"ranking",uid), s => {
+    if (verUid !== uid) return;
+    verDoc = s.exists() ? {...s.data()} : null;
+    pintarUsuario();
+  }, e => { console.error("perfil público:", e); if (verUid === uid){ verDoc = null; pintarUsuario(); } });
+}
+const RESH = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
+function filaHist(h, dueno){
+  const r = RESH[h.resultado] || ["Partida",""];
+  return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Plano de ${esc(dueno)}</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Toca un plano para ampliarlo.</small></details>`;
+}
+function historialOtro(d){
+  return `<h2>Historial</h2><div class="card">${verHist === null ? `<p class="mut">No se pudo cargar el historial.</p>` : verHist.length
+    ? verHist.map(h => filaHist(h, d.nombre || "Jugador")).join("") + `<small>Últimas ${verHist.length} partidas.</small>` : `<p class="mut">Todavía no tiene partidas.</p>`}</div>`;
+}
+function bloqueAmistad(){
+  if (!verUid || verUid === U.uid) return "";
+  const a = amistades.find(x => x.miembros.includes(verUid)), nom = esc(verDoc?.nombre || "Este jugador");
+  let c;
+  if (!a) c = `<button data-agregar="${esc(verUid)}">Agregar amistad</button>`;
+  else if (a.estado === "aceptada") c = `<span class="tag">✓ ${nom} ya está en tus amistades</span>`;
+  else if (a.pedidoPor === U.uid) c = `<span class="tag">Solicitud enviada</span> <button class="mini sec" data-del="${esc(a.id)}">Cancelar</button>`;
+  else c = `<b>${nom}</b> te envió una solicitud. <button class="mini" data-acep="${esc(a.id)}">Aceptar</button> <button class="mini sec" data-del="${esc(a.id)}">Rechazar</button>`;
+  return `<div class="card" style="margin-top:10px">${c}<p class="err" id="eAm" style="margin:0;min-height:0"></p></div>`;
+}
+async function agregarAmigo(uid){
+  const nom = verDoc?.nombre || "Jugador", ref = doc(db,"amistades",[U.uid, uid].sort().join("_"));
+  try {
+    await runTransaction(db, async tx => {
+      if ((await tx.get(ref)).exists()) return;
+      tx.set(ref, {miembros:[U.uid, uid], nombres:{[U.uid]:nombre(), [uid]:nom}, pedidoPor:U.uid, estado:"pendiente", creada:serverTimestamp()});
+    });
+  } catch { const e = $("eAm"); if (e) e.textContent = "No se pudo enviar la solicitud. Inténtalo de nuevo."; }
+}
+function pintarUsuario(){
+  if (verCargando) return;
+  const d = verDoc, volver = `<button class="sec" data-go="${esc(vistaPrev)}">← Volver</button>`;
+  if (!d){ $("v-usuario").innerHTML = volver + `<p class="mut" style="margin-top:12px">Este jugador todavía no tiene perfil público. Aparecerá cuando abra la versión nueva del juego.</p>`; return; }
+  const [s, j] = estad(d), wr = j ? Math.round(s.victorias / j * 100) : 0;
+  const marcoPub = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
+  const efectoPub = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
+  $("v-usuario").innerHTML = volver + `<div class="profile-decor-shell frame-${marcoPub} effect-${efectoPub}"><div class="profile-decor-layer"></div><div style="margin-top:10px">${cabeceraPerfil(d)}</div>${bloqueAmistad()}
+    <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${s.victorias}</b><span>Victorias</span></div><div><b>${s.derrotas}</b><span>Derrotas</span></div>
+      <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d) + historialOtro(d) + `</div>`;
+}
+
+/* ================= INVITACIONES A PARTIDA ================= */
+let invRec = [], invEnv = [], invMsg = "";
+const INV_MS = 60000, INV_TXT = {pendiente:"esperando respuesta…", aceptada:"aceptó", rechazada:"rechazó la invitación", cancelada:"invitación cancelada", vencida:"invitación vencida"};
+let invKey = "";
+function pintarInv(){
+  const e = $("invBar"); if (!e) return;
+  const v = invRec.filter(i => i.estado === "pendiente" && Date.now() - Number(i.t || 0) < INV_MS), key = v.map(i => i.id).join(",") + "|" + invMsg;
+  if (key !== invKey){   // solo se vuelve a dibujar si cambia algo; así los botones no se mueven mientras los tocas
+    invKey = key;
+    e.innerHTML = v.map(i => `<div class="card glass" style="max-width:480px;margin:10px auto;border-color:var(--acc)"><b>${esc(i.deNombre)}</b> te invita a una partida.<div class="row" style="margin-top:8px"><button class="mini" data-invacep="${esc(i.id)}">Aceptar</button><button class="mini sec" data-invrech="${esc(i.id)}">Rechazar</button><small data-exp="${Number(i.t || 0)}"></small></div></div>`).join("")
+      + (invMsg ? `<p class="err" style="max-width:480px;margin:6px auto;padding:0 16px">${esc(invMsg)}</p>` : "");
+  }
+  e.querySelectorAll("[data-exp]").forEach(x => { x.textContent = "Expira en " + Math.max(0, Math.ceil((INV_MS - (Date.now() - Number(x.dataset.exp))) / 1000)) + " s"; });
+}
+let ultInv = "";
+setInterval(() => { pintarInv(); if (vista === "sala" && G && !G.j2 && gid){ const t = invitesSala(gid); if (t !== ultInv){ ultInv = t; pintarSala(gid, G); } } }, 1000);
+function avisoInv(t){ invMsg = t; pintarInv(); setTimeout(() => { invMsg = ""; pintarInv(); }, 6000); }
+function invitesSala(id){
+  return invEnv.filter(i => i.partida === id).map(i => { const vencida = i.estado === "pendiente" && Date.now() - Number(i.t || 0) >= INV_MS; return `<p>Invitaste a <b>${esc(i.paraNombre)}</b>: ${vencida ? "invitación vencida" : (INV_TXT[i.estado] || esc(i.estado))} ${i.estado === "pendiente" && !vencida ? `<button class="mini sec" data-invcan="${esc(i.id)}">Cancelar</button>` : ""}</p>`; }).join("");
+}
+async function crearPartidaId(){
+  for (let n = 0; n < 8; n++){
+    const c = cod(5), ref = doc(db,"games",c);
+    const ok = await runTransaction(db, async tx => {
+      if ((await tx.get(ref)).exists()) return false;
+      tx.set(ref, {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
+      return true;
+    });
+    if (ok) return c;
+  }
+  throw new Error("No se pudo generar un código.");
+}
+async function invitar(uidAmigo, nom){
+  const id = await crearPartidaId();
+  await setDoc(doc(db,"invitaciones", id + "_" + uidAmigo), {de:U.uid, deNombre:nombre(), para:uidAmigo, paraNombre:nom || "Amigo", partida:id, estado:"pendiente", t:Date.now()});
+  abrirSala(id);
+}
+async function aceptarInv(id){
+  const inv = invRec.find(i => i.id === id); if (!inv) return;
+  if (inv.estado !== "pendiente" || Date.now() - Number(inv.t || 0) >= INV_MS){ avisoInv("Esta invitación ya venció. Pide que te envíen otra."); pintarInv(); return; }
+  try {
+    const invRef = doc(db,"invitaciones",id), ref = doc(db,"games",inv.partida);
+    await runTransaction(db, async tx => {
+      const [si, s] = await Promise.all([tx.get(invRef), tx.get(ref)]);
+      const actualInv = si.exists() ? si.data() : null, g = s.exists() ? s.data() : null;
+      if (!actualInv || actualInv.estado !== "pendiente" || Date.now() - Number(actualInv.t || 0) >= INV_MS) throw {code:"invitacion-vencida"};
+      if (!g || g.j2 || g.estado !== "esperando") throw {code:"no-disponible"};
+      tx.update(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
+      tx.update(invRef, {estado:"aceptada"});
+    });
+    abrirSala(inv.partida);
+  } catch (e){
+    await updateDoc(doc(db,"invitaciones",id), {estado:"cancelada"}).catch(() => {});
+    avisoInv(e.code === "invitacion-vencida" ? "Esta invitación ya venció. Pide que te envíen otra." : "Esa partida ya no está disponible.");
+  }
+}
+
+function pintarSala(id, g){
+  $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
+    <p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: ${esc(g.n2 || "esperando rival…")}</p>
+    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p>${g.j2 ? "" : invitesSala(id)}</div>
+    <button class="sec" data-go="partidas">Volver a mis partidas</button>`;
+}
+function abrirSala(id){
+  if (salaSub){ salaSub(); salaSub = null; }
+  ir("sala");
+  gid = null; salaSub = onSnapshot(doc(db,"games",id), s => { if (s.exists()) alCambiar(id, s.data()); });
+}
+
+function cerrarPreviewCosmetico(){ const m=$("previewCosmetic"); if(m) m.hidden=true; const b=$("previewCosmeticBody"); if(b) b.innerHTML=""; }
+function previsualizarCosmetico(tipo, clave){
+  const actual=perfilMio(), demo={...actual};
+  if(tipo==="marco" && Object.hasOwn(MARCOS,clave)) demo.marco=clave;
+  else if(tipo==="efecto" && Object.hasOwn(EFECTOS,clave)) demo.efecto=clave;
+  else return;
+  const item=tipo==="marco"?MARCOS[clave]:EFECTOS[clave];
+  const req=[item.victorias?item.victorias+" victorias":null,item.mejor?item.mejor+" puntos en una partida":null,item.puntos?item.puntos+" puntos acumulados":null,item.req?item.req+" partidas":null].filter(Boolean).join(" · ") || "Sin requisito adicional";
+  const shell=`<div class="profile-decor-shell frame-${demo.marco||"ninguno"} effect-${demo.efecto||"ninguno"}"><div class="profile-decor-layer"></div>${cabeceraPerfil(demo,true)}<div class="card"><b>Estadísticas</b><div class="stats"><div><b>${Number(demo.victorias)||0}</b><span>Victorias</span></div><div><b>${Number(demo.derrotas)||0}</b><span>Derrotas</span></div><div><b>${Number(demo.empates)||0}</b><span>Empates</span></div></div></div><div class="card"><b>Insignias y logros</b><p class="mut">La decoración también se aplica a esta sección.</p>🏆 🎖️ 💎 ⭐</div><div class="card"><b>Historial de partidas</b><p class="mut">Así se verá el resto del perfil.</p><div class="item">Victoria · 250 pts</div><div class="item">Derrota · 120 pts</div></div></div>`;
+  $("previewCosmeticBody").innerHTML=`<div class="row" style="justify-content:space-between;align-items:center"><div><b>Vista previa: ${esc(item.n)}</b><div class="mut">Requisito: ${esc(req)}</div></div><button class="mini sec" data-close-preview>✕</button></div><div class="preview-sample">${shell}</div><p class="mut">Vista previa solamente: no desbloquea ni equipa el elemento.</p><div class="preview-actions"><button class="sec" data-close-preview>Cerrar</button></div>`;
+  $("previewCosmetic").hidden=false;
+}
+
+/* ---------- Acciones (delegación de eventos) ---------- */
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t || !U) return;
+  const d = t.dataset;
+  try {
+    if (d.closePreview !== undefined){ cerrarPreviewCosmetico(); return; }
+    if (d.previewType && d.previewKey){ previsualizarCosmetico(d.previewType,d.previewKey); return; }
+    if (d.go) return ir(d.go);
+    if (d.sala) return abrirSala(d.sala);
+    if (d.espectar) return espectar(d.espectar);
+    if (d.emoji) return enviarEmoji(d.emoji);
+    if (d.perfil) return verPerfil(d.perfil);
+    if (d.pers){ persAbierto = !persAbierto; return pintarPerfil(); }
+    if (d.perstab){ persTab=d.perstab; return pintarPerfil(); }
+    if (t.id === "bFondoCustom"){
+      const a=$("fondoColorA")?.value, b=$("fondoColorB")?.value;
+      if(hexValido(a)&&hexValido(b)) return await updateDoc(doc(db,"users",U.uid), {fondo:`custom:${a}:${b}`});
+    }
+    if (d.agregar) return await agregarAmigo(d.agregar);
+    if (d.ins !== undefined){ const e = t.closest(".card")?.querySelector(".insTxt"); if (e) e.textContent = d.ins; return; }
+    if (d.invitar) return await invitar(d.invitar, d.nombre);
+    if (d.invacep) return await aceptarInv(d.invacep);
+    if (d.invrech) return await updateDoc(doc(db,"invitaciones",d.invrech), {estado:"rechazada"});
+    if (d.invcan) return await updateDoc(doc(db,"invitaciones",d.invcan), {estado:"cancelada"});
+    if (d.estilo && Object.hasOwn(ESTILOS_AVATAR,d.estilo)) return await updateDoc(doc(db,"users",U.uid), {estiloAvatar:d.estilo});
+    if (d.av) return await updateDoc(doc(db,"users",U.uid), {avatar:d.av === "-" ? "" : d.av});
+    if (d.avc) return await updateDoc(doc(db,"users",U.uid), {avatarColor:d.avc});
+    if (d.fondo) return await updateDoc(doc(db,"users",U.uid), {fondo:d.fondo});
+    if (d.marco && Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],perfilMio())) return await updateDoc(doc(db,"users",U.uid), {marco:d.marco});
+    if (d.efecto && Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],perfilMio())) return await updateDoc(doc(db,"users",U.uid), {efecto:d.efecto});
+    if (t.id === "bBio") return await updateDoc(doc(db,"users",U.uid), {bio:$("pBio").value.trim().slice(0, 80)});
+    if (d.rk){ if (d.rk === "actualizar") return cargarRanking(); rkTab = d.rk; return pintarRanking(); }
+    if (d.histPage){ paginaHistorial = Math.max(0, paginaHistorial + Number(d.histPage)); return pintarPerfil(); }
+    if (t.id === "bCrear"){
+      let id = "", creada = false;
+      // Se reserva el identificador de forma atómica para no sobrescribir otra sala.
+      for (let intento = 0; intento < 8 && !creada; intento++){
+        const candidato = cod(5), ref = doc(db,"games",candidato);
+        creada = await runTransaction(db, async tx => {
+          const existente = await tx.get(ref);
+          if (existente.exists()) return false;
+          tx.set(ref, {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp()});
+          return true;
+        });
+        if (creada) id = candidato;
+      }
+      if (!creada) throw new Error("No se pudo generar un código. Inténtalo de nuevo.");
+      return abrirSala(id);
+    }
+    if (t.id === "bUnir"){
+      const id = $("codigo").value.trim().toUpperCase(), er = $("eInicio");
+      if (!/^[A-HJ-NP-Z2-9]{5}$/.test(id)){ er.textContent = "El código debe tener 5 caracteres válidos."; return; }
+      const ref = doc(db,"games",id);
+      const resultado = await runTransaction(db, async tx => {
+        const s = await tx.get(ref);
+        if (!s.exists()) return "missing";
+        const g = s.data();
+        if (g.j1 === U.uid || g.j2 === U.uid) return "joined";
+        if (g.estado !== "esperando" || g.j2) return "full";
+        tx.update(ref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
+        return "joined";
+      });
+      if (resultado === "missing"){ er.textContent = "No existe una partida con ese código."; return; }
+      if (resultado === "full"){ er.textContent = "Esa partida ya está llena o ya comenzó."; return; }
+      return abrirSala(id);
+    }
+    if (t.id === "bAmigo"){
+      const c = $("cAmigo").value.trim().toUpperCase(); msgAmigo = "";
+      if (c.length !== 6) msgAmigo = "El código tiene 6 caracteres.";
+      else {
+        const s = await getDoc(doc(db,"codigos",c));
+        if (!s.exists()) msgAmigo = "No existe ese código.";
+        else if (s.data().uid === U.uid) msgAmigo = "Ese código es el tuyo.";
+        else {
+          const o = s.data(), id = [U.uid, o.uid].sort().join("_"), ref = doc(db,"amistades",id);
+          const estado = await runTransaction(db, async tx => {
+            const existente = await tx.get(ref);
+            if (existente.exists()) return existente.data().estado === "aceptada" ? "friends" : "pending";
+            tx.set(ref, {miembros:[U.uid,o.uid], nombres:{[U.uid]:nombre(), [o.uid]:o.nombre || "Jugador"}, pedidoPor:U.uid, estado:"pendiente", creada:serverTimestamp()});
+            return "sent";
+          });
+          msgAmigo = estado === "friends" ? "Ya son amigos." : estado === "pending" ? "Ya existe una solicitud pendiente entre ustedes." : "✓ Solicitud enviada a " + (o.nombre || "tu amigo");
+        }
+      }
+      return pintarAmigos();
+    }
+    if (d.acep) return await updateDoc(doc(db,"amistades",d.acep), {estado:"aceptada"});
+    if (d.del){
+      const relacion = amistades.find(a => a.id === d.del);
+      if (!relacion) return;
+      const amigoNombre = relacion.nombres?.[otro(relacion)] || "este jugador";
+      const esAmistad = relacion.estado === "aceptada";
+      const pregunta = esAmistad
+        ? `¿Seguro que quieres cancelar la amistad con ${amigoNombre}?
+
+Ya no aparecerá en tu lista de amigos.`
+        : relacion.pedidoPor === U.uid
+          ? `¿Quieres cancelar la solicitud de amistad enviada a ${amigoNombre}?`
+          : `¿Quieres rechazar la solicitud de amistad de ${amigoNombre}?`;
+      if (!window.confirm(pregunta)) return;
+      await deleteDoc(doc(db,"amistades",d.del));
+      return;
+    }
+    if (t.id === "bNombre"){
+      const n = $("pNombre").value.trim(); if (n.length < 3){ $("ePerfil").textContent = ERR.nombre; return; }
+      await updateProfile(U, {displayName:n});
+      await updateDoc(doc(db,"users",U.uid), {nombre:n});
+      if (P.codigo) await updateDoc(doc(db,"codigos",P.codigo), {nombre:n});
+      $("ePerfil").textContent = ""; return pintar();
+    }
+    if (t.id === "bCopiar"){ try { await navigator.clipboard.writeText(P.codigo || ""); t.textContent = "¡Copiado!"; } catch { t.textContent = P.codigo || ""; } return; }
+    if (t.id === "bEjemplo") return await ejemplo();
+    if (t.id === "solicitarPausa") return await solicitarPausa();
+    if (t.id === "confirmarPausa") return await confirmarPausa();
+    if (t.id === "reanudarPartida") return await reanudarPartida();
+    if (t.id === "bSalir") return signOut(auth);
+  } catch (er){
+    const x = $("eInicio") || $("ePerfil"); if (vista === "amigos"){ msgAmigo = texto(er); pintarAmigos(); } else if (x) x.textContent = texto(er);
+  }
+});
+</script>
+</body>
+</html>
