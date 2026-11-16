@@ -237,6 +237,101 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 #previewCosmetic .preview-box{width:min(96vw,560px);max-height:92vh;overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 18px 60px #0009}
 .preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
 .preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+
+
+/* ===== REDISEÑO ILUSTRADO GLOBAL · Batalla en el plano ===== */
+:root{
+  --bg:#fff5df;--card:#fffdf6;--ink:#453b50;--mut:#81758a;--line:#ead9c1;
+  --acc:#ed8b55;--on:#fffdf8;--azul:#65b9c5;--soft:#f8dfc4;
+  color-scheme:light;
+}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at 8% 8%,#fbd9c9aa 0,transparent 30%),
+    radial-gradient(ellipse at 92% 22%,#c9e8d8aa 0,transparent 28%),
+    radial-gradient(ellipse at 75% 90%,#d9d4f5aa 0,transparent 32%),var(--bg);
+  color:var(--ink);font-family:"Trebuchet MS","Avenir Next",system-ui,sans-serif;
+  letter-spacing:.005em;
+}
+body:before,body:after{content:"";position:fixed;z-index:0;pointer-events:none;border-radius:48% 52% 60% 40%;opacity:.22;filter:blur(1px)}
+body:before{width:190px;height:150px;left:-90px;top:24%;background:#f4b86a;transform:rotate(28deg)}
+body:after{width:210px;height:180px;right:-120px;bottom:18%;background:#8bcac1;transform:rotate(-22deg)}
+header#hdr{
+  background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(16px);
+  border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+  box-shadow:0 5px 24px #765b3510;padding:12px max(16px,calc((100vw - 520px)/2));
+}
+header#hdr h1{font-family:"Trebuchet MS",system-ui,sans-serif;font-size:1.02rem;font-weight:900;letter-spacing:.02em}
+main{z-index:1;max-width:560px;padding:18px 16px 112px}
+h1,h2{font-family:"Trebuchet MS",system-ui,sans-serif;font-weight:900;letter-spacing:-.025em}
+h2{font-size:1.12rem;margin:20px 0 10px;color:var(--ink)}
+.card{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--card) 97%,white),var(--card));
+  border:1px solid color-mix(in srgb,var(--line) 82%,white);border-radius:19px;
+  padding:15px;margin:12px 0;box-shadow:0 7px 22px #6e55300d,0 2px 5px #6e553008;
+}
+button{
+  border:1px solid color-mix(in srgb,var(--acc) 80%,#fff);border-radius:14px;
+  background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 76%,#f5c76b));
+  color:var(--on);font-weight:800;box-shadow:0 4px 0 color-mix(in srgb,var(--acc) 72%,#9b5b4a),0 7px 14px #73553a12;
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+button:hover{filter:saturate(1.08) brightness(1.025);transform:translateY(-1px);box-shadow:0 5px 0 color-mix(in srgb,var(--acc) 72%,#9b5b4a),0 10px 18px #73553a18}
+button:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--acc) 72%,#9b5b4a)}
+button.sec{background:color-mix(in srgb,var(--card) 88%,var(--acc) 12%);color:var(--ink);border-color:var(--line);box-shadow:0 3px 0 color-mix(in srgb,var(--line) 75%,#fff)}
+button.link{background:transparent;box-shadow:none;color:var(--acc);border-radius:8px}
+button.mini{border-radius:11px}
+input,select,textarea{border:1.5px solid var(--line)!important;border-radius:13px!important;background:color-mix(in srgb,var(--card) 85%,var(--bg))!important;color:var(--ink)!important;box-shadow:inset 0 1px 2px #70532a08}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 18%,transparent)!important}
+.av{border:3px solid var(--card);box-shadow:0 3px 0 color-mix(in srgb,var(--acc) 60%,#fff),0 5px 12px #4b3b2c24}
+.ph{border-radius:21px;padding:18px;border:2px solid #ffffffaa;box-shadow:0 8px 20px #4c38221a}
+.profile-decor-shell{border-radius:24px;padding:13px;background:color-mix(in srgb,var(--card) 34%,transparent)}
+.profile-decor-shell>.card{border-color:#ffffff99;box-shadow:0 5px 16px #59452a12}
+.item{padding:12px 4px;border-color:color-mix(in srgb,var(--line) 65%,transparent)}
+.tag{border-radius:99px;background:color-mix(in srgb,var(--acc) 10%,var(--card));border-color:color-mix(in srgb,var(--acc) 28%,var(--line));color:var(--ink)}
+.stats b{font-family:"Trebuchet MS",system-ui,sans-serif;color:var(--acc);font-size:1.7rem}
+nav#nav{
+  left:50%;right:auto;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);
+  width:min(94vw,540px);border:1px solid color-mix(in srgb,var(--line) 72%,white);
+  border-radius:22px;padding:6px 7px;background:color-mix(in srgb,var(--card) 91%,transparent);
+  backdrop-filter:blur(18px);box-shadow:0 9px 30px #493a2a25;gap:3px;
+}
+nav button{border-radius:15px;min-height:52px;padding:7px 2px 5px;color:var(--mut);box-shadow:none;background:transparent;font-weight:800}
+nav button:hover{transform:none;box-shadow:none;background:color-mix(in srgb,var(--acc) 9%,transparent)}
+nav button.on{background:color-mix(in srgb,var(--acc) 14%,var(--card));color:var(--acc);box-shadow:inset 0 -3px 0 var(--acc)}
+nav svg{width:22px;height:22px}
+#splash{background:radial-gradient(circle at 25% 25%,#f4c78d,#a9d9c6 46%,#789fb1 100%);color:#fffdf8}
+#splash .load i{background:#fff2bd}
+#auth .card{border-radius:26px;padding:22px;box-shadow:0 15px 40px #66503a20}
+.centro{padding:24px 0 20px}
+.centro h2{font-size:1.45rem}
+.centro .big{min-height:58px;font-size:1.12rem}
+.pers-tabs{background:var(--card);border-radius:15px;padding:7px;box-shadow:0 3px 12px #5d45200b}
+.pers-tab{border-radius:999px;font-weight:800}
+.pers-tab.active{box-shadow:0 3px 0 color-mix(in srgb,var(--acc) 72%,#9b5b4a)}
+.pers-section{scrollbar-color:var(--acc) transparent}
+.style-choice,.profile-bg-choice,.cosmetic,.gradient-swatch{border-radius:15px}
+.style-choice{background:color-mix(in srgb,var(--card) 80%,var(--bg));border-color:var(--line);box-shadow:0 3px 10px #604b3210}
+.style-choice.sel,.profile-bg-choice.sel,.cosmetic.sel{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 18%,transparent),0 5px 12px #604b3210}
+.profile-bg-thumb{height:76px;border-radius:11px}
+.cosmetic{background:color-mix(in srgb,var(--card) 86%,var(--bg));color:var(--ink);border-color:var(--line)}
+.cosmetic small{color:var(--mut)}
+.history-pager{border-radius:14px;background:color-mix(in srgb,var(--bg) 75%,var(--card));border-color:var(--line)}
+.history-scroll{border-radius:12px}
+#previewCosmetic .preview-box,#zoom .zbox{border-radius:23px;box-shadow:0 20px 65px #30251c44}
+#intro{background:radial-gradient(circle at 50% 45%,#f6d9a9,#8bc9c1 75%)}
+#intro .vsv{color:#f4a64f}
+@media(max-width:420px){main{padding-left:12px;padding-right:12px}nav#nav{width:calc(100vw - 16px);bottom:max(7px,env(safe-area-inset-bottom))}nav button{font-size:.67rem}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+/* Controles para crear una paleta propia del juego */
+.theme-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.theme-color{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card) 80%,var(--bg));font-size:.82rem;font-weight:800}
+.theme-color input[type=color]{width:100%;height:44px;padding:3px;border-radius:10px!important;cursor:pointer}
+.theme-preview{padding:13px;border-radius:16px;border:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--bg);color:var(--ink)}
+.theme-preview .sample-card{padding:10px 12px;border-radius:12px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.theme-preview .sample-button{padding:8px 12px;border-radius:10px;background:var(--acc);color:var(--on);font-weight:900}
+
 </style>
 </head>
 <body>
@@ -307,6 +402,31 @@ const cod = n => Array.from({length:n}, () => LET[Math.floor(Math.random()*LET.l
 let U = null, P = {}, kP = "", historial = [], paginaHistorial = 0, amDocs = {}, amSubs = [], amistades = [], partidas = [], errPartidas = "", subs = [], salaSub = null, vista = "inicio", modo = "entrar", msgAmigo = "", rkSub = null, verSub = null;
 const nombreDe = u => u.displayName || (u.email || "Jugador").split("@")[0];
 
+/* ---------- Tema visual personalizable ---------- */
+const TEMA_BASE = {bg:"#fff5df",card:"#fffdf6",ink:"#453b50",acc:"#ed8b55",on:"#fffdf8"};
+function temaSeguro(t){
+  const r={...TEMA_BASE}; if(t && typeof t==="object") for(const k of Object.keys(r)) if(/^#[0-9a-fA-F]{6}$/.test(t[k]||"")) r[k]=t[k];
+  return r;
+}
+function aplicarTema(t){
+  const r=temaSeguro(t), root=document.documentElement;
+  root.style.setProperty("--bg",r.bg); root.style.setProperty("--card",r.card); root.style.setProperty("--ink",r.ink);
+  root.style.setProperty("--acc",r.acc); root.style.setProperty("--on",r.on);
+  root.style.setProperty("--mut",`color-mix(in srgb, ${r.ink} 62%, transparent)`);
+  root.style.setProperty("--line",`color-mix(in srgb, ${r.ink} 18%, ${r.card})`);
+  root.style.setProperty("--soft",`color-mix(in srgb, ${r.acc} 16%, ${r.card})`);
+}
+function temaActual(){return temaSeguro(P.temaVisual)}
+function previsualizarTema(){
+  const t={}; for(const k of Object.keys(TEMA_BASE)){const el=$("tema-"+k);t[k]=el?.value||temaActual()[k];}
+  aplicarTema(t);
+}
+async function guardarTema(){
+  if(!U)return; const t={}; for(const k of Object.keys(TEMA_BASE)){const el=$("tema-"+k);t[k]=el?.value||temaActual()[k];}
+  await updateDoc(doc(db,"users",U.uid),{temaVisual:t});
+}
+aplicarTema(TEMA_BASE);
+
 /* ---------- Autenticación ---------- */
 function pintarModo(){
   const c = modo === "crear";
@@ -347,11 +467,11 @@ onAuthStateChanged(auth, async u => {
   if (salaSub){ salaSub(); salaSub = null; }
   U = u;
   const spl = $("splash");
-  if (!u){ await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
+  if (!u){ aplicarTema(TEMA_BASE); await pausa(); spl.classList.remove("fuera"); spl.classList.add("dif"); $("auth").hidden = false; $("app").hidden = $("nav").hidden = $("hdr").hidden = true; pintarModo(); return; }
   await prepararPerfil(u);
   await pausa(); spl.classList.add("fuera"); latido();
   $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hdr").hidden = false;
-  subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; sincRank(); if (k !== kP){ kP = k; pintar(); } }));
+  subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; aplicarTema(P.temaVisual); sincRank(); if (k !== kP){ kP = k; pintar(); } }));
   subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); suscribirAmigos(); pintar(); if (vista === "usuario") pintarUsuario(); }));
   subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); errPartidas = ""; pintar(); },
     e => { console.error("partidas:", e); errPartidas = e.code || "error"; pintar(); }));
@@ -1090,7 +1210,7 @@ function personalizarHTML(){
 }
 function personalizarPanel(){
   const m=perfilMio(), lg=logrosDe(m).filter(x=>x.ok), f=fondoDe(m);
-  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Cabecera"],["fondoPerfil","🖼️ Fondo de perfil"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"]];
+  const tabs=[["avatar","😀 Avatares"],["estilos","🧩 Estilos"],["colores","🎨 Colores"],["fondos","🌈 Cabecera"],["fondoPerfil","🖼️ Fondo de perfil"],["marcos","💠 Marcos"],["efectos","✨ Efectos"],["identidad","🏷️ Identidad"],["tema","🎨 Tema"]];
   const botones=(items,actual,attr)=>Object.entries(items).map(([k,x])=>{
     const ok=desbloqueado(x,m),sel=(actual||"ninguno")===k;
     const req=[x.victorias?x.victorias+" victorias":null,x.mejor?x.mejor+" puntos en una partida":null,x.puntos?x.puntos+" puntos acumulados":null,x.req?x.req+" partidas":null].filter(Boolean).join(" · ") || "Disponible";
@@ -1107,8 +1227,19 @@ function personalizarPanel(){
   if(persTab==="marcos") contenido=`<div class="pers-section"><b>Marcos del perfil</b><p class="mut">Los marcos rodean todo tu perfil, no solamente el avatar o la cabecera.</p><div class="cosmetic-grid">${botones(MARCOS,m.marco,"marco")}</div></div>`;
   if(persTab==="efectos") contenido=`<div class="pers-section"><b>Efectos visuales</b><p class="mut">Los efectos decoran todo tu perfil: cabecera, logros, estadísticas e historial.</p><div class="cosmetic-grid">${botones(EFECTOS,m.efecto,"efecto")}</div></div>`;
   if(persTab==="identidad") contenido=`<div class="pers-section"><label for="selInsignia">Insignia destacada</label><select id="selInsignia">${insigniaOpts}</select><label for="pBio">Frase o biografía (máx. 80)</label><div class="row"><input id="pBio" maxlength="80" value="${esc(P.bio||"")}"><button id="bBio">Guardar</button></div><label for="selTitulo">Título</label><select id="selTitulo"><option value="grumete">Grumete</option>${lg.map(x=>`<option value="${x.id}" ${P.titulo===x.id?"selected":""}>${esc(x.n)}</option>`).join("")}</select><small class="mut">Los títulos e insignias se consiguen completando logros.</small></div>`;
+  if(persTab==="tema") { const t=temaActual(); contenido=`<div class="pers-section"><b>Diseña los colores de toda la aplicación</b><p class="mut">Cambia el fondo, las tarjetas, el texto y los colores principales. Se aplicará a menús, lobby, ranking, amistades, perfil y pantallas de partida.</p><div class="theme-editor">
+    <label class="theme-color" for="tema-bg">Fondo general<input type="color" id="tema-bg" value="${t.bg}"></label>
+    <label class="theme-color" for="tema-card">Tarjetas y paneles<input type="color" id="tema-card" value="${t.card}"></label>
+    <label class="theme-color" for="tema-ink">Texto principal<input type="color" id="tema-ink" value="${t.ink}"></label>
+    <label class="theme-color" for="tema-acc">Color de botones y acentos<input type="color" id="tema-acc" value="${t.acc}"></label>
+    <label class="theme-color" for="tema-on">Texto de botones<input type="color" id="tema-on" value="${t.on}"></label>
+    </div><div class="theme-preview" aria-label="Vista previa de colores"><b>Vista previa</b><span class="sample-card">Tarjeta</span><span class="sample-button">Botón</span></div><p class="mut">Los cambios se guardan en tu cuenta y se aplican también al volver a iniciar sesión.</p><button class="sec" id="bTemaReset">Restablecer colores ilustrados</button></div>`; }
+
   return `<h2>Personalizar perfil</h2><div class="card"><div class="pers-tabs" role="tablist" aria-label="Categorías de personalización">${tabs.map(([k,n])=>`<button class="pers-tab ${persTab===k?"active":""}" data-perstab="${k}" role="tab" aria-selected="${persTab===k}">${n}</button>`).join("")}</div><div class="pers-content">${contenido}</div></div>`;
 }
+
+document.addEventListener("input", e => { if(e.target.id?.startsWith("tema-")) previsualizarTema(); });
+document.addEventListener("change", e => { if(e.target.id?.startsWith("tema-")) guardarTema().catch(err=>console.error("No se pudo guardar el tema:",err)); });
 
 document.addEventListener("change", e => {
   if (e.target.id === "colorAvatarLibre" && U && hexValido(e.target.value)) updateDoc(doc(db,"users",U.uid), {avatarColor:e.target.value}).catch(()=>{});
@@ -1294,6 +1425,7 @@ document.addEventListener("click", async e => {
     if (d.perfil) return verPerfil(d.perfil);
     if (d.pers){ persAbierto = !persAbierto; return pintarPerfil(); }
     if (d.perstab){ persTab=d.perstab; return pintarPerfil(); }
+    if (t.id === "bTemaReset") { aplicarTema(TEMA_BASE); await updateDoc(doc(db,"users",U.uid),{temaVisual:TEMA_BASE}); return pintarPerfil(); }
     if (t.id === "bFondoCustom"){
       const a=$("fondoColorA")?.value, b=$("fondoColorB")?.value;
       if(hexValido(a)&&hexValido(b)) return await updateDoc(doc(db,"users",U.uid), {fondo:`custom:${a}:${b}`});
