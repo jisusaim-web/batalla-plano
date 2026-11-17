@@ -574,6 +574,8 @@ function pintarAmigos(){
     <div class="card"><label for="cAmigo" style="margin-top:0">Agregar amigo con su código</label>
       <div class="row"><input id="cAmigo" maxlength="6" style="text-transform:uppercase" placeholder="Código de 6 letras"><button id="bAmigo">Enviar</button></div>
       <p class="${msgAmigo.startsWith("✓") ? "mut" : "err"}">${esc(msgAmigo)}</p></div>
+    <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
+      <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
     ${rec.length ? `<h2>Solicitudes</h2><div class="card">${rec.map(a => fila(a, `<button class="mini" data-acep="${a.id}">Aceptar</button> <button class="mini sec" data-del="${a.id}">Rechazar</button>`)).join("")}</div>` : ""}
     <h2>Mis amigos</h2><div class="card">${acept.length ? acept.map(a => fila(a, `<button class="mini sec" data-del="${a.id}">Quitar</button>`)).join("") : `<p class="mut">Todavía no tienes amigos agregados.</p>`}</div>
     ${env.length ? `<h2>Enviadas</h2><div class="card">${env.map(a => fila(a, `<span class="tag">Pendiente</span> <button class="mini sec" data-del="${a.id}">Cancelar</button>`)).join("")}</div>` : ""}`;
@@ -599,8 +601,6 @@ function pintarPerfil(){
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
     <h2>Historial</h2><div class="card">${lista.length ? `<div class="history-pager" aria-label="Páginas del historial"><button class="mini sec" data-hist-page="-1" aria-label="Página anterior" ${paginaHistorial === 0 ? "disabled" : ""}>←</button><div class="history-page-label"><b>Pestaña ${paginaHistorial + 1} de ${totalPaginas}</b>Partidas ${inicioHistorial + 1}–${Math.min(inicioHistorial + porPagina, lista.length)} de ${lista.length}</div><button class="mini sec" data-hist-page="1" aria-label="Página siguiente" ${paginaHistorial >= totalPaginas - 1 ? "disabled" : ""}>→</button></div><div class="history-scroll" role="region" aria-label="Partidas de esta pestaña">${paginaLista.map(h => { const r = RES[h.resultado] || ["Partida",""]; return `<details class="h"><summary class="item" style="padding:0;border:0"><div style="width:76px;flex:none">${mini(h,"riv")}</div><div style="flex:1"><b class="${r[1]}">${r[0]}</b> vs ${esc(h.rivalNombre)}${h.prueba ? ' <span class="tag">Prueba</span>' : ""}${h.abandono ? ' <span class="tag">Abandono</span>' : ""}<br><small>${Number(h.miPuntaje)} – ${Number(h.puntajeRival)} pts · ${fecha(h)}</small></div></summary><div class="two"><div><small>Mi plano</small>${mini(h,"mio")}</div><div><small>Plano de ${esc(h.rivalNombre)}</small>${mini(h,"riv")}</div></div><small>Barcos apagados: derribados. ✕: cuadros dañados. Rojo: recta que tocó barcos; azul: no tocó. Toca un plano para ampliarlo.</small>${botonInforme(h)}</details>`; }).join("")}</div>` : `<p class="mut">Aún no hay partidas. Cuando termines una, aparecerá aquí con la vista previa de los ataques.</p>`}
       <button class="mini sec" id="bEjemplo" style="margin-top:10px">Agregar partida de prueba (no cuenta en estadísticas)</button></div>
-    <div class="card"><small>Tu código de amigo</small><div class="code" style="font-size:1.6rem">${esc(P.codigo || "…")}</div>
-      <button class="mini sec" id="bCopiar" style="margin-top:8px">Copiar código</button></div>
     <button class="sec big" id="bSalir">Cerrar sesión</button></div>`;
 }
 
