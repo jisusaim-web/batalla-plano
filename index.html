@@ -253,60 +253,55 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 .preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
 .preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 
-/* ===== Estilo vistoso: menús y botones (solo CSS, ligero para celular) ===== */
-:root{--g1:#00c2d7;--g2:#7c4dff;--g3:#ff3d9a;--grad:linear-gradient(120deg,var(--g1),var(--g2) 55%,var(--g3));--glow:0 8px 24px -6px rgba(124,77,255,.55)}
-@media (prefers-color-scheme:dark){:root{--g1:#3ee6f5;--g2:#9d7bff;--g3:#ff6fb5;--glow:0 8px 28px -6px rgba(157,123,255,.6)}}
-@keyframes flujo{0%{background-position:0% 50%}100%{background-position:200% 50%}}
-@keyframes brillo{0%{transform:translateX(-120%) skewX(-20deg)}100%{transform:translateX(260%) skewX(-20deg)}}
-@keyframes flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-/* botones principales */
-button:not(.link):not(.av):not(.emo):not(.reac):not(.sec):not(.kclear):not(.mini){
-  position:relative;overflow:hidden;border:0;border-radius:14px;color:#fff;letter-spacing:.2px;
-  background:var(--grad);background-size:200% 100%;animation:flujo 6s linear infinite;
-  box-shadow:var(--glow);transition:transform .18s cubic-bezier(.3,1.6,.5,1),box-shadow .2s,filter .2s}
-button:not(.link):not(.av):not(.emo):not(.reac)::after{content:"";position:absolute;inset:0;width:40%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-120%) skewX(-20deg);pointer-events:none}
-button:not(.link):not(.av):not(.emo):not(.reac):hover::after{animation:brillo .7s ease}
-button:not(.link):not(.av):not(.emo):not(.reac):hover{transform:translateY(-2px) scale(1.03);filter:saturate(1.15)}
-button:not(.link):not(.av):not(.emo):not(.reac):active{transform:scale(.95);box-shadow:none}
-button:disabled{animation:none;filter:grayscale(.6) opacity(.55);transform:none!important;box-shadow:none}
-/* botones secundarios: borde degradado */
-button.sec,button.kclear{border:2px solid transparent;border-radius:14px;color:var(--ink);
-  background:linear-gradient(var(--card),var(--card)) padding-box,var(--grad) border-box;
-  transition:transform .18s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}
-button.sec:hover,button.kclear:hover{transform:translateY(-2px) scale(1.03);box-shadow:var(--glow)}
-button.sec:active,button.kclear:active{transform:scale(.95)}
-button.mini{border-radius:10px}
-button.link{color:var(--g2);text-decoration-thickness:2px;text-underline-offset:3px}
-button.emo,button.reac,.reac{transition:transform .2s cubic-bezier(.3,1.8,.5,1)}
-button.emo:hover,.reac:hover{transform:scale(1.25) rotate(-6deg)}
-button.emo:active{transform:scale(.9)}
-.keypad-grid button{border-radius:12px}
-.history-pager button{border-radius:12px}
+/* ===== Estilo suave en relieve · paleta verde (051F20 0B2B26 163832 235347 8EB69B DAF1DE) ===== */
+:root{--p0:#051F20;--p1:#0B2B26;--p2:#163832;--p3:#235347;--p4:#8EB69B;--p5:#DAF1DE;
+  --bg:#DAF1DE;--card:#EBF8EE;--ink:#051F20;--mut:#3F6558;--line:#B5D3BF;--acc:#235347;--on:#DAF1DE;--off:#C6E1CD;
+  --grad-bg:linear-gradient(180deg,#DAF1DE 0%,#B9D8C2 100%);
+  --sombra:rgba(5,31,32,.5);--luz:rgba(255,255,255,.55);--halo:rgba(142,182,155,.55)}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#051F20;--card:#0B2B26;--ink:#DAF1DE;--mut:#8EB69B;--line:#163832;--acc:#8EB69B;--on:#051F20;--off:#0A2622;
+  --grad-bg:linear-gradient(180deg,#0B2B26 0%,#051F20 100%);
+  --sombra:rgba(0,0,0,.7);--luz:rgba(218,241,222,.07);--halo:rgba(142,182,155,.4)}}
+body{background:var(--grad-bg) fixed;min-height:100vh}
+/* botones: píldoras con relieve y borde inferior grueso */
+button{--bb:var(--acc);--bt:var(--on);--be:color-mix(in srgb,var(--acc) 55%,#000);
+  background:var(--bb);color:var(--bt);border:0;border-radius:999px;padding:11px 20px;letter-spacing:.2px;
+  box-shadow:0 4px 0 var(--be),0 12px 18px -10px var(--sombra),inset 0 1px 0 var(--luz);
+  transition:transform .12s ease,box-shadow .12s ease,filter .15s ease}
+button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--be),inset 0 3px 6px rgba(0,0,0,.25)}
+button:disabled{filter:grayscale(.5) opacity(.5);transform:none;box-shadow:0 2px 0 var(--be);cursor:not-allowed}
+button.sec,.keypad-grid button.kclear{--bb:var(--card);--bt:var(--ink);--be:color-mix(in srgb,var(--line) 70%,var(--ink) 30%);
+  background:var(--bb);color:var(--bt)}
+button.mini{padding:7px 14px}
+button.link{--bb:transparent;background:none;color:var(--ink);box-shadow:none;text-decoration:underline;text-underline-offset:3px;padding:6px 4px;border-radius:8px}
+button.link:hover,button.link:active{transform:none;box-shadow:none;filter:none}
+button.emo,.reac{--bb:var(--card);--bt:var(--ink);--be:var(--line);background:var(--bb);color:var(--bt);border-radius:999px}
+button.emo:hover,.reac:hover{transform:translateY(-2px) scale(1.12)}
+.keypad-grid button{border-radius:16px}
+.history-pager button{border-radius:999px}
+button:focus-visible,input:focus-visible{outline:0;box-shadow:0 0 0 4px var(--halo),0 0 0 1px var(--acc)}
+/* avatar */
+.av{box-shadow:0 3px 0 var(--be,#163832),0 0 0 3px var(--halo);background:var(--acc);color:var(--on);border-radius:50%;padding:0}
 /* cabecera */
-header{background:color-mix(in srgb,var(--card) 70%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:0;position:sticky}
-header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad);background-size:200% 100%;animation:flujo 6s linear infinite}
-header h1{font:800 1.25rem "Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;letter-spacing:.5px;
-  background:var(--grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flujo 6s linear infinite}
-.av{box-shadow:0 0 0 2px var(--g2),var(--glow);background:var(--grad)!important}
-/* menú inferior flotante */
-nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-bottom:0;border:1px solid color-mix(in srgb,var(--g2) 35%,transparent);
-  border-radius:22px;background:color-mix(in srgb,var(--card) 72%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  box-shadow:0 12px 34px -10px rgba(60,30,140,.5);max-width:456px;margin:0 auto}
-nav button{animation:none!important;box-shadow:none!important;background:none!important;color:var(--mut);border-radius:18px;margin:4px;padding:8px 0 6px;overflow:visible;transition:transform .25s cubic-bezier(.3,1.7,.5,1),color .2s}
-nav button::after{display:none}
-nav button:hover{transform:translateY(-3px);filter:none;color:var(--ink)}
-nav button.on{color:var(--g2)}
-nav button.on svg{stroke:var(--g2);transform:scale(1.2);animation:flota 2.4s ease-in-out infinite;filter:drop-shadow(0 4px 6px rgba(124,77,255,.5))}
-nav button.on::before{content:"";position:absolute;top:-1px;left:30%;right:30%;height:3px;border-radius:3px;background:var(--grad)}
-nav svg{transition:transform .25s}
-main{padding-bottom:110px}
-/* tarjetas */
-.card{border-radius:16px;border-color:color-mix(in srgb,var(--g2) 22%,var(--line));transition:transform .2s,box-shadow .2s}
-.card:hover{box-shadow:0 10px 28px -14px rgba(124,77,255,.55)}
-input:focus-visible{outline:0;border-color:var(--g2);box-shadow:0 0 0 3px color-mix(in srgb,var(--g2) 30%,transparent)}
-button:focus-visible{outline:3px solid color-mix(in srgb,var(--g1) 70%,transparent);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+header{background:var(--card);border-bottom:0;border-radius:0 0 24px 24px;box-shadow:0 12px 22px -16px var(--sombra),inset 0 -1px 0 var(--luz)}
+header h1{font:800 1.2rem "Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;letter-spacing:.4px;color:var(--ink)}
+/* menú inferior: panel en relieve; la pestaña activa es una píldora verde */
+nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:456px;margin:0 auto;padding:6px;gap:4px;
+  border:0;border-radius:28px;background:var(--card);box-shadow:0 16px 30px -14px var(--sombra),0 0 0 1px var(--line),inset 0 1px 0 var(--luz)}
+nav button{--bb:transparent;--bt:var(--mut);background:none;color:var(--bt);box-shadow:none;border-radius:22px;padding:8px 0 6px}
+nav button:hover{filter:none;transform:translateY(-1px);color:var(--ink)}
+nav button:active{transform:translateY(2px);box-shadow:inset 0 3px 6px rgba(0,0,0,.2)}
+nav button.on{--bb:var(--acc);--bt:var(--on);background:var(--acc);color:var(--on);
+  box-shadow:0 3px 0 color-mix(in srgb,var(--acc) 55%,#000),inset 0 1px 0 var(--luz)}
+main{padding-bottom:112px}
+/* tarjetas y campos */
+.card{border:0;border-radius:22px;background:var(--card);box-shadow:0 14px 24px -16px var(--sombra),0 0 0 1px var(--line),inset 0 1px 0 var(--luz)}
+input{border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--bg) 75%,var(--card));
+  box-shadow:inset 0 3px 6px -3px var(--sombra)}
+input:focus-visible{border-color:var(--acc)}
+.tag{background:var(--off)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
