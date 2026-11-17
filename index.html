@@ -260,7 +260,7 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
   --sh-d:rgba(0,0,0,.85);--sh-l:rgba(255,255,255,.06);--halo:rgba(239,233,220,.22);color-scheme:dark}}
 :root{--raise:7px 7px 16px var(--sh-d),-6px -6px 14px var(--sh-l);--raise-s:3px 3px 8px var(--sh-d),-3px -3px 8px var(--sh-l);
   --inset:inset 3px 3px 8px var(--sh-d),inset -3px -3px 8px var(--sh-l);--inset-s:inset 2px 2px 4px var(--sh-d),inset -2px -2px 4px var(--sh-l);
-  --muelle:cubic-bezier(.3,1.8,.5,1)}
+  --muelle:cubic-bezier(.3,1.8,.5,1);--cr:#B8921F;--cr-t:#1B1505}
 body{background:var(--bg);min-height:100vh;transition:background .4s,color .4s}
 h1,h2{font-family:"Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;font-weight:800;letter-spacing:.2px}
 @keyframes aparece{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -335,6 +335,10 @@ main{padding-bottom:114px}
 #splash{background:radial-gradient(circle at 50% 40%,#2B2A27,#0C0C0C 74%);color:#EFE9DC}
 #intro{background:radial-gradient(circle at 50% 45%,#2B2A27,#0A0A0A 76%);color:#EFE9DC}
 .vsv{color:#D9CFB8}.vss{color:#9A948A}
+.creador{font-weight:800;background:linear-gradient(90deg,color-mix(in srgb,var(--cr) 70%,#000),color-mix(in srgb,var(--cr) 50%,#fff),color-mix(in srgb,var(--cr) 70%,#000));background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:brilloNombre 4s linear infinite}
+.rol{display:inline-block;margin-left:7px;padding:2px 9px;border-radius:99px;font-size:.6rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;vertical-align:middle;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--cr) 80%,#000),color-mix(in srgb,var(--cr) 55%,#fff));color:var(--cr-t);box-shadow:0 2px 0 color-mix(in srgb,var(--cr) 50%,#000)}
+@keyframes brilloNombre{to{background-position:-220% 0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -392,7 +396,17 @@ const app = initializeApp({
 });
 const auth = getAuth(app), db = getFirestore(app);
 const $ = id => document.getElementById(id);
+// Etiqueta exclusiva del creador: se decide por UID (no por nombre ni por datos editables), así nadie más puede ponérsela.
+// Pega aquí tu UID (Firebase Console > Authentication > Usuarios > "UID de usuario").
+const CREADOR_UID = "uccLvAG8sSeh24PMnPMS7nBMNXi1";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nomHTML = (uid, nombre) => uid && uid === CREADOR_UID ? `<span class="creador">${esc(nombre)}</span><span class="rol">Creador</span>` : esc(nombre);
+function aplicarColorCreador(hex){   // el color lo publica solo el creador en ranking/{CREADOR_UID}; todos lo leen
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex || "")) hex = "#B8921F";
+  const n = parseInt(hex.slice(1), 16), lum = (0.299*(n>>16) + 0.587*((n>>8)&255) + 0.114*(n&255)) / 255;
+  document.documentElement.style.setProperty("--cr", hex);
+  document.documentElement.style.setProperty("--cr-t", lum > 0.55 ? "#1B1505" : "#FFFFFF");
+}
 const ERR = {
   "auth/invalid-credential":"Correo o contraseña incorrectos.","auth/invalid-email":"El correo no es válido.",
   "auth/email-already-in-use":"Ese correo ya tiene una cuenta. Inicia sesión.","auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
@@ -451,6 +465,7 @@ onAuthStateChanged(auth, async u => {
   await pausa(); spl.classList.add("fuera"); latido();
   $("auth").hidden = true; $("app").hidden = $("nav").hidden = $("hdr").hidden = false;
   subs.push(onSnapshot(doc(db,"users",u.uid), s => { const d = s.data() || {}, k = JSON.stringify({...d, visto:0}); P = s.data() || P; sincRank(); if (k !== kP){ kP = k; pintar(); } }));
+  if (CREADOR_UID.length > 20) subs.push(onSnapshot(doc(db,"ranking",CREADOR_UID), s => aplicarColorCreador(s.data()?.colorCreador), () => {}));
   subs.push(onSnapshot(query(collection(db,"amistades"), where("miembros","array-contains",u.uid)), s => { amistades = s.docs.map(d => ({id:d.id, ...d.data()})); suscribirAmigos(); pintar(); if (vista === "usuario") pintarUsuario(); }));
   subs.push(onSnapshot(query(collection(db,"games"), where("jugadores","array-contains",u.uid)), s => { partidas = s.docs.map(d => ({id:d.id, ...d.data()})); errPartidas = ""; pintar(); },
     e => { console.error("partidas:", e); errPartidas = e.code || "error"; pintar(); }));
@@ -540,7 +555,7 @@ function suscribirAmigos(){
 }
 function pintarInicio(){
   const cv = $("codigo")?.value || "";
-  $("v-inicio").innerHTML = `<div class="centro"><h2 style="margin:0">Hola, ${esc(nombre())}</h2>
+  $("v-inicio").innerHTML = `<div class="centro"><h2 style="margin:0">Hola, ${nomHTML(U.uid, nombre())}</h2>
     <button class="big" id="bCrear">Crear partida</button><div class="o">o</div>
     <div class="row"><input id="codigo" maxlength="5" style="text-transform:uppercase;text-align:center" placeholder="Código de la partida" value="${esc(cv)}"><button id="bUnir">Unirse</button></div>
     <p class="err" id="eInicio"></p></div>
@@ -551,7 +566,7 @@ const PAUSA_TXT = {solicitada:"Pausa solicitada", pausada:"Pausada", reanudar:"E
 const enPausa = g => g.estado !== "fin" && !!(g.pausa && PAUSA_TXT[g.pausa.estado]);
 function filaPartida(g){
   const pa = enPausa(g);
-  return `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${pa ? PAUSA_TXT[g.pausa.estado] : estadoTxt(g)}</span><br><small>Rival: ${esc(rival(g) || "esperando…")}</small></div><button class="mini" data-sala="${esc(g.id)}">${pa ? "Continuar" : "Abrir"}</button></div>`;
+  return `<div class="item"><div><b>${esc(g.id)}</b> <span class="tag">${pa ? PAUSA_TXT[g.pausa.estado] : estadoTxt(g)}</span><br><small>Rival: ${rival(g) ? nomHTML(g.j1 === U.uid ? g.j2 : g.j1, rival(g)) : "esperando…"}</small></div><button class="mini" data-sala="${esc(g.id)}">${pa ? "Continuar" : "Abrir"}</button></div>`;
 }
 function pintarPartidas(){
   const l = [...partidas].sort((a,b) => (b.creada?.seconds || 0) - (a.creada?.seconds || 0));
@@ -568,7 +583,7 @@ function pintarAmigos(){
   const acept = amistades.filter(a => a.estado === "aceptada");
   const rec = pendientes(), env = amistades.filter(a => a.estado === "pendiente" && a.pedidoPor === U.uid);
   const fila = (a, bot) => { const id = otro(a), d = amDocs[id] || {}, nom = a.nombres?.[id] || d.nombre || "Jugador";
-    return `<div class="item"><span style="display:flex;align-items:center;gap:8px">${avatarHTML({...d,nombre:nom},26)}<button class="link" data-perfil="${id}">${esc(nom)}</button></span><span>${bot}</span></div>`;
+    return `<div class="item"><span style="display:flex;align-items:center;gap:8px">${avatarHTML({...d,nombre:nom},26)}<button class="link" data-perfil="${id}">${nomHTML(id, nom)}</button></span><span>${bot}</span></div>`;
   };
   $("v-amigos").innerHTML = `<h2 style="margin-top:6px">Amigos</h2>
     <div class="card"><label for="cAmigo" style="margin-top:0">Agregar amigo con su código</label>
@@ -592,10 +607,13 @@ function pintarPerfil(){
   const RES = {victoria:["Victoria","win"], derrota:["Derrota","lose"], empate:["Empate",""]};
   const decoMarco = Object.hasOwn(MARCOS,P.marco) && desbloqueado(MARCOS[P.marco],P) ? P.marco : "ninguno";
   const decoEfecto = Object.hasOwn(EFECTOS,P.efecto) && desbloqueado(EFECTOS[P.efecto],P) ? P.efecto : "ninguno";
-  $("v-perfil").innerHTML = `<div class="profile-decor-shell frame-${decoMarco} effect-${decoEfecto}"><div class="profile-bg-layer" style="${fondoPerfilStyle(P)}"></div><div class="profile-decor-layer"></div><h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio())}
+  $("v-perfil").innerHTML = `<div class="profile-decor-shell frame-${decoMarco} effect-${decoEfecto}"><div class="profile-bg-layer" style="${fondoPerfilStyle(P)}"></div><div class="profile-decor-layer"></div><h2 style="margin-top:6px">Mi perfil</h2>${cabeceraPerfil(perfilMio(), false, U.uid)}
     <div class="card"><label for="pNombre" style="margin-top:0">Nombre de jugador</label>
       <div class="row"><input id="pNombre" maxlength="20" value="${esc(nombre())}"><button id="bNombre">Guardar</button></div>
       <p class="err" id="ePerfil"></p><small>${esc(U.email || "")}</small></div>
+    ${U.uid === CREADOR_UID ? `<div class="card"><label style="margin-top:0">Color de tu nombre de creador</label>
+      <div class="row"><input type="color" id="cCreador" value="${/^#[0-9a-fA-F]{6}$/.test(P.colorCreador || "") ? P.colorCreador : "#B8921F"}" style="height:46px;flex:1"><button class="sec" id="bCreadorReset">Restablecer</button></div>
+      <p style="margin:10px 0 0">${nomHTML(U.uid, nombre())}</p></div>` : ""}
     ${personalizarHTML()}${logrosHTML(perfilMio())}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${v}</b><span>Victorias</span></div><div><b>${d}</b><span>Derrotas</span></div>
       <div><b>${e}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${P.mejor || 0}</b><span>Mejor puntaje</span></div></div></div>
@@ -1016,7 +1034,7 @@ function escucharReacs(id){          // reacciones recientes: las ven jugadores 
 }
 function pintarReacs(){
   const e = $("reacs"); if (!e) return;
-  e.innerHTML = reacs.filter(r => Date.now() - r.t < 60000).map(r => `<span class="reac">${esc(r.emoji)} <small>${esc(r.nombre)}</small></span>`).join("");
+  e.innerHTML = reacs.filter(r => Date.now() - r.t < 60000).map(r => `<span class="reac">${esc(r.emoji)} <small>${nomHTML(r.uid, r.nombre)}</small></span>`).join("");
 }
 setInterval(pintarReacs, 5000);
 async function enviarEmoji(em){
@@ -1046,13 +1064,13 @@ function pintarEsp(){
   const nm = p => p === 1 ? g.n1 : g.n2, ult = g.lineas[g.lineas.length - 1];
   const est = g.estado === "fin" ? "Terminada" : g.pausa && ["pausada","reanudar"].includes(g.pausa.estado) ? "En pausa" : g.estado === "colocando" ? "Colocando barcos" : `Ronda ${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}`;
   const txt = l => `${nm(l.p)} (y = ${mTxt(l)}x ${ecB(l.b)}): ${l.rojo ? "tocó barcos" : "no tocó ningún barco"}. ` + (l.hits || []).map(h => `${h.n} −${h.d}%${h.h ? " ¡derribado!" : ""}${h.p ? ` +${h.p} pts` : ""}`).join(" | ");
-  $("v-sala").innerHTML = `<div class="bar"><span>Espectando</span><span><b>${esc(g.n1)}</b> ${g.pts[1]} – ${g.pts[2]} <b>${esc(g.n2 || "…")}</b></span><span>${est}</span></div>
+  $("v-sala").innerHTML = `<div class="bar"><span>Espectando</span><span><b>${nomHTML(g.j1, g.n1)}</b> ${g.pts[1]} – ${g.pts[2]} <b>${g.n2 ? nomHTML(g.j2, g.n2) : "…"}</b></span><span>${est}</span></div>
     ${g.estado === "fin" ? `<p class="msg">${g.ganador === 0 ? "Empate" : "Ganó " + esc(nm(g.ganador))}</p>` : ""}
     ${ult ? `<div class="card"><b>${esc(txt(ult))}</b></div>` : `<p class="mut">Aún no hay ataques.</p>`}
     <div class="reacs" id="reacs"></div>
     <div class="row">${EMOJIS.map(e => `<button class="sec emo" data-emoji="${e}" aria-label="Reaccionar ${e}">${e}</button>`).join("")}</div>
-    <h2>Ataques de ${esc(g.n1)}</h2>${radarEsp(g, 1)}
-    <h2>Ataques de ${esc(g.n2 || "…")}</h2>${radarEsp(g, 2)}
+    <h2>Ataques de ${nomHTML(g.j1, g.n1)}</h2>${radarEsp(g, 1)}
+    <h2>Ataques de ${g.n2 ? nomHTML(g.j2, g.n2) : "…"}</h2>${radarEsp(g, 2)}
     <div class="row" style="margin-top:14px"><button class="sec" id="dejarEsp">Dejar de espectar</button></div>`;
   pintarReacs(); $("dejarEsp").onclick = dejarEsp;
 }
@@ -1065,6 +1083,7 @@ function sincRank(){                 // publica estadísticas y personalización
   const d = {nombre:nombre(), puntos:P.puntos || 0, victorias:P.victorias || 0, derrotas:P.derrotas || 0, empates:P.empates || 0, mejor:P.mejor || 0};
   // Se envían también los campos vacíos para poder quitar una decoración sin dejar la anterior pegada.
   for (const c of ["avatar","avatarColor","bio","fondo","fondoPerfil","titulo","marco","efecto","insignia","estiloAvatar","avatarUrl","bannerUrl"]) d[c] = typeof P[c] === "string" ? P[c] : "";
+  if (U.uid === CREADOR_UID && /^#[0-9a-fA-F]{6}$/.test(P.colorCreador || "")) d.colorCreador = P.colorCreador;   // solo el creador puede publicarlo
   const k = JSON.stringify(d); if (k === kR) return; kR = k;
   setDoc(doc(db,"ranking",U.uid), d).catch(e => { console.error("No se pudo sincronizar el perfil público:", e); kR = ""; });
 }
@@ -1092,7 +1111,7 @@ function pintarRanking(){
     <div class="row" style="margin:0 0 8px;flex-wrap:wrap">${Object.entries(RK).map(([k,x]) => `<button class="mini ${k === rkTab ? "" : "sec"}" data-rk="${k}">${x.t}</button>`).join("")}<button class="mini sec" data-rk="actualizar">Actualizar</button></div>
     ${rkErr ? `<p class="err">No se pudo cargar la clasificación (${esc(rkErr)}).</p>` : ""}
     <div class="card">${rkCarga ? `<p class="mut">Cargando…</p>` : lista.length
-      ? lista.slice(0, 20).map((r,i) => `<div class="item"${r.id === U.uid ? ' style="font-weight:700"' : ""}><span>${medalla[i] || (i + 1) + "."} ${avatarHTML(r, 26)} <button class="link" data-perfil="${r.id}">${esc(r.nombre || "Jugador")}</button><br><small>${r.victorias || 0}V ${r.derrotas || 0}D ${r.empates || 0}E · ${r.puntos || 0} pts</small></span><b>${c.f(r)}</b></div>`).join("")
+      ? lista.slice(0, 20).map((r,i) => `<div class="item"${r.id === U.uid ? ' style="font-weight:700"' : ""}><span>${medalla[i] || (i + 1) + "."} ${avatarHTML(r, 26)} <button class="link" data-perfil="${r.id}">${nomHTML(r.id, r.nombre || "Jugador")}</button><br><small>${r.victorias || 0}V ${r.derrotas || 0}D ${r.empates || 0}E · ${r.puntos || 0} pts</small></span><b>${c.f(r)}</b></div>`).join("")
       : `<p class="mut">Todavía no hay partidas${rkTab === "winrate" ? " con al menos " + MIN_WR + " jugadas" : ""}.</p>`}</div>
     ${mi >= 20 ? `<p class="mut">Tu posición: #${mi + 1}</p>` : ""}
     <small>${rkTab === "winrate" ? `Win rate: solo cuentan jugadores con ${MIN_WR} o más partidas. ` : ""}Se muestran los 100 jugadores con más puntos.</small>`;
@@ -1210,14 +1229,14 @@ function avatarHTML(d, px){   // solo se dibuja lo permitido: el texto de otros 
   return `<span class="avt style-${estilo} mini-frame-${marco} mini-effect-${efecto}" style="width:${px}px;height:${px}px;font-size:${Math.round(px * .55)}px;background:${colorAv(d)}">${e}</span>`;
 }
 const perfilMio = () => ({...P, nombre:nombre()});
-function cabeceraPerfil(d, vistaPrevia=false){
+function cabeceraPerfil(d, vistaPrevia=false, uid=null){
   const f = fondoDe(d);
   const fondo = `background:linear-gradient(135deg,${f[1]},${f[2]})`;
   const marco = Object.hasOwn(MARCOS,d.marco) && (vistaPrevia || desbloqueado(MARCOS[d.marco],d)) ? d.marco : "ninguno";
   const efecto = Object.hasOwn(EFECTOS,d.efecto) && (vistaPrevia || desbloqueado(EFECTOS[d.efecto],d)) ? d.efecto : "ninguno";
   const estilo = Object.hasOwn(ESTILOS_AVATAR,d.estiloAvatar) ? d.estiloAvatar : "clasico";
   const ins=insigniaDe(d);
-  return `<div class="ph style-${estilo} frame-${marco} effect-${efecto}" style="${fondo}">${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${esc(d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
+  return `<div class="ph style-${estilo} frame-${marco} effect-${efecto}" style="${fondo}">${avatarHTML(d,64)}<div class="profile-copy"><div class="pn">${nomHTML(uid, d.nombre || "Jugador")}</div><div class="pt">${esc(tituloDe(d))}</div>${ins ? `<span class="featured">${ins.i} ${esc(ins.n)}</span>` : ""}${d.bio ? `<div class="pb">${esc(d.bio)}</div>` : ""}</div></div>`;
 }
 function logrosHTML(d){
   const l = logrosDe(d);
@@ -1251,6 +1270,7 @@ function personalizarPanel(){
 
 document.addEventListener("change", e => {
   if (e.target.id === "colorAvatarLibre" && U && hexValido(e.target.value)) updateDoc(doc(db,"users",U.uid), {avatarColor:e.target.value}).catch(()=>{});
+  if (e.target.id === "cCreador" && U && U.uid === CREADOR_UID && /^#[0-9a-fA-F]{6}$/.test(e.target.value)){ aplicarColorCreador(e.target.value); updateDoc(doc(db,"users",U.uid), {colorCreador:e.target.value}).catch(() => {}); }
   if (e.target.id === "selTitulo" && U) updateDoc(doc(db,"users",U.uid), {titulo:e.target.value}).catch(() => {});
   if (e.target.id === "selInsignia" && U) updateDoc(doc(db,"users",U.uid), {insignia:e.target.value}).catch(() => {});
 });
@@ -1332,7 +1352,7 @@ function pintarUsuario(){
   const [s, j] = estad(d), wr = j ? Math.round(s.victorias / j * 100) : 0;
   const marcoPub = Object.hasOwn(MARCOS,d.marco) && desbloqueado(MARCOS[d.marco],d) ? d.marco : "ninguno";
   const efectoPub = Object.hasOwn(EFECTOS,d.efecto) && desbloqueado(EFECTOS[d.efecto],d) ? d.efecto : "ninguno";
-  $("v-usuario").innerHTML = volver + `<div class="profile-decor-shell frame-${marcoPub} effect-${efectoPub}"><div class="profile-bg-layer" style="${fondoPerfilStyle(d)}"></div><div class="profile-decor-layer"></div><div style="margin-top:10px">${cabeceraPerfil(d)}</div>${bloqueAmistad()}
+  $("v-usuario").innerHTML = volver + `<div class="profile-decor-shell frame-${marcoPub} effect-${efectoPub}"><div class="profile-bg-layer" style="${fondoPerfilStyle(d)}"></div><div class="profile-decor-layer"></div><div style="margin-top:10px">${cabeceraPerfil(d, false, verUid)}</div>${bloqueAmistad()}
     <div class="card"><div class="stats" style="row-gap:14px"><div><b>${j}</b><span>Jugadas</span></div><div><b>${s.victorias}</b><span>Victorias</span></div><div><b>${s.derrotas}</b><span>Derrotas</span></div>
       <div><b>${s.empates}</b><span>Empates</span></div><div><b>${wr}%</b><span>Win rate</span></div><div><b>${s.mejor}</b><span>Mejor puntaje</span></div></div></div>` + logrosHTML(d) + historialOtro(d) + `</div>`;
 }
@@ -1396,7 +1416,7 @@ async function aceptarInv(id){
 
 function pintarSala(id, g){
   $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
-    <p>Jugador 1: ${esc(g.n1)}<br>Jugador 2: ${esc(g.n2 || "esperando rival…")}</p>
+    <p>Jugador 1: ${nomHTML(g.j1, g.n1)}<br>Jugador 2: ${g.n2 ? nomHTML(g.j2, g.n2) : "esperando rival…"}</p>
     <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p>${g.j2 ? "" : invitesSala(id)}</div>
     <button class="sec" data-go="partidas">Volver a mis partidas</button>`;
 }
@@ -1532,6 +1552,7 @@ Ya no aparecerá en tu lista de amigos.`
       if (P.codigo) await updateDoc(doc(db,"codigos",P.codigo), {nombre:n});
       $("ePerfil").textContent = ""; return pintar();
     }
+    if (t.id === "bCreadorReset" && U && U.uid === CREADOR_UID){ aplicarColorCreador(""); await updateDoc(doc(db,"users",U.uid), {colorCreador:""}).catch(() => {}); return; }
     if (t.id === "bCopiar"){ try { await navigator.clipboard.writeText(P.codigo || ""); t.textContent = "¡Copiado!"; } catch { t.textContent = P.codigo || ""; } return; }
     if (t.id === "bEjemplo") return await ejemplo();
     if (t.id === "solicitarPausa") return await solicitarPausa();
