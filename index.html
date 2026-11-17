@@ -57,7 +57,7 @@ details.h{border-bottom:1px solid var(--line);padding:8px 0}details.h:last-child
 .sweep{animation:giro 2.4s linear infinite}
 @keyframes giro{to{transform:rotate(360deg)}}
 .load{width:160px;height:4px;border-radius:2px;background:#ffffff26;margin:16px auto 0;overflow:hidden}
-.load i{display:block;height:100%;width:40%;background:#4fb3c6;animation:barra 1.2s ease-in-out infinite}
+.load i{display:block;height:100%;width:40%;background:#EFE9DC;animation:barra 1.2s ease-in-out infinite}
 @keyframes barra{0%{margin-left:-40%}100%{margin-left:100%}}
 @media (prefers-reduced-motion:reduce){.sweep,.load i{animation:none}}
 #auth{padding-top:10vh}
@@ -253,61 +253,95 @@ select{width:100%;padding:11px;font:inherit;border:1px solid var(--line);border-
 .preview-sample{margin:12px 0;padding:10px;border-radius:14px;background:var(--bg)}
 .preview-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 
-/* ===== Estilo suave en relieve · paleta verde (051F20 0B2B26 163832 235347 8EB69B DAF1DE) ===== */
-:root{--p0:#051F20;--p1:#0B2B26;--p2:#163832;--p3:#235347;--p4:#8EB69B;--p5:#DAF1DE;
-  --bg:#DAF1DE;--card:#EBF8EE;--ink:#051F20;--mut:#3F6558;--line:#B5D3BF;--acc:#235347;--on:#DAF1DE;--off:#C6E1CD;
-  --grad-bg:linear-gradient(180deg,#DAF1DE 0%,#B9D8C2 100%);
-  --sombra:rgba(5,31,32,.5);--luz:rgba(255,255,255,.55);--halo:rgba(142,182,155,.55)}
-@media (prefers-color-scheme:dark){:root{
-  --bg:#051F20;--card:#0B2B26;--ink:#DAF1DE;--mut:#8EB69B;--line:#163832;--acc:#8EB69B;--on:#051F20;--off:#0A2622;
-  --grad-bg:linear-gradient(180deg,#0B2B26 0%,#051F20 100%);
-  --sombra:rgba(0,0,0,.7);--luz:rgba(218,241,222,.07);--halo:rgba(142,182,155,.4)}}
-body{background:var(--grad-bg) fixed;min-height:100vh}
-/* botones: píldoras con relieve y borde inferior grueso */
-button{--bb:var(--acc);--bt:var(--on);--be:color-mix(in srgb,var(--acc) 55%,#000);
-  background:var(--bb);color:var(--bt);border:0;border-radius:999px;padding:11px 20px;letter-spacing:.2px;
-  box-shadow:0 4px 0 var(--be),0 12px 18px -10px var(--sombra),inset 0 1px 0 var(--luz);
-  transition:transform .12s ease,box-shadow .12s ease,filter .15s ease}
-button:hover{filter:brightness(1.08);transform:translateY(-1px)}
-button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--be),inset 0 3px 6px rgba(0,0,0,.25)}
-button:disabled{filter:grayscale(.5) opacity(.5);transform:none;box-shadow:0 2px 0 var(--be);cursor:not-allowed}
-button.sec,.keypad-grid button.kclear{--bb:var(--card);--bt:var(--ink);--be:color-mix(in srgb,var(--line) 70%,var(--ink) 30%);
-  background:var(--bb);color:var(--bt)}
+/* ===== Diseño en relieve · blanco y negro elegante (crema / tinta) · claro-oscuro según el dispositivo ===== */
+:root{--bg:#F1EBDF;--card:#F8F4EA;--ink:#181818;--mut:#6B665C;--line:#D8D1C2;--acc:#181818;--on:#F6F1E6;--off:#E6DFD0;
+  --sh-d:rgba(70,58,35,.30);--sh-l:rgba(255,255,255,.9);--halo:rgba(24,24,24,.2);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--card:#1B1B1A;--ink:#EFE9DC;--mut:#9A948A;--line:#2D2C2A;--acc:#EFE9DC;--on:#141414;--off:#0D0D0D;
+  --sh-d:rgba(0,0,0,.85);--sh-l:rgba(255,255,255,.06);--halo:rgba(239,233,220,.22);color-scheme:dark}}
+:root{--raise:7px 7px 16px var(--sh-d),-6px -6px 14px var(--sh-l);--raise-s:3px 3px 8px var(--sh-d),-3px -3px 8px var(--sh-l);
+  --inset:inset 3px 3px 8px var(--sh-d),inset -3px -3px 8px var(--sh-l);--inset-s:inset 2px 2px 4px var(--sh-d),inset -2px -2px 4px var(--sh-l);
+  --muelle:cubic-bezier(.3,1.8,.5,1)}
+body{background:var(--bg);min-height:100vh;transition:background .4s,color .4s}
+h1,h2{font-family:"Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;font-weight:800;letter-spacing:.2px}
+@keyframes aparece{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+main>section:not([hidden]){animation:aparece .38s var(--muelle)}
+/* cabecera y tarjetas */
+header{background:var(--bg);border:0;border-radius:0 0 26px 26px;box-shadow:0 10px 22px -12px var(--sh-d),0 1px 0 var(--sh-l)}
+.card{background:var(--card);border:0;border-radius:24px;padding:16px;margin:16px 0;box-shadow:var(--raise),inset 0 1px 0 var(--sh-l)}
+.card .card{box-shadow:var(--inset);background:var(--bg)}
+.item{border-bottom:1px solid var(--line)}
+/* botones con profundidad: borde grueso inferior; al presionar se hunden y rebotan */
+button{--bb:var(--acc);--bt:var(--on);--edge:color-mix(in srgb,var(--bb) 55%,#7A7468);
+  position:relative;background:var(--bb);color:var(--bt);border:0;border-radius:999px;padding:11px 20px;
+  box-shadow:0 5px 0 var(--edge),0 14px 20px -10px var(--sh-d),inset 0 1px 0 rgba(255,255,255,.22);
+  transition:transform .4s var(--muelle),box-shadow .25s ease,filter .15s ease;-webkit-tap-highlight-color:transparent}
+button::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transform:scale(.3);
+  background:radial-gradient(circle,rgba(255,255,255,.4),transparent 65%);transition:opacity .45s ease,transform .45s ease}
+button:active::after{opacity:1;transform:scale(1.1);transition:none}
+@media (hover:hover){button:hover{transform:translateY(-2px);filter:brightness(1.06);
+  box-shadow:0 7px 0 var(--edge),0 18px 24px -12px var(--sh-d),inset 0 1px 0 rgba(255,255,255,.22)}}
+button:active{transform:translateY(4px) scale(.97);filter:brightness(.96);
+  box-shadow:0 1px 0 var(--edge),inset 0 3px 8px rgba(0,0,0,.28);transition:transform .06s ease-out,box-shadow .06s ease-out}
+button:disabled{box-shadow:0 2px 0 var(--edge);filter:grayscale(1) opacity(.45);transform:none;cursor:not-allowed}
+button:disabled::after{display:none}
+button.sec,.keypad-grid button.kclear{--bb:var(--card);--bt:var(--ink);background:var(--bb);color:var(--bt)}
 button.mini{padding:7px 14px}
+.big{border-radius:28px;padding:17px}
 button.link{--bb:transparent;background:none;color:var(--ink);box-shadow:none;text-decoration:underline;text-underline-offset:3px;padding:6px 4px;border-radius:8px}
-button.link:hover,button.link:active{transform:none;box-shadow:none;filter:none}
-button.emo,.reac{--bb:var(--card);--bt:var(--ink);--be:var(--line);background:var(--bb);color:var(--bt);border-radius:999px}
-button.emo:hover,.reac:hover{transform:translateY(-2px) scale(1.12)}
-.keypad-grid button{border-radius:16px}
-.history-pager button{border-radius:999px}
-button:focus-visible,input:focus-visible{outline:0;box-shadow:0 0 0 4px var(--halo),0 0 0 1px var(--acc)}
-/* avatar */
-.av{box-shadow:0 3px 0 var(--be,#163832),0 0 0 3px var(--halo);background:var(--acc);color:var(--on);border-radius:50%;padding:0}
-/* cabecera */
-header{background:var(--card);border-bottom:0;border-radius:0 0 24px 24px;box-shadow:0 12px 22px -16px var(--sombra),inset 0 -1px 0 var(--luz)}
-header h1{font:800 1.2rem "Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;letter-spacing:.4px;color:var(--ink)}
-/* menú inferior: panel en relieve; la pestaña activa es una píldora verde */
+button.link::after{display:none}
+button.link:hover,button.link:active{box-shadow:none;filter:none;transform:none}
+button.emo,.reac{--bb:var(--card);--bt:var(--ink);background:var(--bb);color:var(--bt);border:0;border-radius:999px}
+.reac{box-shadow:var(--raise-s)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:0}
+button:focus-visible{box-shadow:0 5px 0 var(--edge),0 0 0 4px var(--halo)}
+/* campos hundidos */
+input,select{background:var(--bg);border:0;border-radius:18px;padding:12px 16px;box-shadow:var(--inset);transition:box-shadow .2s}
+input:focus-visible,select:focus-visible{box-shadow:var(--inset),0 0 0 3px var(--halo)}
+input[type=color]{padding:4px;border-radius:14px}
+label{margin:12px 0 6px 4px}
+.av{box-shadow:0 3px 0 var(--edge),var(--raise-s);background:var(--acc);color:var(--on);padding:0;border-radius:50%}
+/* menú inferior */
 nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:456px;margin:0 auto;padding:6px;gap:4px;
-  border:0;border-radius:28px;background:var(--card);box-shadow:0 16px 30px -14px var(--sombra),0 0 0 1px var(--line),inset 0 1px 0 var(--luz)}
-nav button{--bb:transparent;--bt:var(--mut);background:none;color:var(--bt);box-shadow:none;border-radius:22px;padding:8px 0 6px}
-nav button:hover{filter:none;transform:translateY(-1px);color:var(--ink)}
-nav button:active{transform:translateY(2px);box-shadow:inset 0 3px 6px rgba(0,0,0,.2)}
-nav button.on{--bb:var(--acc);--bt:var(--on);background:var(--acc);color:var(--on);
-  box-shadow:0 3px 0 color-mix(in srgb,var(--acc) 55%,#000),inset 0 1px 0 var(--luz)}
-main{padding-bottom:112px}
-/* tarjetas y campos */
-.card{border:0;border-radius:22px;background:var(--card);box-shadow:0 14px 24px -16px var(--sombra),0 0 0 1px var(--line),inset 0 1px 0 var(--luz)}
-input{border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--bg) 75%,var(--card));
-  box-shadow:inset 0 3px 6px -3px var(--sombra)}
-input:focus-visible{border-color:var(--acc)}
-.tag{background:var(--off)}
+  border:0;border-radius:30px;background:var(--bg);box-shadow:var(--raise),inset 0 1px 0 var(--sh-l)}
+nav button{--bb:transparent;--bt:var(--mut);background:none;color:var(--bt);box-shadow:none;border-radius:24px;padding:8px 0 6px}
+nav button::after{display:none}
+nav button:hover{filter:none;transform:none;color:var(--ink);box-shadow:none}
+nav button:active{transform:scale(.94);box-shadow:var(--inset);filter:none}
+nav button.on{color:var(--ink);box-shadow:var(--inset)}
+nav svg{transition:transform .35s var(--muelle)}
+nav button.on svg{transform:translateY(-2px) scale(1.15)}
+main{padding-bottom:114px}
+/* etiquetas, logros, teclado, paginador */
+.tag{border:0;box-shadow:var(--inset-s);padding:3px 11px}
+.logro{border:0;border-radius:18px;background:var(--bg);box-shadow:var(--raise-s)}
+.keypad{border:0;border-radius:24px;background:var(--bg);box-shadow:var(--inset);padding:12px}
+.keypad-grid{gap:10px}
+.keypad-grid button{border-radius:18px}
+.keypad-grid button:active{transform:translateY(4px) scale(.95)}
+.history-pager{border:0;border-radius:999px;background:var(--bg);box-shadow:var(--inset);padding:6px}
+.history-pager button{border-radius:999px}
+.history-scroll::-webkit-scrollbar-thumb,.pers-section::-webkit-scrollbar-thumb{background:var(--mut)}
+/* personalización */
+.pers-tabs{background:var(--card)}
+.pers-tab{--bb:var(--bg);--bt:var(--mut);background:var(--bb);color:var(--bt);border:0}
+.pers-tab.active{--bb:var(--bg);--bt:var(--ink);box-shadow:var(--inset);border:0}
+.style-choice,.insb,.profile-bg-choice,.cosmetic{--bb:var(--bg);--bt:var(--ink);background:var(--bb);color:var(--bt);border:0}
+.cosmetic,.style-choice,.profile-bg-choice{border-radius:18px}
+.style-choice.sel,.cosmetic.sel,.profile-bg-choice.sel{outline:0;border:0;box-shadow:var(--inset),0 0 0 2px var(--ink)}
+.palette-swatch.sel,.gradient-swatch.sel{outline:0;box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--ink)}
+.sw{border:0}
+#zoom .zbox{border-radius:26px;background:var(--bg);box-shadow:var(--raise)}
+/* pantallas de carga y de enfrentamiento: negro y crema */
+#splash{background:radial-gradient(circle at 50% 40%,#2B2A27,#0C0C0C 74%);color:#EFE9DC}
+#intro{background:radial-gradient(circle at 50% 45%,#2B2A27,#0A0A0A 76%);color:#EFE9DC}
+.vsv{color:#D9CFB8}.vss{color:#9A948A}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div id="splash"><div>
-  <svg class="radar" viewBox="-50 -50 100 100" aria-hidden="true"><circle r="46" fill="none" stroke="#4fb3c6" stroke-opacity=".55"/><circle r="30" fill="none" stroke="#4fb3c6" stroke-opacity=".4"/><circle r="14" fill="none" stroke="#4fb3c6" stroke-opacity=".3"/><path d="M-50 0H50M0 -50V50" stroke="#4fb3c6" stroke-opacity=".35"/><g class="sweep"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="#4fb3c6" fill-opacity=".38"/></g><circle cx="18" cy="-12" r="2.5" fill="#ff6b57"/><circle cx="-22" cy="16" r="2.5" fill="#e0a800"/></svg>
-  <div style="font:700 1.9rem Georgia,serif">Batalla en el plano</div><small style="color:#8fa9b1">Cargando…</small><div class="load"><i></i></div>
+  <svg class="radar" viewBox="-50 -50 100 100" aria-hidden="true"><circle r="46" fill="none" stroke="#EFE9DC" stroke-opacity=".55"/><circle r="30" fill="none" stroke="#EFE9DC" stroke-opacity=".4"/><circle r="14" fill="none" stroke="#EFE9DC" stroke-opacity=".3"/><path d="M-50 0H50M0 -50V50" stroke="#EFE9DC" stroke-opacity=".35"/><g class="sweep"><path d="M0 0L46 0A46 46 0 0 0 32.5 -32.5Z" fill="#EFE9DC" fill-opacity=".38"/></g><circle cx="18" cy="-12" r="2.5" fill="#ff6b57"/><circle cx="-22" cy="16" r="2.5" fill="#e0a800"/></svg>
+  <div style="font:700 1.9rem Georgia,serif">Batalla en el plano</div><small style="color:#EFE9DC">Cargando…</small><div class="load"><i></i></div>
 </div></div>
 <header id="hdr" hidden><button class="av" id="hAv" aria-label="Mi perfil"></button><h1>Batalla en el plano</h1><span style="width:36px"></span></header>
 <main>
