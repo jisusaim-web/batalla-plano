@@ -538,6 +538,7 @@ main{padding-bottom:114px}
 .profile-decor-shell.effect-reflejo .profile-decor-layer::before{background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.28) 44%,rgba(255,255,255,.7) 50%,rgba(255,255,255,.28) 56%,transparent 64%);animation-duration:5s}
 .profile-decor-shell.effect-reflejo .profile-decor-layer::after{animation-duration:5s}
 @keyframes fxFlash{0%,100%{opacity:0}50%{opacity:1}}
+.fxroot{position:fixed;pointer-events:none;z-index:60;overflow:hidden;border-radius:6px}.fxroot svg{position:absolute;inset:0;width:100%;height:100%}.fxtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;font:900 clamp(1.5rem,7vw,2.5rem) system-ui,sans-serif;letter-spacing:.07em;gap:6px}.fxtxt small{font:700 .9rem system-ui,sans-serif;letter-spacing:.04em;color:#fff;text-shadow:0 1px 4px #000c;padding:0 10px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -889,9 +890,135 @@ async function alCambiar(id, g){
     if (g.cancelada) guardado = true;
     if (!guardado && f[U.uid] && (f[yo === 1 ? g.j2 : g.j1] || g.abandonoPor)){ guardado = true; guardarFin(); }
   }
+  // ataque nuevo: se anima el lanzamiento (no se repite al abrir o recargar la partida)
+  if (lineasVistas[id] === undefined) lineasVistas[id] = g.lineas.length;
+  else if (g.lineas.length > lineasVistas[id]){
+    lineasVistas[id] = g.lineas.length; const nueva = g.lineas[g.lineas.length - 1];
+    if (!reducirMov() && g.estado !== "colocando"){ const idx = g.lineas.length - 1; lineaFx = idx; setTimeout(() => animarAtaque(nueva), 90); setTimeout(() => { if (lineaFx === idx) lineaFx = null; }, 9000); }
+  }
   const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null]);
   if (h !== huella){ huella = h; pintarPartida(); }
   else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
+}
+
+/* --- animaciones de lanzamiento, impacto y hundimiento --- */
+let fxPend = null, lineaFx = null, lineasVistas = {};
+const reducirMov = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const esperar = ms => new Promise(ok => setTimeout(ok, ms));
+const tween = (ms, f) => new Promise(ok => { const t0 = performance.now(); const paso = now => { const t = Math.min(1, (now - t0) / ms); f(t); t < 1 ? requestAnimationFrame(paso) : ok(); }; requestAnimationFrame(paso); });
+const NS_SVG = "http://www.w3.org/2000/svg";
+function mk(tag, attrs, padre){ const e = document.createElementNS(NS_SVG, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (padre) padre.appendChild(e); return e; }
+function vibrar(p){ try { navigator.vibrate && navigator.vibrate(p); } catch {} }
+// tramo de la recta que cae dentro del tablero, a ambos lados de la base (0, b)
+function tramoRecta(m, b){
+  let x0 = -15, x1 = 15;
+  if (Math.abs(m) > 1e-9){ const xa = (-15 - b) / m, xb = (15 - b) / m; x0 = Math.max(-15, Math.min(xa, xb)); x1 = Math.min(15, Math.max(xa, xb)); }
+  return {x0: Math.min(x0, 0), x1: Math.max(x1, 0)};
+}
+// capa de efectos pegada al radar (sigue al radar aunque la pantalla se vuelva a dibujar o se haga scroll)
+function crearFx(cual){
+  const radar = () => { const c = $(cual); return c && c.querySelector("svg"); };
+  const root = document.createElement("div");
+  root.className = "fxroot";
+  root.innerHTML = `<svg viewBox="-15.6 -15.6 31.2 31.2"><g transform="scale(1,-1)"></g></svg><div class="fxtxt"></div>`;
+  document.body.appendChild(root);
+  const colocar = () => {
+    const el = radar();
+    if (el){ const r = el.getBoundingClientRect(); Object.assign(root.style, {left:r.left + "px", top:r.top + "px", width:r.width + "px", height:r.height + "px"}); }
+    else Object.assign(root.style, {left:"0", top:"0", width:"100vw", height:"100vh"});
+  };
+  colocar(); let vivo = true; const seguir = () => { if (vivo){ colocar(); requestAnimationFrame(seguir); } }; seguir();
+  const g = root.querySelector("g"), txt = root.querySelector(".fxtxt");
+  return {
+    g: radar() ? g : null, root,
+    decir(t, color, sub, ms = 1700){
+      txt.innerHTML = `<span style="color:${color};text-shadow:0 2px 0 #000a,0 0 22px ${color}">${esc(t)}</span>${sub ? `<small>${esc(sub)}</small>` : ""}`;
+      txt.animate([{opacity:0, transform:"scale(.55)"}, {opacity:1, transform:"scale(1.1)", offset:.16}, {opacity:1, transform:"scale(1)", offset:.8}, {opacity:0, transform:"scale(1.04)"}], {duration:ms, fill:"forwards"});
+    },
+    flash(c){ root.animate([{background:c + "00"}, {background:c}, {background:c + "00"}], {duration:460}); },
+    sacudir(){ const f = [{transform:"translate(0,0)"}, {transform:"translate(-5px,2px)"}, {transform:"translate(5px,-3px)"}, {transform:"translate(-3px,-2px)"}, {transform:"translate(2px,2px)"}, {transform:"translate(0,0)"}]; radar()?.animate(f, {duration:420}); root.animate(f, {duration:420}); },
+    fin(){ vivo = false; root.remove(); }
+  };
+}
+// estallido en una celda: aro, bola de fuego y chispas
+async function explotar(fx, cx, cy, color){
+  if (!fx.g) return;
+  const aro = mk("circle", {cx, cy, r:.2, fill:"none", stroke:"#fff", "stroke-width":.14}, fx.g);
+  const bola = mk("circle", {cx, cy, r:.1, fill:"#ffb020"}, fx.g), nucleo = mk("circle", {cx, cy, r:.05, fill:"#fff"}, fx.g);
+  const ch = Array.from({length:9}, (_, i) => { const a = i / 9 * Math.PI * 2 + Math.random() * .5; return {a, l:mk("line", {x1:cx, y1:cy, x2:cx, y2:cy, stroke:i % 2 ? "#ffd166" : color, "stroke-width":.13, "stroke-linecap":"round"}, fx.g)}; });
+  await tween(620, t => {
+    const e = easeOut(t);
+    aro.setAttribute("r", .2 + e * 1.9); aro.setAttribute("opacity", 1 - t);
+    bola.setAttribute("r", .1 + Math.sin(Math.min(1, t * 1.4) * Math.PI) * .95); bola.setAttribute("opacity", 1 - t * .9);
+    nucleo.setAttribute("r", .05 + (1 - t) * .4); nucleo.setAttribute("opacity", 1 - t);
+    for (const c of ch){ c.l.setAttribute("x1", cx + Math.cos(c.a) * e * .7); c.l.setAttribute("y1", cy + Math.sin(c.a) * e * .7); c.l.setAttribute("x2", cx + Math.cos(c.a) * e * 2.2); c.l.setAttribute("y2", cy + Math.sin(c.a) * e * 2.2); c.l.setAttribute("opacity", 1 - t); }
+  });
+  [aro, bola, nucleo, ...ch.map(c => c.l)].forEach(e => e.remove());
+}
+// ondas en el agua (cuando la recta no toca nada)
+async function salpicar(fx, puntos){
+  if (!fx.g) return;
+  const aros = puntos.map(p => [mk("circle", {cx:p.x, cy:p.y, r:.1, fill:"none", stroke:"#8fd3ff", "stroke-width":.1}, fx.g), mk("circle", {cx:p.x, cy:p.y, r:.1, fill:"none", stroke:"#d6f0ff", "stroke-width":.06}, fx.g)]);
+  await tween(900, t => aros.forEach(([a, b], i) => { const u = Math.max(0, Math.min(1, t * 1.25 - i * .08)); a.setAttribute("r", .1 + easeOut(u) * 1.6); a.setAttribute("opacity", 1 - u); b.setAttribute("r", .05 + easeOut(Math.max(0, u - .2)) * 1.1); b.setAttribute("opacity", Math.max(0, .8 - u)); }));
+  aros.flat().forEach(e => e.remove());
+}
+// hundimiento: el barco se inclina, se hunde bajo una capa de agua y suben burbujas
+async function hundir(fx, barco){
+  if (!fx.g) return;
+  const C = CL[barco.i], xs = barco.celdas.map(c => c.x), ys = barco.celdas.map(c => c.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs) + 1, y0 = Math.min(...ys), y1 = Math.max(...ys) + 1, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const grupo = mk("g", {}, fx.g);
+  for (const c of barco.celdas) mk("rect", {x:c.x + .06, y:c.y + .06, width:.88, height:.88, rx:.12, fill:C.c}, grupo);
+  const agua = mk("rect", {x:x0 - .3, y:y0 - .3, width:x1 - x0 + .6, height:0, fill:"#4aa8ff", opacity:.42, rx:.3}, fx.g);
+  const burb = Array.from({length:8}, (_, i) => ({x:x0 + Math.random() * (x1 - x0), d:Math.random() * .4, v:.9 + Math.random() * .9, e:mk("circle", {r:.1 + Math.random() * .14, fill:"none", stroke:"#e6f6ff", "stroke-width":.06}, fx.g)}));
+  const ang = (barco.celdas.length > 1 && (x1 - x0) >= (y1 - y0) ? 1 : -1) * 14;
+  await tween(1900, t => {
+    const e = t * t * (3 - 2 * t);
+    grupo.setAttribute("transform", `translate(${cx} ${cy - e * .9}) rotate(${ang * e}) scale(${1 - .18 * e}) translate(${-cx} ${-cy})`);
+    grupo.setAttribute("opacity", Math.max(0, 1 - Math.max(0, t - .35) * 1.55));
+    const h = Math.min(1, t * 1.6) * (y1 - y0 + .6); agua.setAttribute("height", h); agua.setAttribute("y", y0 - .3); agua.setAttribute("opacity", .42 * (1 - Math.max(0, t - .7) / .3));
+    for (const b of burb){ const u = Math.max(0, t - b.d); b.e.setAttribute("cx", b.x + Math.sin(u * 9 + b.v) * .18); b.e.setAttribute("cy", cy - .3 + u * b.v * 3.2); b.e.setAttribute("opacity", u > 0 ? Math.max(0, 1 - u * 1.15) : 0); }
+  });
+  [grupo, agua, ...burb.map(b => b.e)].forEach(e => e.remove());
+}
+async function animarAtaque(l){
+  const fin = () => { lineaFx = null; for (const c of ["atk", "def"]) if ($(c) && G && G.estado === "batalla") $(c).innerHTML = radarH(c, c === "atk" ? {linea:(G.turno === yo && !G.ataque) ? leerRecta() : null} : undefined); };
+  if (reducirMov() || !G){ fin(); return; }
+  const mia = l.p === yo, pend = fxPend && fxPend.n === G.lineas.length ? fxPend : null; fxPend = null;
+  const fx = crearFx(mia ? "atk" : "def");
+  try {
+    const col = l.rojo ? "#ff6a3d" : "#5ab4ff", y = x => l.m * x + l.b, {x0, x1} = tramoRecta(l.m, l.b);
+    if (fx.g){
+      // carga en la base (0, b)
+      const halo = mk("circle", {cx:0, cy:l.b, r:.2, fill:"none", stroke:"#fff", "stroke-width":.12}, fx.g);
+      await tween(260, t => { halo.setAttribute("r", .2 + t * 1.5); halo.setAttribute("opacity", 1 - t); }); halo.remove();
+      // la recta sale disparada hacia los dos lados
+      const estela = [-1, 1].map(() => mk("line", {x1:0, y1:l.b, x2:0, y2:l.b, stroke:col, "stroke-width":.2, "stroke-linecap":"round", opacity:.95}, fx.g));
+      const cabeza = [-1, 1].map(() => { const g = mk("g", {}, fx.g); mk("circle", {r:.75, fill:col, opacity:.3}, g); mk("circle", {r:.38, fill:"#fff"}, g); return g; });
+      await tween(780, t => { const e = easeOut(t); [x0, x1].forEach((xe, i) => { const xv = xe * e; estela[i].setAttribute("x2", xv); estela[i].setAttribute("y2", y(xv)); cabeza[i].setAttribute("transform", `translate(${xv} ${y(xv)})`); }); });
+      cabeza.forEach(c => c.remove());
+      estela.forEach(e => e.animate([{opacity:.95}, {opacity:0}], {duration:520, fill:"forwards"}));
+    } else await esperar(300);
+    if (mia){
+      const hund = (l.hits || []).filter(h => h.h);
+      if (l.rojo){ fx.flash("rgba(255,70,40,.28)"); fx.sacudir(); vibrar(hund.length ? [70, 50, 160] : 70); fx.decir("¡IMPACTO!", "#ff7a4d", (l.hits || []).map(h => h.n).filter((n, i, a) => a.indexOf(n) === i).join(" · "), hund.length ? 1100 : 1800); }
+      else { await salpicar(fx, [x0 * .9, x1 * .9].map(xv => ({x:xv, y:y(xv)})).filter(p => Math.abs(p.y) <= 14.5)); fx.decir("AGUA", "#7cc7ff", "No tocó ningún barco", 1300); }
+      if (hund.length){ if (l.rojo) await esperar(1000); fx.flash("rgba(80,170,255,.30)"); vibrar([90, 60, 200]); fx.decir("¡HUNDIDO!", "#9fe3ff", hund.map(h => h.n).join(" · "), 2000); await esperar(1900); }
+      else await esperar(1100);
+    } else {
+      const imp = pend ? pend.impactos : [];
+      if (imp.length){
+        fx.flash("rgba(255,70,40,.28)"); fx.sacudir(); vibrar(80);
+        await Promise.all(imp.map((c, i) => esperar(i * 140).then(() => explotar(fx, c.x + .5, c.y + .5, CL[c.i].c))));
+        const hundidos = pend.hundidos || [];
+        if (hundidos.length){ fx.decir("¡TE HUNDIERON!", "#ff8a8a", hundidos.map(b => CL[b.i].n).join(" · "), 2300); vibrar([90, 60, 220]); await Promise.all(hundidos.map(b => hundir(fx, b))); await esperar(300); }
+        else fx.decir("¡TE IMPACTARON!", "#ff7a4d", imp.map(c => CL[c.i].n).filter((n, i, a) => a.indexOf(n) === i).join(" · "), 1300);
+      } else if (l.rojo) fx.decir("¡TE IMPACTARON!", "#ff7a4d", "", 1300);
+      else { const pts = [.3, .55, .8].map(u => { const xv = x0 + (x1 - x0) * u; return {x:xv, y:y(xv)}; }); await salpicar(fx, pts); fx.decir("AGUA", "#7cc7ff", "Esquivaste el ataque", 1100); await esperar(500); }
+    }
+  } catch (e){ console.error("animación:", e); }
+  fx.fin(); fin();
 }
 
 /* --- dibujo --- */
@@ -906,7 +1033,7 @@ function radarH(modo, prev, place){
   }
   if (prev && prev.celdas) for (const c of prev.celdas) g += `<rect x="${c.x}" y="${c.y}" width="1" height="1" fill="${prev.ok ? "#2e7d32" : "#d23a2a"}" opacity=".55"/>`;
   g += `<path d="M-15 0H15M0 -15V15" stroke="var(--ink)" stroke-width=".07"/>`;
-  for (const l of G.lineas.filter(l => modo === "atk" ? l.p === yo : l.p !== yo)) g += ln(l.m, l.b, l.rojo ? "var(--err)" : "var(--azul)", .1, "");
+  for (const l of G.lineas.filter((l, i) => i !== lineaFx && (modo === "atk" ? l.p === yo : l.p !== yo))) g += ln(l.m, l.b, l.rojo ? "var(--err)" : "var(--azul)", .1, "");
   if (modo === "def" && G.apunta && G.apunta.p !== yo) g += ln(G.apunta.m, G.apunta.b, "var(--err)", .06, ".25 .2");
   if (prev && prev.linea) g += ln(prev.linea.m, prev.linea.b, "var(--acc)", .08, ".25 .2");
   let t = "";
@@ -1092,7 +1219,7 @@ function avanzar(g, pts){
 async function resolver(){          // lo hace el defensor: solo él conoce sus barcos
   resolviendo = true;
   try {
-    const a = G.ataque, hits = []; let toca = false, suma = 0;
+    const a = G.ataque, hits = [], impactos = [], hundidos = []; let toca = false, suma = 0;
     var bakMis = JSON.stringify(mis), bakGast = [...gast];
     for (const s of mis){
       if (s.hund) continue;   // un barco ya derribado cuenta como agua
@@ -1108,9 +1235,11 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
       s.pagado = total; suma += ganado;
       if (!s.hund && s.dano >= C.um) s.hund = true;
       hits.push({k:s.k, n:C.n, d, t:s.dano, h:s.hund, p:ganado});
+      impactos.push({x:c.x, y:c.y, i:s.i}); if (s.hund) hundidos.push({i:s.i, celdas:s.celdas.map(z => ({x:z.x, y:z.y}))});
     }
     toca = hits.length > 0;   // solo es "tocó" si la recta causó daño nuevo; si no, es agua
     const gana = mis.every(s => s.hund);
+    fxPend = {n:(G.lineas || []).length + 1, impactos, hundidos};   // el defensor conoce las celdas: se usan para la animación
     await setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[...gast]});
     await runTransaction(db, async tx => {
       const ref = doc(db,"games",gid), g = (await tx.get(ref)).data();
@@ -1121,7 +1250,7 @@ async function resolver(){          // lo hace el defensor: solo él conoce sus 
       tx.update(ref, patch);
     });
   } catch (e){
-    console.error(e);
+    console.error(e); fxPend = null;
     // si la transacción falló, se deshace el daño local para que el reintento no lo pierda
     if (typeof bakMis === "string"){ mis = JSON.parse(bakMis); gast = new Set(bakGast); setDoc(doc(db,"games",gid,"privado",U.uid), {ships:mis, gast:[...gast]}).catch(() => {}); }
   }
