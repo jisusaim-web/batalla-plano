@@ -539,6 +539,7 @@ main{padding-bottom:114px}
 .profile-decor-shell.effect-reflejo .profile-decor-layer::after{animation-duration:5s}
 @keyframes fxFlash{0%,100%{opacity:0}50%{opacity:1}}
 .fxroot{position:fixed;pointer-events:none;z-index:60;overflow:hidden;border-radius:6px}.fxroot svg{position:absolute;inset:0;width:100%;height:100%}.fxtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;font:900 clamp(1.5rem,7vw,2.5rem) system-ui,sans-serif;letter-spacing:.07em;gap:6px}.fxtxt small{font:700 .9rem system-ui,sans-serif;letter-spacing:.04em;color:#fff;text-shadow:0 1px 4px #000c;padding:0 10px}
+#v3root{position:fixed;inset:0;z-index:55;background:#0a2230;display:flex;flex-direction:column;color:#e9f4fa}.v3bar{display:flex;align-items:center;gap:8px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:#0e2f42;flex-wrap:wrap}.v3bar b{font-size:1rem}.v3est{flex:1;font-size:.8rem;opacity:.85}.v3tabs{display:flex;gap:6px}.v3tabs button.on{box-shadow:inset 3px 3px 7px rgba(0,0,0,.35);filter:brightness(.92)}.v3cv{flex:1;position:relative;min-height:0;touch-action:none}.v3hint{padding:6px 12px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:.75rem;opacity:.7;text-align:center;background:#0e2f42}h2 .mini{font-size:.7rem;padding:4px 11px;margin-left:8px;vertical-align:middle}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -899,6 +900,7 @@ async function alCambiar(id, g){
   const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null]);
   if (h !== huella){ huella = h; pintarPartida(); }
   else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
+  sync3D();
 }
 
 /* --- animaciones de lanzamiento, impacto y hundimiento --- */
@@ -986,6 +988,7 @@ async function animarAtaque(l){
   const fin = () => { lineaFx = null; for (const c of ["atk", "def"]) if ($(c) && G && G.estado === "batalla") $(c).innerHTML = radarH(c, c === "atk" ? {linea:(G.turno === yo && !G.ataque) ? leerRecta() : null} : undefined); };
   if (reducirMov() || !G){ fin(); return; }
   const mia = l.p === yo, pend = fxPend && fxPend.n === G.lineas.length ? fxPend : null; fxPend = null;
+  if (v3 && v3.abierto){ try { await animar3D(l, pend); } catch (e){ console.error(e); } fin(); return; }
   const fx = crearFx(mia ? "atk" : "def");
   try {
     const col = l.rojo ? "#ff6a3d" : "#5ab4ff", y = x => l.m * x + l.b, {x0, x1} = tramoRecta(l.m, l.b);
@@ -1019,6 +1022,186 @@ async function animarAtaque(l){
     }
   } catch (e){ console.error("animación:", e); }
   fx.fin(); fin();
+}
+
+/* --- vista 3D (Three.js se carga solo al abrir el visor) --- */
+let v3 = null;
+const cargarThree = () => new Promise((ok, no) => { if (window.THREE) return ok(); const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+const P3 = (x, y, h = 0) => new THREE.Vector3(x, h, -y);       // tablero (x, y) → mundo 3D (el eje y del tablero apunta "al norte")
+function acomodar(m, p1, p2){ const d = new THREE.Vector3().subVectors(p2, p1), l = d.length() || .001; m.position.copy(p1).addScaledVector(d, .5); m.scale.y = l; m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); }
+function tubo(p1, p2, r, color, op){ const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 10, 1, true), new THREE.MeshBasicMaterial({color, transparent:true, opacity:op, depthWrite:false})); acomodar(m, p1, p2); return m; }
+function rayo3D(m, b, color, r, op){
+  const {x0, x1} = tramoRecta(m, b), g = new THREE.Group(), a = P3(x0, m * x0 + b, .2), c = P3(x1, m * x1 + b, .2);
+  g.add(tubo(a, c, r, color, op), tubo(a, c, r * 2.6, color, op * .22));
+  const punto = new THREE.Mesh(new THREE.SphereGeometry(r * 2.4, 12, 10), new THREE.MeshBasicMaterial({color, transparent:true, opacity:op})); punto.position.copy(P3(0, b, .2)); g.add(punto);
+  return g;
+}
+function etiqueta(texto, color = "#d9f0ff"){
+  const cv = document.createElement("canvas"); cv.width = 128; cv.height = 64; const c = cv.getContext("2d");
+  c.font = "bold 40px system-ui,sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = color; c.shadowColor = "#000a"; c.shadowBlur = 6; c.fillText(texto, 64, 34);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv), transparent:true, depthWrite:false})); s.scale.set(1.6, .8, 1); return s;
+}
+function liberar(grupo){ grupo.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material){ (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.map && m.map.dispose(); m.dispose(); }); } }); while (grupo.children.length) grupo.remove(grupo.children[0]); }
+function barco3D(s, enPie){
+  const C = CL[s.i], xs = s.celdas.map(c => c.x), ys = s.celdas.map(c => c.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs) + 1, y0 = Math.min(...ys), y1 = Math.max(...ys) + 1;
+  const horiz = (x1 - x0) >= (y1 - y0), L = Math.max(x1 - x0, y1 - y0) - .12, W = .8, a = L / 2;
+  const col = new THREE.Color(C.c), oscuro = col.clone().multiplyScalar(.5), claro = col.clone().lerp(new THREE.Color(0xffffff), .5);
+  const mat = c => new THREE.MeshStandardMaterial({color:c, roughness:.55, metalness:.25});
+  const caja = (w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); return m; };
+  const cil = (r, h, c, x, y, z, rz) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 14), mat(c)); m.position.set(x, y, z); if (rz) m.rotation.z = rz; return m; };
+  const g = new THREE.Group();
+  if (C.n === "Submarino"){
+    g.add(cil(.3, L - .5, col, 0, .1, 0, Math.PI / 2));
+    for (const sx of [-1, 1]){ const e = new THREE.Mesh(new THREE.SphereGeometry(.3, 16, 12), mat(col)); e.position.set(sx * (L - .5) / 2, .1, 0); g.add(e); }
+    g.add(caja(.5, .3, .24, oscuro, 0, .4, 0), cil(.03, .34, claro, .12, .7, 0), caja(.12, .03, .03, claro, .06, .86, 0));
+  } else {
+    const sh = new THREE.Shape(); sh.moveTo(-a, -W / 2); sh.lineTo(a - .6, -W / 2); sh.quadraticCurveTo(a - .1, -W / 2, a, 0); sh.quadraticCurveTo(a - .1, W / 2, a - .6, W / 2); sh.lineTo(-a, W / 2); sh.lineTo(-a, -W / 2);
+    const casco = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {depth:.32, bevelEnabled:false}), mat(col)); casco.rotation.x = -Math.PI / 2; casco.position.y = -.02; g.add(casco);
+    if (C.n === "Portaaviones"){
+      g.add(caja(L - .4, .05, W + .16, 0xcfd6dd, -.1, .34, 0), caja(L - .7, .006, .05, 0xffe27a, -.15, .37, 0), caja(.5, .46, .26, oscuro, L * .2, .58, W / 2 - .02));
+      g.add(caja(.22, .05, .2, 0x8a96a3, -L * .25, .4, .15), caja(.22, .05, .2, 0x8a96a3, -L * .05, .4, -.18));
+    } else if (C.n === "Acorazado"){
+      g.add(caja(L - .5, .04, W - .1, claro, -.2, .33, 0), caja(.5, .4, .42, oscuro, -.05, .53, 0), cil(.09, .3, 0x2a2f36, -.5, .6, 0));
+      for (const px of [-L * .32, L * .28]){ g.add(cil(.2, .16, oscuro, px, .42, 0)); for (const sz of [-.07, .07]) g.add(cil(.035, .6, 0x2a2f36, px + .32, .44, sz, Math.PI / 2)); }
+    } else {
+      g.add(caja(L - .4, .04, W - .12, claro, -.1, .33, 0), caja(.4, .3, .32, oscuro, -.1, .5, 0), cil(.1, .26, 0x2a2f36, -.4, .56, 0), cil(.15, .12, oscuro, L * .26, .4, 0), cil(.03, .5, 0x2a2f36, L * .26 + .3, .42, 0, Math.PI / 2));
+    }
+  }
+  const sub = new THREE.Group(); sub.add(g); sub.rotation.y = horiz ? 0 : Math.PI / 2; sub.position.set((x0 + x1) / 2, .06, -(y0 + y1) / 2);
+  if (s.hund && !enPie){ g.position.y = -.5; g.rotation.z = .4; g.traverse(o => { if (o.material && o.material.color) o.material.color.multiplyScalar(.55); }); }
+  sub.userData.g = g; return sub;
+}
+function marca3D(c){   // celda dañada
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.CircleGeometry(.32, 16), new THREE.MeshBasicMaterial({color:0x140a08, transparent:true, opacity:.85})); m.rotation.x = -Math.PI / 2; m.position.y = .42; g.add(m);
+  const e = new THREE.Mesh(new THREE.SphereGeometry(.1, 10, 8), new THREE.MeshBasicMaterial({color:0xff8a3d})); e.position.y = .5; g.add(e); g.userData.brasa = e;
+  g.position.set(c.x + .5, 0, -(c.y + .5)); return g;
+}
+function sync3D(){
+  if (!v3 || !v3.abierto || v3.animando || !G) return;
+  liberar(v3.dyn); v3.barcos = new Map(); v3.brasas = [];
+  const modo = v3.vista, zona = PERM[modo === "def" ? yo : 3 - yo];
+  [1, 2, 3, 4].filter(q => !zona.includes(q)).forEach(q => { const m = new THREE.Mesh(new THREE.PlaneGeometry(15, 15), new THREE.MeshBasicMaterial({color:0x04141d, transparent:true, opacity:.55})); m.rotation.x = -Math.PI / 2; m.position.set(q === 1 || q === 4 ? 7.5 : -7.5, .11, q === 1 || q === 2 ? -7.5 : 7.5); v3.dyn.add(m); });
+  if (modo === "def"){
+    for (const s of mis){ const b = barco3D(s, v3.enPie && v3.enPie.has(`${s.celdas[0].x},${s.celdas[0].y}`)); v3.barcos.set(`${s.celdas[0].x},${s.celdas[0].y}`, b); v3.dyn.add(b); for (const c of s.celdas) if (gast.has(kk(c))){ const mk3 = marca3D(c); v3.brasas.push(mk3.userData.brasa); v3.dyn.add(mk3); } }
+  }
+  G.lineas.forEach((l, i) => { if (i === lineaFx || (modo === "atk" ? l.p !== yo : l.p === yo)) return; v3.dyn.add(rayo3D(l.m, l.b, l.rojo ? 0xff4d3a : 0x4aa8ff, .07, .95)); });
+  if (modo === "def" && G.apunta && G.apunta.p !== yo) v3.dyn.add(rayo3D(G.apunta.m, G.apunta.b, 0xff7a6a, .04, .5));
+  if (modo === "atk" && G.estado === "batalla" && G.turno === yo && !G.ataque){ const r = leerRecta(); if (r) v3.dyn.add(rayo3D(r.m, r.b, 0xffffff, .045, .65)); }
+  v3.estado.textContent = G.estado === "batalla" ? `${G.turno === yo ? "Tu turno" : "Turno del rival"} · Ronda ${G.ronda}/${RONDAS}` : "";
+  v3.root.querySelectorAll("[data-v3=def],[data-v3=atk]").forEach(b => b.classList.toggle("on", b.dataset.v3 === modo));
+}
+async function abrir3D(vista){
+  if (v3 && v3.abierto){ v3.vista = vista; sync3D(); return; }
+  try { await cargarThree(); } catch { alert("No se pudo cargar el visor 3D (necesita internet). La vista 2D sigue disponible."); return; }
+  const root = document.createElement("div"); root.id = "v3root";
+  root.innerHTML = `<div class="v3bar"><b>Vista 3D</b><span class="v3est"></span><div class="v3tabs"><button class="mini sec" data-v3="def">Mi flota</button><button class="mini sec" data-v3="atk">Radar de ataque</button></div><button class="mini" data-v3="cerrar">Cerrar</button></div><div class="v3cv"></div><div class="v3hint">Arrastra para girar · pellizca o usa la rueda para acercar · doble toque para centrar</div>`;
+  document.body.appendChild(root);
+  const cv = root.querySelector(".v3cv"), renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); cv.appendChild(renderer.domElement);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0a2230); scene.fog = new THREE.Fog(0x0a2230, 48, 100);
+  const cam = new THREE.PerspectiveCamera(45, 1, .1, 200);
+  scene.add(new THREE.HemisphereLight(0xcfe9ff, 0x0b2a3a, .65)); const sol = new THREE.DirectionalLight(0xffffff, .8); sol.position.set(-12, 22, 10); scene.add(sol);
+  const mar = new THREE.Mesh(new THREE.PlaneGeometry(30, 30, 40, 40), new THREE.MeshPhongMaterial({color:0x14658c, shininess:80, specular:0x7fc4ea, transparent:true, opacity:.8}));
+  mar.rotation.x = -Math.PI / 2; scene.add(mar); const base0 = mar.geometry.attributes.position.array.slice();
+  const rejilla = new THREE.GridHelper(30, 30, 0x9fd8f5, 0x4a9bc4); rejilla.position.y = .1; rejilla.material.transparent = true; rejilla.material.opacity = .4; scene.add(rejilla);
+  const eje = (w, d) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, .05, d), new THREE.MeshBasicMaterial({color:0xffffff})); m.position.y = .12; scene.add(m); };
+  eje(30, .07); eje(.07, 30);
+  const marco = new THREE.Mesh(new THREE.BoxGeometry(30.4, .5, 30.4), new THREE.MeshBasicMaterial({color:0x0e3a52, wireframe:false, side:THREE.BackSide})); marco.position.y = -.26; scene.add(marco);
+  for (let i = -15; i <= 15; i += 5){ if (!i) continue; const a = etiqueta(String(i)); a.position.set(i, .15, .9); scene.add(a); const b = etiqueta(String(i)); b.position.set(-.9, .15, -i); scene.add(b); }
+  const ex = etiqueta("x", "#ffe27a"); ex.position.set(15.9, .15, 0); scene.add(ex); const ey = etiqueta("y", "#ffe27a"); ey.position.set(0, .15, -15.9); scene.add(ey);
+  const dyn = new THREE.Group(), fxg = new THREE.Group(); scene.add(dyn, fxg);
+  v3 = {abierto:true, vista, root, renderer, scene, cam, dyn, fxg, mar, base0, estado:root.querySelector(".v3est"), camP:{az:0, el:1, d:60}, manual:false, sacudida:0, tics:[], barcos:new Map(), brasas:[], animando:false, enPie:null, raf:0};
+  const distAjustada = a => Math.min(100, Math.max(32 / (.828 * a), 33)) * .95;   // que el tablero entre completo en la pantalla
+  const ajustar = () => { const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); renderer.domElement.style.cssText = "width:100%;height:100%;display:block"; cam.aspect = w / h; cam.updateProjectionMatrix(); if (!v3.manual) v3.camP.d = distAjustada(cam.aspect); };
+  const cerrar = () => { if (!v3) return; v3.abierto = false; cancelAnimationFrame(v3.raf); window.removeEventListener("resize", ajustar); liberar(scene); renderer.dispose(); root.remove(); v3 = null; lineaFx = null; };
+  root.addEventListener("click", e => { const b = e.target.closest("[data-v3]"); if (!b) return; if (b.dataset.v3 === "cerrar") return cerrar(); v3.vista = b.dataset.v3; sync3D(); });
+  window.addEventListener("resize", ajustar); ajustar();
+  // cámara: arrastrar gira, pellizco o rueda acerca
+  const ptr = new Map(); let dist0 = 0, ultimoToque = 0;
+  const el = renderer.domElement; el.style.touchAction = "none";
+  el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); ptr.set(e.pointerId, {x:e.clientX, y:e.clientY}); if (ptr.size === 2){ const [p, q] = [...ptr.values()]; dist0 = Math.hypot(p.x - q.x, p.y - q.y); } const t = Date.now(); if (t - ultimoToque < 300){ v3.manual = false; v3.camP = {az:0, el:1, d:distAjustada(cam.aspect)}; } ultimoToque = t; });
+  el.addEventListener("pointermove", e => { const p = ptr.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    v3.manual = true; if (ptr.size === 1){ v3.camP.az -= dx * .008; v3.camP.el = Math.max(.3, Math.min(1.5, v3.camP.el + dy * .006)); }
+    else if (ptr.size === 2){ const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (dist0) v3.camP.d = Math.max(12, Math.min(100, v3.camP.d * dist0 / d)); dist0 = d; } });
+  const soltar = e => { ptr.delete(e.pointerId); dist0 = 0; }; el.addEventListener("pointerup", soltar); el.addEventListener("pointercancel", soltar);
+  el.addEventListener("wheel", e => { e.preventDefault(); v3.manual = true; v3.camP.d = Math.max(12, Math.min(100, v3.camP.d * (1 + Math.sign(e.deltaY) * .08))); }, {passive:false});
+  // bucle de dibujo
+  let k = 0, t0 = performance.now();
+  const bucle = now => {
+    if (!v3 || !v3.abierto) return; const t = (now - t0) / 1000; k++;
+    const pos = mar.geometry.attributes.position.array; for (let i = 0; i < pos.length; i += 3) pos[i + 2] = Math.sin(base0[i] * .5 + t * 1.4) * .04 + Math.cos(base0[i + 1] * .6 + t * 1.1) * .035;
+    mar.geometry.attributes.position.needsUpdate = true; if (k % 3 === 0) mar.geometry.computeVertexNormals();
+    for (const b of v3.brasas) b.material.color.setHSL(.07 + Math.sin(t * 6 + b.id) * .02, 1, .5 + Math.sin(t * 9 + b.id) * .1);
+    const cp = v3.camP, s = v3.sacudida; v3.sacudida *= .9;
+    cam.position.set(cp.d * Math.cos(cp.el) * Math.sin(cp.az) + (Math.random() - .5) * s, cp.d * Math.sin(cp.el) + (Math.random() - .5) * s, cp.d * Math.cos(cp.el) * Math.cos(cp.az)); cam.lookAt(0, 0, 0);
+    for (const f of [...v3.tics]) f(now);
+    renderer.render(scene, cam); v3.raf = requestAnimationFrame(bucle);
+  };
+  v3.raf = requestAnimationFrame(bucle); sync3D();
+}
+// --- animaciones en 3D ---
+function anillo3D(x, y, color, ms, tam){
+  const m = new THREE.Mesh(new THREE.RingGeometry(.9, 1, 40), new THREE.MeshBasicMaterial({color, transparent:true, opacity:.9, side:THREE.DoubleSide, depthWrite:false})); m.rotation.x = -Math.PI / 2; m.position.set(x, .12, -y); v3.fxg.add(m);
+  return tween(ms, t => { const e = easeOut(t); m.scale.setScalar(.2 + e * tam); m.material.opacity = .9 * (1 - t); }).then(() => { v3.fxg.remove(m); m.geometry.dispose(); m.material.dispose(); });
+}
+async function explotar3D(cx, cy){
+  const n = 50, pos = new Float32Array(n * 3), vel = [], c = P3(cx, cy, .5);
+  for (let i = 0; i < n; i++){ pos.set([c.x, c.y, c.z], i * 3); vel.push(new THREE.Vector3((Math.random() - .5) * 6, Math.random() * 6 + 1.5, (Math.random() - .5) * 6)); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({color:0xffc15a, size:.3, transparent:true, opacity:1, depthWrite:false}));
+  const bola = new THREE.Mesh(new THREE.SphereGeometry(.4, 16, 12), new THREE.MeshBasicMaterial({color:0xffa030, transparent:true, opacity:.95})); bola.position.copy(c);
+  const luz = new THREE.PointLight(0xffa040, 4, 10); luz.position.copy(c).add(new THREE.Vector3(0, 1, 0));
+  v3.fxg.add(pts, bola, luz); v3.sacudida = .5; anillo3D(cx, cy, 0xffe0a0, 800, 2.4);
+  let ant = 0;
+  await tween(950, t => { const dt = (t - ant) * .95; ant = t; for (let i = 0; i < n; i++){ vel[i].y -= 9 * dt; pos[i * 3] += vel[i].x * dt; pos[i * 3 + 1] += vel[i].y * dt; pos[i * 3 + 2] += vel[i].z * dt; } geo.attributes.position.needsUpdate = true; pts.material.opacity = 1 - t; bola.scale.setScalar(1 + Math.sin(Math.min(1, t * 1.5) * Math.PI) * 2); bola.material.opacity = .95 * (1 - t); luz.intensity = 4 * (1 - t); });
+  [pts, bola, luz].forEach(o => { v3.fxg.remove(o); o.geometry && o.geometry.dispose(); o.material && o.material.dispose(); });
+}
+async function hundir3D(s){
+  const b = v3.barcos.get(`${s.celdas[0].x},${s.celdas[0].y}`); if (!b) return;
+  const g = b.userData.g, cx = b.position.x, cz = b.position.z, nb = 14, pos = new Float32Array(nb * 3), vel = [];
+  for (let i = 0; i < nb; i++){ pos.set([cx + (Math.random() - .5) * 2, .1, cz + (Math.random() - .5) * .8], i * 3); vel.push(.8 + Math.random() * 1.4); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const burb = new THREE.Points(geo, new THREE.PointsMaterial({color:0xe6f6ff, size:.22, transparent:true, opacity:.9, depthWrite:false})); v3.fxg.add(burb);
+  anillo3D(cx, -cz, 0xbfe6ff, 1700, 3.2);
+  await tween(1900, t => { const e = t * t * (3 - 2 * t); g.position.y = -.5 * e; g.rotation.z = .4 * e; g.traverse(o => { if (o.material && o.material.color && o.userData.c0 === undefined) o.userData.c0 = o.material.color.clone(); if (o.userData.c0) o.material.color.copy(o.userData.c0).multiplyScalar(1 - .45 * e); });
+    for (let i = 0; i < nb; i++) pos[i * 3 + 1] = .1 + t * vel[i] * 2.6; geo.attributes.position.needsUpdate = true; burb.material.opacity = .9 * (1 - t * t); });
+  v3.fxg.remove(burb); geo.dispose(); burb.material.dispose();
+}
+async function animar3D(l, pend){
+  const mia = l.p === yo;
+  if ((v3.vista === "atk") !== mia){ lineaFx = null; sync3D(); return; }      // ese ataque se ve en la otra vista
+  v3.animando = true; const keys = new Set((pend && pend.hundidos || []).map(b => `${b.celdas[0].x},${b.celdas[0].y}`)); v3.enPie = keys; v3.animando = false; sync3D(); v3.animando = true;
+  const fx = crearFx("__3d");
+  try {
+    const col = l.rojo ? 0xff6a3d : 0x5ab4ff, y = x => l.m * x + l.b, {x0, x1} = tramoRecta(l.m, l.b), h = .22, base = P3(0, l.b, h);
+    anillo3D(0, l.b, 0xffffff, 380, 1.6); await esperar(260);
+    const tubos = [x0, x1].map(() => tubo(base, base.clone().add(new THREE.Vector3(.01, 0, 0)), .1, col, .95));
+    const cabezas = [x0, x1].map(() => { const s = new THREE.Mesh(new THREE.SphereGeometry(.3, 16, 12), new THREE.MeshBasicMaterial({color:0xffffff})); s.add(new THREE.PointLight(col, 2, 7)); s.position.copy(base); return s; });
+    v3.fxg.add(...tubos, ...cabezas);
+    await tween(780, t => { const e = easeOut(t); [x0, x1].forEach((xe, i) => { const p = P3(xe * e, y(xe * e), h); acomodar(tubos[i], base, p); cabezas[i].position.copy(p); }); });
+    cabezas.forEach(c => { v3.fxg.remove(c); c.geometry.dispose(); c.material.dispose(); });
+    tween(520, t => tubos.forEach(m => m.material.opacity = .95 * (1 - t))).then(() => tubos.forEach(m => { v3.fxg.remove(m); m.geometry.dispose(); m.material.dispose(); }));
+    if (mia){
+      const hund = (l.hits || []).filter(z => z.h);
+      if (l.rojo){ fx.flash("rgba(255,70,40,.28)"); v3.sacudida = .5; vibrar(hund.length ? [70, 50, 160] : 70); fx.decir("¡IMPACTO!", "#ff7a4d", (l.hits || []).map(z => z.n).filter((n, i, a) => a.indexOf(n) === i).join(" · "), hund.length ? 1100 : 1800); }
+      else { await Promise.all([x0 * .9, x1 * .9].filter(xv => Math.abs(y(xv)) <= 14.5).map(xv => anillo3D(xv, y(xv), 0xbfe6ff, 900, 2.2))); fx.decir("AGUA", "#7cc7ff", "No tocó ningún barco", 1300); }
+      if (hund.length){ if (l.rojo) await esperar(1000); fx.flash("rgba(80,170,255,.30)"); vibrar([90, 60, 200]); fx.decir("¡HUNDIDO!", "#9fe3ff", hund.map(z => z.n).join(" · "), 2000); await esperar(1900); }
+      else await esperar(1100);
+    } else {
+      const imp = pend ? pend.impactos : [];
+      if (imp.length){
+        fx.flash("rgba(255,70,40,.28)"); vibrar(80);
+        await Promise.all(imp.map((c, i) => esperar(i * 140).then(() => explotar3D(c.x + .5, c.y + .5))));
+        const hundidos = pend.hundidos || [];
+        if (hundidos.length){ fx.decir("¡TE HUNDIERON!", "#ff8a8a", hundidos.map(z => CL[z.i].n).join(" · "), 2300); vibrar([90, 60, 220]); await Promise.all(hundidos.map(z => hundir3D(z))); await esperar(300); }
+        else fx.decir("¡TE IMPACTARON!", "#ff7a4d", imp.map(c => CL[c.i].n).filter((n, i, a) => a.indexOf(n) === i).join(" · "), 1300);
+      } else if (l.rojo) fx.decir("¡TE IMPACTARON!", "#ff7a4d", "", 1300);
+      else { await Promise.all([.3, .55, .8].map(u => { const xv = x0 + (x1 - x0) * u; return anillo3D(xv, y(xv), 0xbfe6ff, 900, 2.2); })); fx.decir("AGUA", "#7cc7ff", "Esquivaste el ataque", 1100); await esperar(500); }
+    }
+  } catch (e){ console.error("animación 3D:", e); }
+  fx.fin(); if (v3){ v3.animando = false; v3.enPie = null; lineaFx = null; sync3D(); }
 }
 
 /* --- dibujo --- */
@@ -1119,10 +1302,10 @@ function pintarPartida(){
     h += `<p class="msg">${g.ataque ? "Resolviendo el ataque…" : miT ? (g.ronda <= 4 ? "Tu turno: ataque desde el origen, elige la pendiente m." : "Tu turno: elige m y b.") : "Turno de " + esc(riv) + "…"}</p>
       ${ult ? `<div class="card"><b>${esc(ultTxt(ult))}</b></div>` : ""}${msgP ? `<p class="msg">${msgP}</p>` : ""}
       <p><small>Barcos rivales tocados: ${esc(resumenH())}</small></p>
-      <h2>Radar de ataque</h2><div class="rad" id="atk">${radarH("atk", {linea:miT ? leerRecta() : null})}</div>
+      <h2>Radar de ataque <button class="mini sec" data-abrir3d="atk">Ver en 3D</button></h2><div class="rad" id="atk">${radarH("atk", {linea:miT ? leerRecta() : null})}</div>
       ${miT ? `<div class="row"><div class="frac">m (pendiente)<div class="fr"><input id="mn" type="text" inputmode="none" autocomplete="off" aria-label="Numerador de m" value="${esc(vmn)}"><hr><input id="md" type="text" inputmode="none" autocomplete="off" aria-label="Denominador de m" value="${esc(vmd)}"></div></div>
         <label>b (eje Y)<input id="b" type="text" inputmode="none" autocomplete="off" value="${g.ronda <= 4 ? 0 : esc(vb)}" ${g.ronda <= 4 ? "disabled" : ""}></label><button id="fire">Disparar recta</button></div><div class="keypad" aria-label="Teclado numérico"><div class="keypad-head"><span>Teclado numérico</span><span id="keyTarget">Editando: numerador</span></div><div class="keypad-grid">${["7","8","9","4","5","6","1","2","3","−","0","."].map(k => `<button type="button" class="sec" data-key="${k}">${k}</button>`).join("")}<button type="button" class="sec kwide" data-key="back">⌫ Borrar</button><button type="button" class="sec kwide kclear" data-key="clear">Limpiar</button><button type="button" class="sec kwide" data-key="sign">+/−</button></div></div>` : ""}
-      <h2>Mi radar de defensa</h2><div class="rad" id="def">${radarH("def")}</div>`;
+      <h2>Mi radar de defensa <button class="mini sec" data-abrir3d="def">Ver en 3D</button></h2><div class="rad" id="def">${radarH("def")}</div>`;
   }
   if (pa && pa.estado === "solicitada"){
     const yoSolicite = pa.solicitadaPor === U.uid;
@@ -1806,6 +1989,7 @@ function previsualizarCosmetico(tipo, clave){
 /* ---------- Acciones (delegación de eventos) ---------- */
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t || !U) return;
+  if (t.dataset.abrir3d){ abrir3D(t.dataset.abrir3d); return; }
   const d = t.dataset;
   try {
     if (d.liveReport !== undefined) return abrirInformeAtaques(G?.lineas || [], G?.n1 || "Jugador 1", G?.n2 || "Jugador 2", G?.pts?.[1] || 0, G?.pts?.[2] || 0);
