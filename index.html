@@ -540,6 +540,9 @@ main{padding-bottom:114px}
 @keyframes fxFlash{0%,100%{opacity:0}50%{opacity:1}}
 .fxroot{position:fixed;pointer-events:none;z-index:60;overflow:hidden;border-radius:6px}.fxroot svg{position:absolute;inset:0;width:100%;height:100%}.fxtxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;font:900 clamp(1.5rem,7vw,2.5rem) system-ui,sans-serif;letter-spacing:.07em;gap:6px}.fxtxt small{font:700 .9rem system-ui,sans-serif;letter-spacing:.04em;color:#fff;text-shadow:0 1px 4px #000c;padding:0 10px}
 #v3root{position:fixed;inset:0;z-index:55;background:#0a2230;display:flex;flex-direction:column;color:#e9f4fa}.v3bar{display:flex;align-items:center;gap:8px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:#0e2f42;flex-wrap:wrap}.v3bar b{font-size:1rem}.v3est{flex:1;font-size:.8rem;opacity:.85}.v3tabs{display:flex;gap:6px}.v3tabs button.on{box-shadow:inset 3px 3px 7px rgba(0,0,0,.35);filter:brightness(.92)}.v3cv{flex:1;position:relative;min-height:0;touch-action:none}.v3hint{padding:6px 12px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:.75rem;opacity:.7;text-align:center;background:#0e2f42}h2 .mini{font-size:.7rem;padding:4px 11px;margin-left:8px;vertical-align:middle}
+#chatBtn{position:fixed;right:14px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:70;width:54px;height:54px;padding:0;border-radius:50%;font-size:1.5rem}#chatBadge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#e11d48;color:#fff;font:800 .72rem system-ui;display:flex;align-items:center;justify-content:center;padding:0 5px}#chatBadge[hidden]{display:none}
+#chatPanel{position:fixed;right:10px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:71;width:min(370px,calc(100vw - 20px));height:min(62vh,460px);display:flex;flex-direction:column;background:var(--card);border-radius:22px;box-shadow:var(--raise),0 0 0 1px var(--line);overflow:hidden}#chatPanel[hidden]{display:none}.ch-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}#chatLista{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.cm{max-width:84%;align-self:flex-start;background:var(--bg);box-shadow:var(--inset-s);border-radius:14px;padding:6px 11px;display:flex;flex-direction:column;overflow-wrap:anywhere}.cm small{color:var(--mut);font-size:.68rem}.cm span{font-size:.92rem}.cm.mio{align-self:flex-end;background:var(--acc);color:var(--on)}.cm.mio small{color:inherit;opacity:.75}.ch-in{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}.ch-in input{flex:1;min-width:0}
+.v3atk{background:#0e2f42;padding:8px 12px;display:flex;flex-direction:column;gap:6px;color:#e9f4fa}.v3f{display:flex;gap:6px;align-items:center}.v3f input{width:74px;text-align:center;padding:8px}.v3fire{margin-left:auto}.v3msg{margin:0;font-size:.8rem;color:#ffb4a8;min-height:1em}.v3atk[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -706,10 +709,10 @@ const VISTAS = ["inicio","partidas","amigos","ranking","perfil","usuario","sala"
 function ir(v){
   vista = v;
   if (v === "ranking") cargarRanking();
-  if (v !== "sala" && espSub){ espSub(); espSub = null; E = null; eid = null; }
+  if (v !== "sala" && espSub){ espSub(); espSub = null; E = null; eid = null; detenerChat(true); }
   VISTAS.forEach(x => $("v-"+x).hidden = x !== v);
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === (v === "sala" ? "partidas" : v)));
-  pintar(); window.scrollTo(0,0);
+  pintar(); window.scrollTo(0,0); actualizarChatBtn();
 }
 $("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); };
 $("hAv").onclick = () => ir("perfil");
@@ -870,7 +873,7 @@ let G = null, gid = null, yo = 0, mis = [], gast = new Set(), drag = null, horiz
 async function alCambiar(id, g){
   g.lineas = g.lineas || []; g.listo = g.listo || {}; g.pts = g.pts || {1:0,2:0};
   if (id !== gid){
-    escucharReacs(id);
+    escucharReacs(id); escucharChat(id, false);
     gid = id; mis = []; gast = new Set(); guardado = false; publicado = false; msgP = ""; huella = ""; G = g; yo = g.j1 === U.uid ? 1 : 2;
     try { const s = await getDoc(doc(db,"games",id,"privado",U.uid)); if (s.exists()){ mis = s.data().ships; gast = new Set(s.data().gast); } } catch {}
   }
@@ -897,7 +900,7 @@ async function alCambiar(id, g){
     lineasVistas[id] = g.lineas.length; const nueva = g.lineas[g.lineas.length - 1];
     if (!reducirMov() && g.estado !== "colocando"){ const idx = g.lineas.length - 1; lineaFx = idx; setTimeout(() => animarAtaque(nueva), 90); setTimeout(() => { if (lineaFx === idx) lineaFx = null; }, 9000); }
   }
-  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null]);
+  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null, g.revancha ? g.revancha.partida : null]);
   if (h !== huella){ huella = h; pintarPartida(); }
   else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
   sync3D();
@@ -1079,8 +1082,16 @@ function marca3D(c){   // celda dañada
   g.position.set(c.x + .5, 0, -(c.y + .5)); return g;
 }
 function sync3D(){
-  if (!v3 || !v3.abierto || v3.animando || !G) return;
+  if (!v3 || !v3.abierto || v3.animando || !(v3.esp ? E : G)) return;
   liberar(v3.dyn); v3.barcos = new Map(); v3.brasas = [];
+  if (v3.esp){                       // espectador: solo se ven las rectas, los barcos nunca
+    const g = E, fil = v3.fil, col = (p, rojo) => p === 1 ? (rojo ? 0xff5a3c : 0x4aa8ff) : (rojo ? 0xffb020 : 0xb28cff);
+    if (fil) [1, 2, 3, 4].filter(q => !PERM[3 - fil].includes(q)).forEach(q => { const m = new THREE.Mesh(new THREE.PlaneGeometry(15, 15), new THREE.MeshBasicMaterial({color:0x04141d, transparent:true, opacity:.55})); m.rotation.x = -Math.PI / 2; m.position.set(q === 1 || q === 4 ? 7.5 : -7.5, .11, q === 1 || q === 2 ? -7.5 : 7.5); v3.dyn.add(m); });
+    (g.lineas || []).forEach((l, i) => { if (i === lineaFx || (fil && l.p !== fil)) return; v3.dyn.add(rayo3D(Number(l.m), Number(l.b), col(l.p, l.rojo), .07, .95)); });
+    v3.estado.textContent = `${g.n1 || ""} ${(g.pts || {})[1] || 0} – ${(g.pts || {})[2] || 0} ${g.n2 || ""}${g.estado === "fin" ? " · Terminada" : g.estado === "batalla" ? ` · Ronda ${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}` : ""}`;
+    v3.root.querySelectorAll("[data-v3^=e]").forEach(b => b.classList.toggle("on", b.dataset.v3 === "e" + fil));
+    return;
+  }
   const modo = v3.vista, zona = PERM[modo === "def" ? yo : 3 - yo];
   [1, 2, 3, 4].filter(q => !zona.includes(q)).forEach(q => { const m = new THREE.Mesh(new THREE.PlaneGeometry(15, 15), new THREE.MeshBasicMaterial({color:0x04141d, transparent:true, opacity:.55})); m.rotation.x = -Math.PI / 2; m.position.set(q === 1 || q === 4 ? 7.5 : -7.5, .11, q === 1 || q === 2 ? -7.5 : 7.5); v3.dyn.add(m); });
   if (modo === "def"){
@@ -1091,12 +1102,27 @@ function sync3D(){
   if (modo === "atk" && G.estado === "batalla" && G.turno === yo && !G.ataque){ const r = leerRecta(); if (r) v3.dyn.add(rayo3D(r.m, r.b, 0xffffff, .045, .65)); }
   v3.estado.textContent = G.estado === "batalla" ? `${G.turno === yo ? "Tu turno" : "Turno del rival"} · Ronda ${G.ronda}/${RONDAS}` : "";
   v3.root.querySelectorAll("[data-v3=def],[data-v3=atk]").forEach(b => b.classList.toggle("on", b.dataset.v3 === modo));
+  // panel de ataque dentro del visor
+  const pa = v3.root.querySelector(".v3atk"), mostrar = modo === "atk" && G.estado === "batalla"; pa.hidden = !mostrar;
+  if (mostrar){
+    const mi = G.turno === yo && !G.ataque && !(G.pausa && ["pausada", "reanudar"].includes(G.pausa.estado)), q = id => pa.querySelector("#" + id);
+    const poner = (id, val) => { const el = q(id); if (el && document.activeElement !== el) el.value = val; };
+    poner("v3mn", vmn); poner("v3md", vmd); poner("v3b", G.ronda <= 4 ? "0" : vb);
+    ["v3mn", "v3md"].forEach(id => q(id).disabled = !mi); q("v3b").disabled = !mi || G.ronda <= 4;
+    pa.querySelectorAll("[data-v3=negmn],[data-v3=disparar]").forEach(b => b.disabled = !mi); pa.querySelector("[data-v3=negb]").disabled = !mi || G.ronda <= 4;
+    const msg = pa.querySelector(".v3msg"); if (!mi) msg.textContent = G.ataque ? "Disparo enviado. Esperando el resultado…" : "Es el turno de tu rival."; else if (msg.textContent.startsWith("Es el turno") || msg.textContent.startsWith("Disparo enviado")) msg.textContent = G.ronda <= 4 ? "Tus primeros 4 ataques salen del origen (b = 0)." : "";
+  }
 }
 async function abrir3D(vista){
   if (v3 && v3.abierto){ v3.vista = vista; sync3D(); return; }
   try { await cargarThree(); } catch { alert("No se pudo cargar el visor 3D (necesita internet). La vista 2D sigue disponible."); return; }
   const root = document.createElement("div"); root.id = "v3root";
-  root.innerHTML = `<div class="v3bar"><b>Vista 3D</b><span class="v3est"></span><div class="v3tabs"><button class="mini sec" data-v3="def">Mi flota</button><button class="mini sec" data-v3="atk">Radar de ataque</button></div><button class="mini" data-v3="cerrar">Cerrar</button></div><div class="v3cv"></div><div class="v3hint">Arrastra para girar · pellizca o usa la rueda para acercar · doble toque para centrar</div>`;
+  const esp = vista === "esp";
+  const tabs = esp ? `<button class="mini sec" data-v3="e1">${esc(E.n1 || "Jugador 1")}</button><button class="mini sec" data-v3="e2">${esc(E.n2 || "Jugador 2")}</button><button class="mini sec" data-v3="e0">Ambos</button>` : `<button class="mini sec" data-v3="def">Mi flota</button><button class="mini sec" data-v3="atk">Radar de ataque</button>`;
+  root.innerHTML = `<div class="v3bar"><b>Vista 3D</b><span class="v3est"></span><div class="v3tabs">${tabs}</div><button class="mini" data-v3="cerrar">Cerrar</button></div><div class="v3cv"></div>
+    <div class="v3atk" hidden><div class="v3f"><span>m =</span><input id="v3mn" inputmode="decimal" autocomplete="off" aria-label="Numerador de m"><button class="mini sec" data-v3="negmn" aria-label="Cambiar signo">±</button><span>/</span><input id="v3md" inputmode="decimal" autocomplete="off" aria-label="Denominador de m"></div>
+    <div class="v3f"><span>b =</span><input id="v3b" inputmode="decimal" autocomplete="off" aria-label="Valor de b"><button class="mini sec" data-v3="negb" aria-label="Cambiar signo">±</button><button class="v3fire" data-v3="disparar">Disparar</button></div><p class="v3msg"></p></div>
+    <div class="v3hint">${esp ? "Rojo y azul: ataques del jugador 1 (tocó / agua) · Naranja y violeta: jugador 2 · " : ""}Arrastra para girar · pellizca o usa la rueda para acercar · doble toque para centrar</div>`;
   document.body.appendChild(root);
   const cv = root.querySelector(".v3cv"), renderer = new THREE.WebGLRenderer({antialias:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); cv.appendChild(renderer.domElement);
@@ -1112,11 +1138,24 @@ async function abrir3D(vista){
   for (let i = -15; i <= 15; i += 5){ if (!i) continue; const a = etiqueta(String(i)); a.position.set(i, .15, .9); scene.add(a); const b = etiqueta(String(i)); b.position.set(-.9, .15, -i); scene.add(b); }
   const ex = etiqueta("x", "#ffe27a"); ex.position.set(15.9, .15, 0); scene.add(ex); const ey = etiqueta("y", "#ffe27a"); ey.position.set(0, .15, -15.9); scene.add(ey);
   const dyn = new THREE.Group(), fxg = new THREE.Group(); scene.add(dyn, fxg);
-  v3 = {abierto:true, vista, root, renderer, scene, cam, dyn, fxg, mar, base0, estado:root.querySelector(".v3est"), camP:{az:0, el:1, d:60}, manual:false, sacudida:0, tics:[], barcos:new Map(), brasas:[], animando:false, enPie:null, raf:0};
+  v3 = {abierto:true, vista, esp, fil:0, root, renderer, scene, cam, dyn, fxg, mar, base0, estado:root.querySelector(".v3est"), camP:{az:0, el:1, d:60}, manual:false, sacudida:0, tics:[], barcos:new Map(), brasas:[], animando:false, enPie:null, raf:0};
   const distAjustada = a => Math.min(100, Math.max(32 / (.828 * a), 33)) * .95;   // que el tablero entre completo en la pantalla
   const ajustar = () => { const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); renderer.domElement.style.cssText = "width:100%;height:100%;display:block"; cam.aspect = w / h; cam.updateProjectionMatrix(); if (!v3.manual) v3.camP.d = distAjustada(cam.aspect); };
-  const cerrar = () => { if (!v3) return; v3.abierto = false; cancelAnimationFrame(v3.raf); window.removeEventListener("resize", ajustar); liberar(scene); renderer.dispose(); root.remove(); v3 = null; lineaFx = null; };
-  root.addEventListener("click", e => { const b = e.target.closest("[data-v3]"); if (!b) return; if (b.dataset.v3 === "cerrar") return cerrar(); v3.vista = b.dataset.v3; sync3D(); });
+  const cerrar = () => { if (!v3) return; v3.abierto = false; cancelAnimationFrame(v3.raf); window.removeEventListener("resize", ajustar); liberar(scene); renderer.dispose(); root.remove(); v3 = null; lineaFx = null; actualizarChatBtn(); };
+  root.addEventListener("click", async e => {
+    const b = e.target.closest("[data-v3]"); if (!b) return; const a = b.dataset.v3;
+    if (a === "cerrar") return cerrar();
+    if (a === "def" || a === "atk"){ v3.vista = a; return sync3D(); }
+    if (/^e[012]$/.test(a)){ v3.fil = Number(a[1]); return sync3D(); }
+    if (a === "negmn" || a === "negb"){ const inp = root.querySelector(a === "negmn" ? "#v3mn" : "#v3b"); if (inp.disabled) return; inp.value = inp.value.startsWith("-") ? inp.value.slice(1) : "-" + inp.value; inp.dispatchEvent(new Event("input", {bubbles:true})); return; }
+    if (a === "disparar"){ const msg = root.querySelector(".v3msg"); msg.textContent = ""; b.disabled = true; await fuego(); msg.textContent = msgP || ""; sync3D(); }
+  });
+  // lo que se escribe aquí se comparte con el formulario 2D para que fuego() lea los mismos valores
+  root.addEventListener("input", e => {
+    const id = e.target.id, v = e.target.value; if (!["v3mn", "v3md", "v3b"].includes(id)) return;
+    if (id === "v3mn"){ vmn = v; if ($("mn")) $("mn").value = v; } else if (id === "v3md"){ vmd = v; if ($("md")) $("md").value = v; } else { vb = v; if ($("b")) $("b").value = v; }
+    apuntar(); sync3D();
+  });
   window.addEventListener("resize", ajustar); ajustar();
   // cámara: arrastrar gira, pellizco o rueda acerca
   const ptr = new Map(); let dist0 = 0, ultimoToque = 0;
@@ -1139,7 +1178,7 @@ async function abrir3D(vista){
     for (const f of [...v3.tics]) f(now);
     renderer.render(scene, cam); v3.raf = requestAnimationFrame(bucle);
   };
-  v3.raf = requestAnimationFrame(bucle); sync3D();
+  v3.raf = requestAnimationFrame(bucle); sync3D(); actualizarChatBtn();
 }
 // --- animaciones en 3D ---
 function anillo3D(x, y, color, ms, tam){
@@ -1168,6 +1207,24 @@ async function hundir3D(s){
   await tween(1900, t => { const e = t * t * (3 - 2 * t); g.position.y = -.5 * e; g.rotation.z = .4 * e; g.traverse(o => { if (o.material && o.material.color && o.userData.c0 === undefined) o.userData.c0 = o.material.color.clone(); if (o.userData.c0) o.material.color.copy(o.userData.c0).multiplyScalar(1 - .45 * e); });
     for (let i = 0; i < nb; i++) pos[i * 3 + 1] = .1 + t * vel[i] * 2.6; geo.attributes.position.needsUpdate = true; burb.material.opacity = .9 * (1 - t * t); });
   v3.fxg.remove(burb); geo.dispose(); burb.material.dispose();
+}
+async function animarEsp3D(l){
+  if (!v3 || !v3.abierto || !v3.esp) return;
+  v3.animando = true; const fx = crearFx("__3d");
+  try {
+    const col = l.p === 1 ? (l.rojo ? 0xff5a3c : 0x4aa8ff) : (l.rojo ? 0xffb020 : 0xb28cff), y = x => Number(l.m) * x + Number(l.b), {x0, x1} = tramoRecta(Number(l.m), Number(l.b)), h = .22, base = P3(0, Number(l.b), h);
+    anillo3D(0, Number(l.b), 0xffffff, 380, 1.6); await esperar(260);
+    const tubos = [x0, x1].map(() => tubo(base, base.clone().add(new THREE.Vector3(.01, 0, 0)), .1, col, .95));
+    const cabezas = [x0, x1].map(() => { const s = new THREE.Mesh(new THREE.SphereGeometry(.3, 16, 12), new THREE.MeshBasicMaterial({color:0xffffff})); s.position.copy(base); return s; });
+    v3.fxg.add(...tubos, ...cabezas);
+    await tween(780, t => { const e = easeOut(t); [x0, x1].forEach((xe, i) => { const p = P3(xe * e, y(xe * e), h); acomodar(tubos[i], base, p); cabezas[i].position.copy(p); }); });
+    cabezas.forEach(c => { v3.fxg.remove(c); c.geometry.dispose(); c.material.dispose(); });
+    tween(520, t => tubos.forEach(m => m.material.opacity = .95 * (1 - t))).then(() => tubos.forEach(m => { v3.fxg.remove(m); m.geometry.dispose(); m.material.dispose(); }));
+    const quien = l.p === 1 ? (E.n1 || "Jugador 1") : (E.n2 || "Jugador 2"), hund = (l.hits || []).filter(z => z.h);
+    if (l.rojo){ fx.flash("rgba(255,70,40,.25)"); v3.sacudida = .4; fx.decir("¡IMPACTO!", "#ff7a4d", `${quien} · ${(l.hits || []).map(z => z.n).filter((n, i, a) => a.indexOf(n) === i).join(" · ")}`, hund.length ? 1100 : 1700); if (hund.length){ await esperar(1000); fx.flash("rgba(80,170,255,.30)"); fx.decir("¡HUNDIDO!", "#9fe3ff", hund.map(z => z.n).join(" · "), 1800); await esperar(1800); } else await esperar(1000); }
+    else { await Promise.all([x0 * .9, x1 * .9].filter(xv => Math.abs(y(xv)) <= 14.5).map(xv => anillo3D(xv, y(xv), 0xbfe6ff, 900, 2.2))); fx.decir("AGUA", "#7cc7ff", quien, 1100); await esperar(900); }
+  } catch (e){ console.error("animación 3D espectador:", e); }
+  fx.fin(); if (v3){ v3.animando = false; lineaFx = null; sync3D(); }
 }
 async function animar3D(l, pend){
   const mia = l.p === yo;
@@ -1283,8 +1340,9 @@ function pintarPartida(){
   const pa = g.pausa || null, congelada = !!(pa && (pa.estado === "pausada" || pa.estado === "reanudar"));
   let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="reacs" id="reacs"></div>`;
   if (g.estado === "fin"){
+    const rv = g.revancha, botRev = !rv ? `<button class="big" data-revancha="1">Volver a jugar</button>` : rv.por === U.uid ? `<div class="card"><p class="msg">Propusiste la revancha. Esperando a ${esc(riv)}…</p><button class="big" data-ir-sala="${esc(rv.partida)}">Ir a la sala</button></div>` : `<div class="card"><p class="msg"><b>${esc(rv.nombre || riv)}</b> quiere la revancha.</p><button class="big" data-revancha="1">Aceptar revancha</button></div>`;
     h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
-      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div>${g.cancelada ? "" : `<button class="big" data-live-report="1">Abrir tabla de ataques en otra pestaña</button>`}<button data-go="partidas">Volver a mis partidas</button>`;
+      <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div>${g.cancelada ? "" : `<button class="big" data-live-report="1">Abrir tabla de ataques en otra pestaña</button>`}${botRev}<button data-go="partidas">Volver a mis partidas</button>`;
     $("v-sala").innerHTML = h; return;
   }
   if (congelada){
@@ -1562,7 +1620,7 @@ async function guardarFin(){
 
 /* ================= ESPECTAR Y EMOJIS ================= */
 const EMOJIS = ["👏","🔥","😮","😂","💥","🎯"];
-let E = null, eid = null, espSub = null, reacSub = null, reacs = [], ultEmoji = 0;
+let E = null, eid = null, espSub = null, reacSub = null, reacs = [], ultEmoji = 0, espN = {};
 function escucharReacs(id){          // reacciones recientes: las ven jugadores y espectadores
   if (reacSub){ reacSub(); reacSub = null; } reacs = [];
   reacSub = onSnapshot(query(collection(db,"games",id,"reacciones"), orderBy("t","desc"), limit(6)),
@@ -1578,15 +1636,60 @@ async function enviarEmoji(em){
   ultEmoji = Date.now();
   try { await addDoc(collection(db,"games",eid,"reacciones"), {uid:U.uid, nombre:nombre(), emoji:em, t:Date.now()}); } catch {}
 }
+/* --- chat libre de la partida (jugadores y espectadores) --- */
+let chatSub = null, chatId = null, chatEsp = false, chatMsgs = [], chatVisto = {}, ultChat = 0;
+document.body.insertAdjacentHTML("beforeend", `<button id="chatBtn" hidden aria-label="Abrir chat">💬<span id="chatBadge" hidden></span></button><div id="chatPanel" hidden><div class="ch-head"><b>Chat de la partida</b><button class="mini sec" id="chatCerrar">Cerrar</button></div><div id="chatLista"></div><div class="ch-in"><input id="chatTxt" maxlength="300" placeholder="Escribe un mensaje…" autocomplete="off"><button id="chatEnviar">Enviar</button></div></div>`);
+function actualizarChatBtn(){ const ver = !!chatId && (vista === "sala" || (v3 && v3.abierto)); $("chatBtn").hidden = !ver; if (!ver) $("chatPanel").hidden = true; }
+function escucharChat(id, esp){
+  if (chatId === id){ chatEsp = esp; actualizarChatBtn(); return; }
+  detenerChat(); chatId = id; chatEsp = esp; chatMsgs = [];
+  chatSub = onSnapshot(query(collection(db,"games",id,"chat"), orderBy("t","desc"), limit(60)), s => {
+    chatMsgs = s.docs.map(d => ({id:d.id, ...d.data()})).reverse();
+    if (chatVisto[id] === undefined) chatVisto[id] = Math.max(0, ...chatMsgs.map(m => Number(m.t) || 0));   // lo anterior no cuenta como nuevo
+    pintarChat();
+  }, () => {});
+  actualizarChatBtn();
+}
+function detenerChat(soloEsp){
+  if (soloEsp && !chatEsp) return;
+  if (chatSub){ chatSub(); chatSub = null; } chatId = null; chatMsgs = []; $("chatPanel").hidden = true; actualizarChatBtn();
+}
+function pintarChat(){
+  if (!U || !chatId) return;
+  const abierto = !$("chatPanel").hidden, ultimo = Math.max(0, ...chatMsgs.map(m => Number(m.t) || 0));
+  const nuevos = chatMsgs.filter(m => m.uid !== U.uid && Number(m.t) > (chatVisto[chatId] || 0)).length;
+  if (abierto) chatVisto[chatId] = ultimo;
+  const b = $("chatBadge"), n = abierto ? 0 : nuevos; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n);
+  const lista = $("chatLista");
+  lista.innerHTML = chatMsgs.length ? chatMsgs.map(m => `<div class="cm ${m.uid === U.uid ? "mio" : ""}"><small>${nomHTML(m.uid, m.nombre)} · ${new Date(Number(m.t) || 0).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}</small><span>${esc(m.texto)}</span></div>`).join("") : `<p class="mut" style="text-align:center">Aún no hay mensajes. ¡Saluda!</p>`;
+  if (abierto) lista.scrollTop = lista.scrollHeight;
+}
+async function enviarChat(){
+  const inp = $("chatTxt"), texto = inp.value.trim().slice(0, 300);
+  if (!texto || !chatId || Date.now() - ultChat < 600) return;
+  ultChat = Date.now(); inp.value = "";
+  try { await addDoc(collection(db,"games",chatId,"chat"), {uid:U.uid, nombre:nombre(), texto, t:Date.now()}); } catch { inp.value = texto; }
+}
+$("chatBtn").onclick = () => { $("chatPanel").hidden = false; pintarChat(); $("chatTxt").focus(); };
+$("chatCerrar").onclick = () => { $("chatPanel").hidden = true; pintarChat(); };
+$("chatEnviar").onclick = enviarChat;
+$("chatTxt").onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); enviarChat(); } };
+
 function espectar(id){
   if (salaSub){ salaSub(); salaSub = null; } if (espSub){ espSub(); espSub = null; }
-  eid = id; E = null; ir("sala"); escucharReacs(id);
+  eid = id; E = null; ir("sala"); escucharReacs(id); escucharChat(id, true);
   $("v-sala").innerHTML = `<p class="mut">Conectando con la partida…</p>`;
   espSub = onSnapshot(doc(db,"games",id),
-    s => { if (!s.exists()){ $("v-sala").innerHTML = `<p class="msg">Esa partida ya no existe.</p><button data-go="inicio">Volver</button>`; return; } E = s.data(); pintarEsp(); },
+    s => {
+      if (!s.exists()){ $("v-sala").innerHTML = `<p class="msg">Esa partida ya no existe.</p><button data-go="inicio">Volver</button>`; return; }
+      const nuevo = s.data(), n = (nuevo.lineas || []).length;
+      if (espN[id] === undefined) espN[id] = n;
+      else if (n > espN[id]){ espN[id] = n; if (v3 && v3.abierto && v3.esp && !reducirMov()){ lineaFx = n - 1; const l = nuevo.lineas[n - 1]; setTimeout(() => animarEsp3D(l), 80); } }
+      E = nuevo; pintarEsp(); sync3D();
+    },
     () => { $("v-sala").innerHTML = `<p class="err">No puedes ver esta partida. Solo la ven los amigos de los jugadores.</p><button data-go="inicio">Volver</button>`; });
 }
-function dejarEsp(){ if (espSub){ espSub(); espSub = null; } E = null; eid = null; ir("inicio"); }
+function dejarEsp(){ if (v3 && v3.esp) v3.root.querySelector("[data-v3=cerrar]").click(); if (espSub){ espSub(); espSub = null; } E = null; eid = null; ir("inicio"); }
 function radarEsp(g, p){                 // solo rectas: los barcos nunca se muestran
   let c = "";
   for (let x = -NN; x < NN; x++) for (let y = -NN; y < NN; y++) c += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PERM[3-p].includes(quad(x,y)) ? "var(--card)" : "var(--off)"}" stroke="var(--line)" stroke-width=".03"/>`;
@@ -1603,6 +1706,7 @@ function pintarEsp(){
   $("v-sala").innerHTML = `<div class="bar"><span>Espectando</span><span><b>${nomHTML(g.j1, g.n1)}</b> ${g.pts[1]} – ${g.pts[2]} <b>${g.n2 ? nomHTML(g.j2, g.n2) : "…"}</b></span><span>${est}</span></div>
     ${g.estado === "fin" ? `<p class="msg">${g.ganador === 0 ? "Empate" : "Ganó " + esc(nm(g.ganador))}</p>` : ""}
     ${ult ? `<div class="card"><b>${esc(txt(ult))}</b></div>` : `<p class="mut">Aún no hay ataques.</p>`}
+    <div class="row"><button class="sec" data-abrir3d="esp">Ver en 3D</button></div>
     <div class="reacs" id="reacs"></div>
     <div class="row">${EMOJIS.map(e => `<button class="sec emo" data-emoji="${e}" aria-label="Reaccionar ${e}">${e}</button>`).join("")}</div>
     <h2>Ataques de ${nomHTML(g.j1, g.n1)}</h2>${radarEsp(g, 1)}
@@ -1936,6 +2040,33 @@ async function crearPartidaId(){
   }
   throw new Error("No se pudo generar un código.");
 }
+async function revancha(idViejo){
+  const ref = doc(db,"games",idViejo);
+  for (let n = 0; n < 8; n++){
+    const c = cod(5), nuevaRef = doc(db,"games",c);
+    const res = await runTransaction(db, async tx => {
+      const [sv, sn] = await Promise.all([tx.get(ref), tx.get(nuevaRef)]);
+      const g = sv.exists() ? sv.data() : null; if (!g) return {error:true};
+      if (g.revancha && g.revancha.partida) return {existe:g.revancha};     // el rival ya la propuso: se acepta
+      if (sn.exists()) return null;                                          // código ocupado: se prueba otro
+      tx.set(nuevaRef, {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp(), revanchaDe:idViejo});
+      tx.update(ref, {revancha:{por:U.uid, nombre:nombre(), partida:c}});
+      return {nueva:c};
+    });
+    if (!res) continue;
+    if (res.error) return;
+    if (res.nueva) return abrirSala(res.nueva);
+    const rv = res.existe;
+    if (rv.por === U.uid) return abrirSala(rv.partida);
+    const nref = doc(db,"games",rv.partida);
+    await runTransaction(db, async tx => {
+      const s2 = await tx.get(nref); if (!s2.exists()) return; const g2 = s2.data();
+      if (g2.j1 === U.uid || g2.j2 || g2.estado !== "esperando") return;
+      tx.update(nref, {j2:U.uid, n2:nombre(), estado:"colocando", jugadores:arrayUnion(U.uid), lineas:[], listo:{}, pts:{1:0,2:0}, turno:1, ronda:1, fallos:{1:0,2:0}, inicio:Date.now()});
+    });
+    return abrirSala(rv.partida);
+  }
+}
 async function invitar(uidAmigo, nom){
   const id = await crearPartidaId();
   await setDoc(doc(db,"invitaciones", id + "_" + uidAmigo), {de:U.uid, deNombre:nombre(), para:uidAmigo, paraNombre:nom || "Amigo", partida:id, estado:"pendiente", t:Date.now()});
@@ -1990,6 +2121,8 @@ function previsualizarCosmetico(tipo, clave){
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t || !U) return;
   if (t.dataset.abrir3d){ abrir3D(t.dataset.abrir3d); return; }
+  if (t.dataset.revancha){ t.disabled = true; try { await revancha(gid); } catch (e){ console.error(e); t.disabled = false; } return; }
+  if (t.dataset.irSala){ abrirSala(t.dataset.irSala); return; }
   const d = t.dataset;
   try {
     if (d.liveReport !== undefined) return abrirInformeAtaques(G?.lineas || [], G?.n1 || "Jugador 1", G?.n2 || "Jugador 2", G?.pts?.[1] || 0, G?.pts?.[2] || 0);
