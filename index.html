@@ -901,6 +901,7 @@ async function alCambiar(id, g){
     if (!prev.j2 && g.j2) avisar("¡Tu rival se unió!", rival || "Ya pueden empezar", "union-" + id, () => abrirSala(id));
     if (g.estado === "batalla" && g.turno === yo && !g.ataque && (prev.turno !== yo || prev.estado !== "batalla")){ sonar("turno"); avisar("¡Es tu turno!", `Partida contra ${rival}`, "turno-" + id, () => abrirSala(id)); }
     if (g.estado === "fin" && prev.estado !== "fin") setTimeout(() => sonar(g.ganador === yo ? "victoria" : g.ganador === 0 ? "turno" : "derrota"), 2600);
+    if (g.revancha && g.revancha.estado === "rechazada" && g.revancha.por === U.uid && !(prev.revancha && prev.revancha.estado === "rechazada")) avisar("Revancha", `${rival || "Tu rival"} no aceptó la revancha`, "rev-no-" + id, () => abrirSala(id));
     if (g.revancha && g.revancha.por !== U.uid && !prev.revancha){ sonar("turno"); avisar("Revancha", `${g.revancha.nombre || "Tu rival"} quiere jugar otra vez`, "rev-" + id, () => abrirSala(id)); }
   }
   // los amigos ven que estás en partida (para poder espectarla)
@@ -920,7 +921,7 @@ async function alCambiar(id, g){
     lineasVistas[id] = g.lineas.length; const nueva = g.lineas[g.lineas.length - 1];
     if (!reducirMov() && g.estado !== "colocando"){ const idx = g.lineas.length - 1; lineaFx = idx; setTimeout(() => animarAtaque(nueva), 90); setTimeout(() => { if (lineaFx === idx) lineaFx = null; }, 9000); }
   }
-  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null, g.revancha ? g.revancha.partida : null]);
+  const h = JSON.stringify([g.estado, g.turno, g.ronda, g.lineas.length, !!g.ataque, g.listo, g.pts, g.pausa || null, g.revancha ? g.revancha.partida + (g.revancha.estado || "") : null]);
   if (h !== huella){ huella = h; pintarPartida(); }
   else if (g.apunta && g.apunta.p !== yo && $("def")) $("def").innerHTML = radarH("def");
   sync3D();
@@ -1490,7 +1491,7 @@ function pintarPartida(){
   const pa = g.pausa || null, congelada = !!(pa && (pa.estado === "pausada" || pa.estado === "reanudar"));
   let h = `<div class="bar"><span>vs <b>${esc(riv)}</b></span><span>Ronda <b>${Math.min(g.ronda || 1, RONDAS)}/${RONDAS}</b></span><span>Tú <b>${g.pts[p]}</b> · Rival <b>${g.pts[3-p]}</b></span><span>⏱ <b id="tm">${congelada ? "Pausado" : "—"}</b></span></div><div class="reacs" id="reacs"></div>`;
   if (g.estado === "fin"){
-    const rv = g.revancha, botRev = !rv ? `<button class="big" data-revancha="1">Volver a jugar</button>` : rv.por === U.uid ? `<div class="card"><p class="msg">Propusiste la revancha. Esperando a ${esc(riv)}…</p><button class="big" data-ir-sala="${esc(rv.partida)}">Ir a la sala</button></div>` : `<div class="card"><p class="msg"><b>${esc(rv.nombre || riv)}</b> quiere la revancha.</p><button class="big" data-revancha="1">Aceptar revancha</button></div>`;
+    const rv = g.revancha, rech = rv && rv.estado === "rechazada", botRev = !rv ? `<button class="big" data-revancha="1">Volver a jugar</button>` : rech ? `<div class="card"><p class="msg">${rv.por === U.uid ? `${esc(riv)} no aceptó la revancha.` : "Rechazaste la revancha."}</p></div>` : rv.por === U.uid ? `<div class="card"><p class="msg">Propusiste la revancha. Esperando a ${esc(riv)}…</p><button class="big" data-ir-sala="${esc(rv.partida)}">Ir a la sala</button></div>` : `<div class="card"><p class="msg"><b>${esc(rv.nombre || riv)}</b> quiere la revancha.</p><button class="big" data-revancha="1">Aceptar revancha</button><button class="big sec" data-rechazar-rev="1">No aceptar</button></div>`;
     h += `<div class="card"><h2 style="margin-top:0">Fin de la partida</h2><p class="msg"><b>${g.cancelada ? "Partida cancelada: nadie terminó de colocar a tiempo." : g.ganador === 0 ? "Empate" : g.ganador === p ? "¡Ganaste!" : "Perdiste"}</b></p>${g.abandonoPor ? `<p>${g.abandonoPor === p ? "Abandonaste la partida." : esc(riv) + " abandonó la partida."}</p>` : ""}
       <p>Tú: <b>${g.pts[p]}</b> pts<br>${esc(riv)}: <b>${g.pts[3-p]}</b> pts</p>${g.cancelada ? "" : "<small>Se guardó en tu historial.</small>"}</div>${g.cancelada ? "" : `<button class="big" data-live-report="1">Abrir tabla de ataques en otra pestaña</button>`}${g.cancelada ? "" : `<button class="big sec" data-live-replay="1">Ver repetición</button>`}${botRev}<button data-go="partidas">Volver a mis partidas</button>`;
     $("v-sala").innerHTML = h; return;
@@ -2201,14 +2202,14 @@ async function revancha(idViejo){
     const res = await runTransaction(db, async tx => {
       const [sv, sn] = await Promise.all([tx.get(ref), tx.get(nuevaRef)]);
       const g = sv.exists() ? sv.data() : null; if (!g) return {error:true};
-      if (g.revancha && g.revancha.partida) return {existe:g.revancha};     // el rival ya la propuso: se acepta
+      if (g.revancha && g.revancha.partida) return g.revancha.estado === "rechazada" ? {rechazada:true} : {existe:g.revancha};     // el rival ya la propuso: se acepta
       if (sn.exists()) return null;                                          // código ocupado: se prueba otro
       tx.set(nuevaRef, {j1:U.uid, n1:nombre(), j2:null, n2:null, jugadores:[U.uid], estado:"esperando", lineas:[], listo:{}, pts:{1:0,2:0}, creada:serverTimestamp(), revanchaDe:idViejo});
       tx.update(ref, {revancha:{por:U.uid, nombre:nombre(), partida:c}});
       return {nueva:c};
     });
     if (!res) continue;
-    if (res.error) return;
+    if (res.error || res.rechazada) return;
     if (res.nueva) return abrirSala(res.nueva);
     const rv = res.existe;
     if (rv.por === U.uid) return abrirSala(rv.partida);
@@ -2246,10 +2247,36 @@ async function aceptarInv(id){
   }
 }
 
+let panelInvSala = false, salaActual = null;
+function amigosParaSala(id){
+  const ac = amistades.filter(a => a.estado === "aceptada"), ahora = Date.now();
+  if (!ac.length) return `<p class="mut">Aún no tienes amigos agregados. Comparte el código o agrégalos desde Amigos.</p>`;
+  const enviadas = new Map(invEnv.filter(i => i.partida === id).map(i => [i.para, i]));
+  return ac.map(a => {
+    const uid = otro(a), d = amDocs[uid] || {}, nom = (a.nombres && a.nombres[uid]) || "Jugador", on = ahora - (d.visto || 0) < 75000, inv = enviadas.get(uid);
+    const pend = inv && inv.estado === "pendiente" && ahora - Number(inv.t || 0) < INV_MS;
+    const der = pend ? `<small class="mut">Invitación enviada</small>` : `<button class="mini" data-inv-sala="${esc(uid)}" data-nombre="${esc(nom)}">${inv ? "Invitar de nuevo" : "Invitar"}</button>`;
+    return `<div class="item"><span><i class="dot2 ${on ? "on2" : ""}"></i>${avatarHTML({...d, nombre:nom}, 26)} ${esc(nom)} <small class="mut">${on ? "en línea" : "desconectado"}</small></span><span>${der}</span></div>`;
+  }).join("");
+}
+async function invitarASala(id, uid, nom){
+  const ref = doc(db,"invitaciones", id + "_" + uid);
+  try { await deleteDoc(ref); } catch {}        // si ya hubo una invitación vencida o cancelada, se reemplaza
+  try { await setDoc(ref, {de:U.uid, deNombre:nombre(), para:uid, paraNombre:nom || "Amigo", partida:id, estado:"pendiente", t:Date.now()}); toast(`Invitación enviada a ${nom}`); }
+  catch (e){ console.error(e); toast("No se pudo enviar la invitación. Inténtalo de nuevo."); }
+}
+async function compartirCodigo(id){
+  const texto = `Juega conmigo Batalla en el plano. Código de la partida: ${id}`, url = location.href.split("#")[0];
+  if (navigator.share){ try { await navigator.share({title:"Batalla en el plano", text:texto, url}); return; } catch (e){ if (e && e.name === "AbortError") return; } }
+  try { await navigator.clipboard.writeText(texto + " " + url); toast("Texto copiado con el código " + id); } catch { toast("Tu código es " + id); }
+}
 function pintarSala(id, g){
+  salaActual = {id, g};
+  const anfitrion = g.j1 === U.uid && !g.j2;
+  const acciones = anfitrion ? `<div class="row" style="margin:10px 0"><button id="bInvSala">${panelInvSala ? "Ocultar amigos" : "Invitar amigos"}</button><button class="sec" id="bCodSala">Compartir código</button></div>${panelInvSala ? `<div class="card" style="box-shadow:var(--inset);background:var(--bg)"><b>Tus amigos</b>${amigosParaSala(id)}</div>` : ""}` : "";
   $("v-sala").innerHTML = `<div class="card"><h2 style="margin-top:0">Sala de espera</h2><small>Código de la partida</small><div class="code">${esc(id)}</div>
     <p>Jugador 1: ${nomHTML(g.j1, g.n1)}<br>Jugador 2: ${g.n2 ? nomHTML(g.j2, g.n2) : "esperando rival…"}</p>
-    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Comparte el código con tu rival."}</b></p>${g.j2 ? "" : invitesSala(id)}</div>
+    <p><b>${g.j2 ? "¡Los dos jugadores están dentro! El siguiente paso es colocar los barcos." : "Invita a un amigo o comparte el código con tu rival."}</b></p>${g.j2 ? "" : acciones + invitesSala(id)}</div>
     <button class="sec" data-go="partidas">Volver a mis partidas</button>`;
 }
 function abrirSala(id){
@@ -2275,12 +2302,16 @@ function previsualizarCosmetico(tipo, clave){
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t || !U) return;
   if (t.dataset.abrir3d){ abrir3D(t.dataset.abrir3d); return; }
+  if (t.id === "bInvSala"){ panelInvSala = !panelInvSala; if (salaActual) pintarSala(salaActual.id, salaActual.g); return; }
+  if (t.id === "bCodSala"){ if (salaActual) compartirCodigo(salaActual.id); return; }
+  if (t.dataset.invSala){ if (salaActual) await invitarASala(salaActual.id, t.dataset.invSala, t.dataset.nombre); return; }
   if (t.id === "bSonido"){ alternarSonido(); pintarPerfil(); return; }
   if (t.id === "bAvisos"){ await activarAvisos(); pintarPerfil(); return; }
   if (t.dataset.replay){ abrirRepl(REPL[t.dataset.replay]); return; }
   if (t.dataset.liveReplay !== undefined){ const rivU = yo === 1 ? G.j2 : G.j1, fl = F => (F || []).map(z => ({c:CL[z.i].c, celdas:z.celdas, hund:!!z.hund})); abrirRepl({n1:G.n1, n2:G.n2, lineas:G.lineas, flotas:{[yo]:fl(mis), [3 - yo]:fl(G.finales && G.finales[rivU] && G.finales[rivU].ships)}, pts:G.pts}); return; }
   if (t.dataset.revancha){ t.disabled = true; try { await revancha(gid); } catch (e){ console.error(e); t.disabled = false; } return; }
   if (t.dataset.irSala){ abrirSala(t.dataset.irSala); return; }
+  if (t.dataset.rechazarRev){ t.disabled = true; try { await updateDoc(doc(db,"games",gid), {"revancha.estado":"rechazada", "revancha.rechazadaPor":U.uid}); } catch (e){ console.error(e); t.disabled = false; } return; }
   const d = t.dataset;
   try {
     if (d.liveReport !== undefined) return abrirInformeAtaques(G?.lineas || [], G?.n1 || "Jugador 1", G?.n2 || "Jugador 2", G?.pts?.[1] || 0, G?.pts?.[2] || 0);
