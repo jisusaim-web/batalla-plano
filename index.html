@@ -550,40 +550,8 @@ main{padding-bottom:114px}
 nav button.pulsado svg{animation:icono .45s cubic-bezier(.3,1.9,.5,1)}@keyframes icono{0%{transform:scale(1)}40%{transform:scale(1.3) translateY(-3px)}100%{transform:scale(1)}}
 button.link:active{transform:scale(.95);opacity:.8}
 #rpRoot{position:fixed;inset:0;z-index:56;background:#0a2230;display:flex;flex-direction:column;color:#e9f4fa;overflow-y:auto}.rpcuerpo{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;padding:12px;flex:1}.rpb{width:min(92vw,360px)}.rpb small{display:block;margin-bottom:4px}.rpb svg{width:100%;aspect-ratio:1;border-radius:10px;display:block;background:#f8f3e7}.rpctl{position:sticky;bottom:0;background:#0e2f42;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px}.rpcap{font-size:.85rem;min-height:2.6em}.rpcap code{background:#ffffff1a;padding:1px 6px;border-radius:6px}.rpctl input[type=range]{width:100%;padding:0;box-shadow:none;background:none}.rpbtn{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-/* ===== Portada tipo cuaderno de campo y tarjetas "Cómo se juega" ===== */
-:root{--terra:#C35933;--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}@media (prefers-color-scheme:dark){:root{--terra:#E0805A}}
-.atl{color:var(--ink);padding:6px 2px 4px}.atl-eye{font:500 11px var(--mono);letter-spacing:.24em;margin:0 0 10px}
-.atl-h{font:700 38px/1.04 "Source Sans 3","Segoe UI",system-ui,sans-serif;letter-spacing:-.022em;margin:0 0 12px}.atl-h b{color:var(--terra);font-weight:700}
-.atl-p{font:400 12.4px/1.7 var(--mono);color:var(--mut);margin:0 0 14px;max-width:36ch}
-.atl-cab{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:6px}.atl-coord{font:400 10px/1.6 var(--mono);text-align:right;color:var(--mut)}.atl-coord span{display:block}
-.atl-svg{width:100%;height:auto;display:block;overflow:visible;margin:4px 0 6px;-webkit-tap-highlight-color:transparent}
-.atl-num text{font:400 6.5px var(--mono);fill:var(--mut)}.atl-eq{font:600 8px var(--mono);fill:var(--terra)}.atl-rom{font:500 9px var(--mono);fill:var(--mut)}
-.atl-z{cursor:pointer;outline:none}.atl-z:focus-visible .atl-hit{stroke:var(--terra);stroke-width:1.4}
-.atl-fill,.atl-olas{opacity:0;transition:opacity .65s}.atl-z.on .atl-fill,.atl-z.on .atl-olas{opacity:1}
-.atl-ola{animation:atlOla 5s linear infinite}@keyframes atlOla{to{transform:translateX(40px)}}
-.atl-dot{fill:var(--terra)}.atl-halo{fill:var(--terra);transform-box:fill-box;transform-origin:center;animation:atlHalo 2.2s ease-out infinite}@keyframes atlHalo{0%{transform:scale(1);opacity:.4}100%{transform:scale(3.4);opacity:0}}
-.atl-z.on .atl-dot,.atl-z.on .atl-halo{display:none}
-.atl-ring{opacity:0;transform:scale(.2);transition:opacity .25s}.atl-z.on .atl-ring{opacity:1;transform:scale(1);transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .3s}
-.atl-ring text{font:600 5px var(--mono);letter-spacing:.9px;fill:var(--ink)}.atl-giro{animation:atlGiro 14s linear infinite}@keyframes atlGiro{to{transform:rotate(360deg)}}
-.atl-play .atl-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:atlDraw 1.6s cubic-bezier(.65,0,.35,1) forwards;animation-delay:var(--d,0s)}@keyframes atlDraw{to{stroke-dashoffset:0}}
-.atl-sel{display:flex;flex-direction:column;align-items:flex-end;margin:4px 0 14px}.atl-lw{display:flex;gap:14px;align-items:flex-start}
-.atl-regla{position:relative;width:14px;height:180px;border-right:1px solid var(--mut);background:repeating-linear-gradient(to bottom,var(--mut) 0 1px,transparent 1px 7.5px) right/8px 100% no-repeat}
-.atl-marca{position:absolute;right:-1px;width:16px;height:2px;background:var(--terra);top:calc(var(--i) * 45px + 21px);transition:top .55s cubic-bezier(.16,1,.3,1)}
-.atl-lista{list-style:none;margin:0;padding:0;text-align:right}.atl-lista li{font:400 21px/45px var(--mono);cursor:pointer;color:var(--ink);transition:color .3s}.atl-lista li.on{color:var(--terra)}
-#comoRoot{position:fixed;inset:0;z-index:58;background:var(--bg);display:flex;flex-direction:column;opacity:0;transition:opacity .35s}#comoRoot.entra{opacity:1}#comoRoot.sale{opacity:0}
-.como-top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px));font:500 12px var(--mono);color:var(--ink)}
-.como-vista{flex:1;overflow:hidden;touch-action:pan-y;cursor:grab;display:flex;align-items:center;min-height:0}.como-vista.agarrada{cursor:grabbing}
-.como-track{display:flex;gap:14px;will-change:transform;height:min(62vh,520px)}
-.como-card{flex:none;border-radius:22px;padding:22px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 18px 40px -20px rgba(0,0,0,.5);user-select:none;-webkit-user-select:none}
-.como-n{font:500 11px var(--mono);letter-spacing:.2em;display:flex;align-items:center;gap:8px}.como-n i{display:inline-block;width:46px;height:1px;background:currentColor;opacity:.6}
-.como-ilu{margin:14px 0}.como-ilu svg{width:100%;height:auto;max-height:170px}.como-et{font:500 10px var(--mono);letter-spacing:.2em;margin:0 0 6px;opacity:.8}
-.como-card h3{font:700 28px/1.05 "Source Sans 3",system-ui,sans-serif;margin:0 0 10px;letter-spacing:-.02em}.como-tx{font:400 14px/1.55 "Source Sans 3",system-ui,sans-serif;margin:0;opacity:.92}
-.como-card>*{opacity:0;transform:translateY(18px);transition:opacity .6s,transform .75s cubic-bezier(.16,1,.3,1)}#comoRoot.entra .como-card>*{opacity:1;transform:none}
-.como-card>*:nth-child(1){transition-delay:.15s}.como-card>*:nth-child(2){transition-delay:.22s}.como-card>*:nth-child(3){transition-delay:.29s}.como-card>*:nth-child(4){transition-delay:.36s}.como-card>*:nth-child(5){transition-delay:.43s}
-.como-prog{height:2px;background:var(--line);margin:0 24px}.como-prog i{display:block;height:100%;background:var(--terra);width:0}.como-ayuda{text-align:center;font:400 10.5px var(--mono);color:var(--mut);padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));margin:0}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="splash"><div>
@@ -802,13 +770,12 @@ function suscribirAmigos(){
 }
 function pintarInicio(){
   const cv = $("codigo")?.value || "";
-  $("v-inicio").innerHTML = atlasHTML() + `<div class="centro"><h2 style="margin:0">Hola, ${nomHTML(U.uid, nombre())}</h2>
+  $("v-inicio").innerHTML = `<div class="centro"><h2 style="margin:0">Hola, ${nomHTML(U.uid, nombre())}</h2>
     <button class="big" id="bCrear">Crear partida</button><div class="o">o</div>
     <div class="row"><input id="codigo" maxlength="5" style="text-transform:uppercase;text-align:center" placeholder="Código de la partida" value="${esc(cv)}"><button id="bUnir">Unirse</button></div>
     <p class="err" id="eInicio"></p></div>
     <h2 style="display:flex;justify-content:space-between;align-items:center">Amigos <button class="mini sec" data-go="amigos">Agregar</button></h2>
     <div class="card" id="listaAm">${htmlAmigos()}</div>`;
-  atlasIntro = true; if (reducirMov()) document.querySelectorAll("animateMotion").forEach(n => n.remove());
 }
 const PAUSA_TXT = {solicitada:"Pausa solicitada", pausada:"Pausada", reanudar:"Esperando reanudación"};
 const enPausa = g => g.estado !== "fin" && !!(g.pausa && PAUSA_TXT[g.pausa.estado]);
@@ -1207,100 +1174,6 @@ function abrirRepl(d){
   q("rpCerrar").onclick = () => { sesion++; reproduciendo = false; root.remove(); };
   root.addEventListener("click", e => { if (e.target.closest("[data-v3=snd]")) alternarSonido(); });
   refrescar();
-}
-
-/* --- portada tipo "cuaderno de campo": el plano cartesiano como menú de inicio --- */
-const ATL_ZONAS = [["q1", "Crear partida", "I", "x > 0 · y > 0"], ["q2", "Unirme con código", "II", "x < 0 · y > 0"], ["q3", "Mis partidas", "III", "x < 0 · y < 0"], ["q4", "Amigos", "IV", "x > 0 · y < 0"]];
-let atlasZona = "q1", atlasIntro = false, atlasArmada = null;
-function atlasHTML(){
-  const u = 10, X = x => 180 + x * u, Y = y => 160 - y * u, play = atlasIntro ? "" : " atl-play";
-  let grid = "";
-  for (let i = -15; i <= 15; i++){ if (!i) continue; const a = i % 5 ? .16 : .34; grid += `<line class="atl-draw" pathLength="1" style="--d:${(Math.abs(i) * .03).toFixed(2)}s" x1="${X(i)}" y1="10" x2="${X(i)}" y2="310" stroke="var(--ink)" stroke-width=".5" opacity="${a}"/><line class="atl-draw" pathLength="1" style="--d:${(Math.abs(i) * .03).toFixed(2)}s" x1="30" y1="${Y(i)}" x2="330" y2="${Y(i)}" stroke="var(--ink)" stroke-width=".5" opacity="${a}"/>`; }
-  let marcas = ""; for (const i of [-15, -10, -5, 5, 10, 15]) marcas += `<text x="${X(i)}" y="173" text-anchor="middle">${i}</text><text x="${X(0) + 5}" y="${Y(i) + 2.5}">${i}</text>`;
-  const q = {q1:[180, 10], q2:[30, 10], q3:[30, 160], q4:[180, 160]}, cen = {q1:[255, 85], q2:[105, 85], q3:[105, 235], q4:[255, 235]};
-  const clip = Object.entries(q).map(([k, [x, y]]) => `<clipPath id="atl${k}"><rect x="${x}" y="${y}" width="150" height="150"/></clipPath>`).join("");
-  const ola = (y, d) => `<path class="atl-ola" style="animation-delay:${d}s" d="M-40 ${y} q10 -7 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="#C35933" stroke-width=".9" opacity=".7"/>`;
-  const zonas = ATL_ZONAS.map(([k, n, r]) => { const [x, y] = q[k], [cx, cy] = cen[k]; return `<g class="atl-z${k === atlasZona ? " on" : ""}" data-zona="${k}" tabindex="0" role="button" aria-label="${esc(n)}">
-      <rect class="atl-hit" x="${x}" y="${y}" width="150" height="150" fill="transparent"/>
-      <g clip-path="url(#atl${k})" pointer-events="none"><rect class="atl-fill" x="${x}" y="${y}" width="150" height="150" fill="url(#atlHatch)"/><g class="atl-olas">${ola(y + 42, 0)}${ola(y + 80, -1.2)}${ola(y + 118, -2.4)}</g></g>
-      <text class="atl-rom" x="${x + (x < 100 ? 8 : 142)}" y="${y + 13}" text-anchor="${x < 100 ? "start" : "end"}">${r}</text>
-      <g transform="translate(${cx} ${cy})" pointer-events="none"><circle class="atl-halo" r="5"/><circle class="atl-dot" r="5"/>
-        <g class="atl-ring"><circle r="22" fill="var(--bg)" stroke="var(--ink)" stroke-width=".8"/><path d="M-7 0H7M0 -7V7" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"/><g class="atl-giro"><text><textPath href="#atlAro" textLength="176">BATALLA EN EL PLANO · BATALLA EN EL PLANO ·</textPath></text></g></g></g></g>`; }).join("");
-  const lista = ATL_ZONAS.map(([k, n]) => `<li data-zl="${k}" class="${k === atlasZona ? "on" : ""}">${esc(n)}</li>`).join("");
-  const z = ATL_ZONAS.find(a => a[0] === atlasZona);
-  return `<div class="atl${play}"><p class="atl-eye">BATALLA EN EL PLANO</p><h1 class="atl-h">Dispara con <b>rectas</b>,<br>hunde la flota<br>de tu rival</h1>
-    <p class="atl-p">Ubica tus barcos en el plano, escribe y = mx + b y apunta. Elige una zona para empezar.</p>
-    <div class="atl-cab"><button class="mini sec" id="bComo">Cómo se juega</button><div class="atl-coord"><span id="atlCoord">${z[3]}</span><span>y = mx + b</span></div></div>
-    <svg class="atl-svg" viewBox="0 0 360 320" role="group" aria-label="Plano cartesiano con cuatro zonas">
-      <defs><pattern id="atlHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#C35933" stroke-width="1" opacity=".32"/></pattern><path id="atlAro" d="M0 -28 a28 28 0 1 1 0 56 a28 28 0 1 1 0 -56"/>${clip}</defs>
-      <g>${grid}</g>
-      <line class="atl-draw" pathLength="1" x1="30" y1="160" x2="330" y2="160" stroke="var(--ink)" stroke-width="1.4"/><line class="atl-draw" pathLength="1" x1="180" y1="10" x2="180" y2="310" stroke="var(--ink)" stroke-width="1.4"/>
-      <g class="atl-num">${marcas}</g>
-      <g fill="none" stroke="var(--ink)" stroke-width=".9" opacity=".75"><g>${[0, 1, 2, 3].map(i => `<rect x="${X(3) + i * u}" y="${Y(6)}" width="${u}" height="${u}"/>`).join("")}</g><g>${[0, 1, 2].map(i => `<rect x="${X(-9) + i * u}" y="${Y(4)}" width="${u}" height="${u}"/>`).join("")}</g><g>${[0, 1].map(i => `<rect x="${X(-7)}" y="${Y(-5) + i * u}" width="${u}" height="${u}"/>`).join("")}</g><g>${[0, 1].map(i => `<rect x="${X(8) + i * u}" y="${Y(-8)}" width="${u}" height="${u}"/>`).join("")}</g></g>
-      <line class="atl-draw atl-rec" pathLength="1" style="--d:.9s" x1="30" y1="205" x2="330" y2="55" stroke="#C35933" stroke-width="1.6" stroke-linecap="round"/>
-      <text class="atl-eq" x="326" y="47" text-anchor="end">y = 0.5x + 3</text>
-      <circle r="3.2" fill="#C35933"><animateMotion dur="4s" repeatCount="indefinite" path="M30 205 L330 55"/></circle>
-      ${zonas}</svg>
-    <div class="atl-sel"><p class="atl-eye">ELIGE ZONA</p><div class="atl-lw" id="atlLw" style="--i:${ATL_ZONAS.findIndex(a => a[0] === atlasZona)}"><div class="atl-regla"><i class="atl-marca"></i></div><ul class="atl-lista">${lista}</ul></div></div></div>`;
-}
-function activarAtlas(z){
-  atlasZona = z;
-  document.querySelectorAll(".atl-z").forEach(g => g.classList.toggle("on", g.dataset.zona === z));
-  document.querySelectorAll(".atl-lista li").forEach(li => li.classList.toggle("on", li.dataset.zl === z));
-  const lw = $("atlLw"); if (lw) lw.style.setProperty("--i", ATL_ZONAS.findIndex(a => a[0] === z));
-  const c = $("atlCoord"); if (c) c.textContent = ATL_ZONAS.find(a => a[0] === z)[3];
-}
-function ejecutarAtlas(z){
-  if (z === "q1") $("bCrear")?.click();
-  else if (z === "q2"){ const c = $("codigo"); if (c){ c.scrollIntoView({behavior:"smooth", block:"center"}); c.focus(); } }
-  else if (z === "q3") ir("partidas");
-  else ir("amigos");
-}
-document.addEventListener("pointerover", e => { if (e.pointerType !== "mouse") return; const el = e.target.closest("[data-zona],[data-zl]"); if (el) activarAtlas(el.dataset.zona || el.dataset.zl); });
-document.addEventListener("click", e => {
-  const el = e.target.closest("[data-zona],[data-zl]"); if (!el) return; const z = el.dataset.zona || el.dataset.zl;
-  if (e.pointerType !== "mouse" && e.detail !== 0 && atlasArmada !== z && matchMedia("(hover: none)").matches){ atlasArmada = z; activarAtlas(z); return; }   // en pantalla táctil: primer toque explora, segundo abre
-  atlasArmada = null; ejecutarAtlas(z);
-});
-document.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("[data-zona]")){ e.preventDefault(); ejecutarAtlas(e.target.dataset.zona); } });
-
-/* --- "Cómo se juega": tarjetas de colores que se arrastran, con inercia y ajuste al soltar --- */
-function abrirComoJugar(){
-  const flota = CL.reduce((a, c) => a + c.q, 0), mmss = `${Math.floor(SEG / 60)}:${String(SEG % 60).padStart(2, "0")}`;
-  const ilus = [
-    `<svg viewBox="0 0 120 90"><g stroke="currentColor" stroke-width=".6" opacity=".35">${Array.from({length:9}, (_, i) => `<line x1="${10 + i * 12}" y1="8" x2="${10 + i * 12}" y2="82"/>`).join("")}${Array.from({length:7}, (_, i) => `<line x1="10" y1="${8 + i * 12.3}" x2="106" y2="${8 + i * 12.3}"/>`).join("")}</g><g fill="currentColor" opacity=".9"><rect x="22" y="20" width="11" height="11" rx="2"/><rect x="34" y="20" width="11" height="11" rx="2"/><rect x="46" y="20" width="11" height="11" rx="2"/><rect x="70" y="57" width="11" height="11" rx="2"/><rect x="70" y="69" width="11" height="11" rx="2"/></g></svg>`,
-    `<svg viewBox="0 0 120 90"><g stroke="currentColor" stroke-width="1.2"><line x1="10" y1="45" x2="110" y2="45"/><line x1="60" y1="6" x2="60" y2="84"/></g><line x1="10" y1="78" x2="110" y2="14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="3 5"/><circle cx="60" cy="46" r="3.4" fill="currentColor"/><text x="66" y="40" font-size="8" fill="currentColor" font-family="IBM Plex Mono,monospace">b</text></svg>`,
-    `<svg viewBox="0 0 120 90"><g stroke="currentColor" stroke-width="1" opacity=".5"><line x1="10" y1="45" x2="110" y2="45"/><line x1="60" y1="6" x2="60" y2="84"/></g><line x1="14" y1="72" x2="106" y2="18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="60" cy="45" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="106" cy="18" r="4" fill="currentColor"/><circle cx="14" cy="72" r="4" fill="currentColor"/></svg>`,
-    `<svg viewBox="0 0 120 90"><g fill="currentColor" opacity=".5"><rect x="22" y="40" width="14" height="14" rx="2"/><rect x="38" y="40" width="14" height="14" rx="2"/><rect x="54" y="40" width="14" height="14" rx="2"/></g><line x1="10" y1="76" x2="112" y2="22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="46" cy="54" r="11" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M40 48l12 12M52 48l-12 12" stroke="currentColor" stroke-width="2"/></svg>`,
-    `<svg viewBox="0 0 120 90"><path d="M36 14h48v22a24 24 0 0 1-48 0z" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M36 20H22a14 14 0 0 0 14 22M84 20h14a14 14 0 0 1-14 22" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M60 60v12M44 76h32" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`
-  ];
-  const T = [
-    ["#2F55D4", "#fff", "Coloca tu flota", `Arrastra tus ${flota} barcos a tus cuadrantes: ${CL.map(c => `${c.q} ${c.n.toLowerCase()}${c.q > 1 ? "s" : ""}`).join(", ")}. Gira cada uno con un toque.`],
-    ["#23201C", "#fff", "Escribe tu recta", "La recta es y = mx + b. La b es el punto donde corta el eje Y. Tus primeros 4 ataques salen del origen, con b = 0."],
-    ["#C35933", "#fff", "Dispara", "La recta sale hacia los dos lados. En cada barco cuenta el primer cuadro que cruza, y si pasa justo por una esquina también cuenta."],
-    ["#1F4A35", "#fff", "Hunde y puntúa", "Cada impacto daña un porcentaje del barco. Al llegar al límite se hunde y ganas sus puntos. Una recta que solo cruza cuadros ya dañados cuenta como agua."],
-    ["#D99A2B", "#1C1A17", "Gana la partida", `Son ${RONDAS} rondas por jugador y ${mmss} por turno. Gana quien sume más puntos o hunda toda la flota rival.`]
-  ];
-  const root = document.createElement("div"); root.id = "comoRoot";
-  root.innerHTML = `<div class="como-top"><button class="mini sec" id="comoVolver">‹ Volver</button><span class="como-cont" id="comoCont"></span></div><div class="como-vista" id="comoVista"><div class="como-track" id="comoTrack">${T.map((t, i) => `<article class="como-card" style="background:${t[0]};color:${t[1]}"><div class="como-n">0${i + 1} <i></i> 05</div><div class="como-ilu">${ilus[i]}</div><p class="como-et">CÓMO SE JUEGA</p><h3>${esc(t[2])}</h3><p class="como-tx">${esc(t[3])}</p></article>`).join("")}</div></div><div class="como-prog"><i id="comoProg"></i></div><p class="como-ayuda">Arrastra las tarjetas · ← → para moverte · Esc para volver</p>`;
-  document.body.appendChild(root);
-  const vista = root.querySelector("#comoVista"), track = root.querySelector("#comoTrack"), cards = [...track.children];
-  let pos = 0, W = 0, paso = 0, minPos = 0, anim = 0, idx = 0, meta = 0, arrastrando = false;
-  const medir = () => { const vw = vista.clientWidth; W = Math.min(vw * .8, 330); const lado = (vw - W) / 2; cards.forEach(c => c.style.width = W + "px"); track.style.paddingLeft = lado + "px"; track.style.paddingRight = lado + "px"; paso = W + 14; minPos = -(cards.length - 1) * paso; };
-  const poner = p => { pos = p; track.style.transform = `translate3d(${p}px,0,0)`; const f = Math.max(0, Math.min(cards.length - 1, -p / paso)); idx = Math.round(f); root.querySelector("#comoCont").textContent = `0${idx + 1} —— 05`; root.querySelector("#comoProg").style.width = (f / (cards.length - 1) * 100) + "%"; };
-  const irA = (i, ms = 900) => { cancelAnimationFrame(anim); meta = Math.max(0, Math.min(cards.length - 1, i)); const a = pos, b = -meta * paso, t0 = performance.now(); const paso1 = now => { const t = Math.min(1, (now - t0) / ms), e = t === 1 ? 1 : 1 - Math.pow(2, -10 * t); poner(a + (b - a) * e); if (t < 1) anim = requestAnimationFrame(paso1); }; anim = requestAnimationFrame(paso1); };
-  const banda = d => d * .35;
-  let x0 = 0, p0 = 0, vel = 0, ult = 0, tUlt = 0;
-  vista.addEventListener("pointerdown", e => { arrastrando = true; cancelAnimationFrame(anim); x0 = e.clientX; p0 = pos; vel = 0; ult = e.clientX; tUlt = performance.now(); vista.setPointerCapture(e.pointerId); vista.classList.add("agarrada"); });
-  vista.addEventListener("pointermove", e => { if (!arrastrando) return; let p = p0 + (e.clientX - x0); if (p > 0) p = banda(p); else if (p < minPos) p = minPos + banda(p - minPos); const n = performance.now(); vel = (e.clientX - ult) / Math.max(1, n - tUlt); ult = e.clientX; tUlt = n; poner(p); });
-  const soltar = () => { if (!arrastrando) return; arrastrando = false; vista.classList.remove("agarrada"); const destino = Math.round(-(pos + vel * 220) / paso); irA(destino); };
-  vista.addEventListener("pointerup", soltar); vista.addEventListener("pointercancel", soltar);
-  const salir = () => { cancelAnimationFrame(anim); window.removeEventListener("keydown", teclas); window.removeEventListener("resize", ajustar); root.classList.add("sale"); setTimeout(() => root.remove(), 380); };
-  const teclas = e => { if (e.key === "Escape") salir(); else if (e.key === "ArrowRight") irA(meta + 1, 700); else if (e.key === "ArrowLeft") irA(meta - 1, 700); };
-  const ajustar = () => { medir(); poner(-meta * paso); };
-  window.addEventListener("keydown", teclas); window.addEventListener("resize", ajustar);
-  root.querySelector("#comoVolver").onclick = salir;
-  medir(); poner(0); requestAnimationFrame(() => root.classList.add("entra"));
 }
 
 /* --- vista 3D (Three.js se carga solo al abrir el visor) --- */
@@ -2428,7 +2301,6 @@ function previsualizarCosmetico(tipo, clave){
 /* ---------- Acciones (delegación de eventos) ---------- */
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t || !U) return;
-  if (t.id === "bComo"){ abrirComoJugar(); return; }
   if (t.dataset.abrir3d){ abrir3D(t.dataset.abrir3d); return; }
   if (t.id === "bInvSala"){ panelInvSala = !panelInvSala; if (salaActual) pintarSala(salaActual.id, salaActual.g); return; }
   if (t.id === "bCodSala"){ if (salaActual) compartirCodigo(salaActual.id); return; }
